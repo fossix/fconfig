@@ -1,5 +1,6 @@
 ;;; yasnippet
 (use-package yasnippet
+  :ensure t
   :diminish yas-minor-mode
   :commands yas-expand
   :config
@@ -9,6 +10,7 @@
 
 ;; ace jump
 (use-package ace-jump-mode
+  :ensure t
   :diminish ace-jump-mode
   :commands ace-jump-mode
   :config
@@ -23,14 +25,17 @@
 
 ; (use-package dropdown-list)
 (use-package highlight-parentheses
+  :ensure t
   :defer 3
   :diminish)
 
 (use-package autopair
+  :ensure t
   :defer 3
   :diminish)
 
 (use-package fic-mode
+  :ensure t
   :defer 5
   :config (progn
             (add-to-list 'fic-highlighted-words "WARNING")))
@@ -55,6 +60,7 @@
 ;; (require 'doxymacs)                     ; doxygen comments
 
 (use-package ledger-mode
+  :ensure t
   :defer t
   :init
   (progn
@@ -68,6 +74,7 @@
   :mode "\\.bc\\'")
 
 (use-package pos-tip
+  :ensure t
   :defer t
   :config
   (defadvice popup-menu-show-quick-help
@@ -206,7 +213,7 @@
     (custom-set-faces
      `(company-tooltip ((t (:inherit default :background "gray5"))))
      `(company-scrollbar-bg ((t (:background "gray10"))))
-     `(company-scrollbar-fg ((t (:background "light-gray"))))
+     `(company-scrollbar-fg ((t (:background "light gray"))))
      `(company-tooltip-selection ((t (:inherit font-lock-function-name-face))))
      `(company-tooltip-common ((t (:inherit font-lock-constant-face)))))))
 

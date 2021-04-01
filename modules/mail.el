@@ -15,6 +15,7 @@
 
 
 (use-package notmuch
+  :ensure t
   :config
   (setq notmuch-show-logo nil
         notmuch-column-control 1.0)
@@ -27,10 +28,19 @@
     (interactive)
     (org-capture nil "d"))
 
+  (defun fconfig/notmuch-get-tags ()
+    "Set tag for the message thread "
+
+    (pcase major-mode
+      ('notmuch-show-mode (notmuch-show-get-tags))
+      ('notmuch-search-mode (notmuch-search-get-tags))
+      ('notmuch-tree-mode (notmuch-tree-get-tags))))
+
   (defun fconfig/notmuch-set-tags (tags)
     "Set tag for message"
 
     (pcase major-mode
+      ('notmuch-search-mode (notmuch-search-tag tags))
       ('notmuch-show-mode (notmuch-show-tag tags))
       ('notmuch-tree-mode (notmuch-tree-tag tags))))
 
@@ -56,44 +66,73 @@ the tag string."
         (fconfig/notmuch-set-tags-thread (list tag))
       (fconfig/notmuch-set-tags (list tag))))
 
-
-  (defun fconfig/notmuch-get-tags ()
-    "Set tag for the message thread "
-
-    (pcase major-mode
-      ('notmuch-show-mode (notmuch-show-get-tags))
-      ('notmuch-search-mode (notmuch-search-get-tags))
-      ('notmuch-tree-mode (notmuch-tree-get-tags))))
-
   (defun fconfig/notmuch-toggle-unread ()
     "toggle unread tag for thread"
     (interactive)
-    (if (member "unread" (fconfig/notmuch-get-tags))
-        (fconfig/notmuch-set-tags-thread '("-unread"))
-      (fconfig/notmuch-set-tags-thread '("+unread"))))
+    (fconfig/notmuch-toggle-tag "unread"))
 
   (defun fconfig/notmuch-toggle-flagged ()
     "Toggle needs action/flagged tag for thread"
     (interactive)
-    (if (member "flagged" (fconfig/notmuch-get-tags))
-        (fconfig/notmuch-set-tags-thread '("-flagged"))
-      (fconfig/notmuch-set-tags-thread '("+flagged"))))
+    (fconfig/notmuch-toggle-tag "flagged"))
 
+  ;; both the delete functions will remove the unread tag, even if we are
+  ;; undeleting a message. I think that's ok for my use case. In rare cases,
+  ;; when I undelete and mark as unread, I can toggle unread too, just one more
+  ;; key stroke
   (defun fconfig/notmuch-delete-thread ()
     "Toggle 'deleted' tag for a thread"
     (interactive)
+    (fconfig/notmuch-set-tags-thread (list "-unread"))
     (fconfig/notmuch-toggle-tag "deleted" t))
 
   (defun fconfig/notmuch-delete-message ()
     "Toggle 'deleted tag for a message"
     (interactive)
+    (fconfig/notmuch-set-tags (list "-unread"))
     (fconfig/notmuch-toggle-tag "deleted"))
+
+  (defun fconfig/notmuch-show-view-as-patch ()
+    "View the the current message as a patch."
+    (interactive)
+    (let* ((id (notmuch-show-get-message-id))
+           (msg (notmuch-show-get-message-properties))
+           (part (notmuch-show-get-part-properties))
+           (subject (concat "Subject: " (notmuch-show-get-subject) "\n"))
+           (diff-default-read-only t)
+           (buf (get-buffer-create (concat "*notmuch-patch-" id "*")))
+           (map (make-sparse-keymap)))
+      (define-key map "q" 'notmuch-bury-or-kill-this-buffer)
+      (switch-to-buffer buf)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert subject)
+        (insert (notmuch-get-bodypart-text msg part nil)))
+      (set-buffer-modified-p nil)
+      (diff-mode)
+      (lexical-let ((new-ro-bind (cons 'buffer-read-only map)))
+        (add-to-list 'minor-mode-overriding-map-alist new-ro-bind))
+      (goto-char (point-min))))
+
+  (defun fconfig/notmuch-bounce-message (&optional address)
+    "Bounce the current message."
+    (interactive "sBounce To: ")
+    (notmuch-show-view-raw-message)
+    (message-resend address))
 
   (general-def notmuch-search-mode-map "#" 'fconfig/notmuch-toggle-unread)
   (general-def notmuch-search-mode-map "!" 'fconfig/notmuch-toggle-flagged)
+  (general-def notmuch-show-mode-map "#" 'fconfig/notmuch-toggle-unread)
+  (general-def notmuch-show-mode-map "!" 'fconfig/notmuch-toggle-flagged)
+  (general-def notmuch-tree-mode-map "#" 'fconfig/notmuch-toggle-unread)
+  (general-def notmuch-tree-mode-map "!" 'fconfig/notmuch-toggle-flagged)
 
   (general-def notmuch-tree-mode-map "d" 'fconfig/notmuch-delete-message)
+  (general-def notmuch-show-mode-map "d" 'fconfig/notmuch-delete-message)
+  ;; In show mode, the threads won't be expanded, so delete will mean the whole
+  ;; thread
   (general-def notmuch-search-mode-map "d" 'fconfig/notmuch-delete-thread)
+  (general-def notmuch-search-mode-map "D" 'fconfig/notmuch-delete-thread)
   (general-def notmuch-show-mode-map "D" 'fconfig/notmuch-delete-thread)
   (general-def notmuch-tree-mode-map "D" 'fconfig/notmuch-delete-thread)
 
@@ -112,6 +151,12 @@ the tag string."
   (general-def notmuch-show-mode-map "<down>" 'next-line)
   (general-def notmuch-show-mode-map "<right>" 'forward-char)
   (general-def notmuch-show-mode-map "<left>" 'backward-char)
+
+  ;; view parts
+  (general-def notmuch-show-part-map "d" 'fconfig/notmuch-show-view-as-patch)
+
+  ;; bounce mail
+  (general-def notmuch-show-mode-map "b" 'fconfig/notmuch-bounce-message)
 
   ;; extract patch from mail
   ;; from: http://www.holgerschurig.de/en/emacs-notmuch-export-patch/
@@ -176,15 +221,10 @@ the tag string."
     (lexical-let ((new-ro-bind (cons 'buffer-read-only map)))
                  (add-to-list 'minor-mode-overriding-map-alist new-ro-bind))
     (goto-char (point-min))))
-  (define-key 'notmuch-show-part-map "v" 'fconfig/notmuch-show-view-as-patch)
-
-  ;; faces, this should go into the theme
-  (setq notmuch-search-line-faces
-        '(("unread" . notmuch-search-unread-face)
-          ("flagged" . notmuch-search-flagged-face)
-          ("deleted" . notmuch-tag-deleted))))
+  (define-key 'notmuch-show-part-map "v" 'fconfig/notmuch-show-view-as-patch))
 
 (use-package helm-notmuch
+  :ensure t
   :commands helm-notmuch)
 
 ;;; from http://www.coli.uni-saarland.de/~slemaguer/emacs/main.html
@@ -204,12 +244,9 @@ the tag string."
           (:key "c" :name "Mails from lists (to/cc me)" :query "tag:list and tag:me")
           (:key "t" :name "Today's stuff" :query "date:today and not tag:deleted")
           (:key "a" :name "Mails that need action" :query "tag:flagged")
-          (:key "b" :name "Bugs" :query "tag:bug and not tag:mybug")
-          (:key "m" :name "Bugs assigned to me" :query "tag:mybug")
           (:key "D" :name "Deleted" :query "tag:deleted")
           (:key "T" :name "To lists" :query "tag:sent and tag:list")
           (:key "i" :name "Unread inbox" :query "tag:inbox and tag:unread")
-          (:key "r" :name "Reddit" :query "tag:reddit")
 
           ;; Classic box
           (:key "s" :name "sent" :query "tag:sent")
@@ -217,17 +254,17 @@ the tag string."
 
           ;; Folder
           (:key "f" :name "fossix inbox" :query "folder:fossix/INBOX and tag:inbox")
-          (:key "l" :name "ltc inbox" :query "(folder:ltc/INBOX or folder:ltc/ibmnotes)")
+          (:key "b" :name "courierboy" :query "folder:cb/INBOX and tag:inbox")
 
           ;; mailing lists
-          (:key "L" :name "lkml" :query "tag:lkml and not (tag:linuxmm or tag:nvdimm or tag:linuxmm or tag:lppc)")
-          (:key "M" :name "linux-mm" :query "tag:linuxmm and not tag:nvdimm and not tag:lppc")
-          (:key "p" :name "lppc" :query "tag:lppc")
-          (:key "n" :name "nvdimm" :query "tag:nvdimm and not tag:lppc")
+          (:key "k" :name "kernel" :query "tag:kernel")
+          (:key "p" :name "Linux PPC Users" :query "tag:lppcuser")
+          (:key "S" :name "Skiboot" :query "tag:skiboot")
+          (:key "l" :name "ledger" :query "tag:ledger")
+          (:key "r" :name "rust" :query "tag:rust")
 
           ;; custom queries
-          (:key "x" :name "ndctl" :query "tag:nvdimm and subject:ndctl")
-          ))
+          (:key "n" :name "ndctl" :query "tag:nvdimm and subject:ndctl")))
 
   (defun my-count-query (query)
     (with-temp-buffer
@@ -356,7 +393,9 @@ the CLI and emacs interface."))
         mail-envelope-from 'header
         message-sendmail-envelope-from 'header
         message-signature nil
-        message-mail-alias-type 'ecomplete))
+        message-kill-buffer-on-exit t
+        message-mail-alias-type 'ecomplete
+        message-auto-save-directory nil))
 
 (autoload 'mail-hist-forward-header "mail-hist")
 (autoload 'mail-text-start          "sendmail")

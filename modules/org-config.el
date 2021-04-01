@@ -135,7 +135,8 @@
           ("Personal" ,(list (all-the-icons-faicon "user")) nil nil :ascent center)
           ("Project" ,(list (all-the-icons-faicon "cogs")) nil nil :ascent center)
           ("Learning" ,(list (all-the-icons-faicon "book")) nil nil :ascent center)
-          ("Writing" ,(list (all-the-icons-faicon "pencil-square-o")) nil nil :ascent center)
+          ("Language" ,(list (all-the-icons-faicon "globe")) nil nil :ascent center)
+          ("Writing" ,(list (all-the-icons-faicon "pencil")) nil nil :ascent center)
           ("Sun" ,(list (all-the-icons-faicon "sun-o")) nil nil :ascent center)
           ("Diary" ,(list (all-the-icons-faicon "calendar")) nil nil :ascent center)
           ("Moon" ,(list (all-the-icons-faicon "moon-o")) nil nil :ascent center)
@@ -370,18 +371,18 @@ A prefix arg forces clock in of the default task."
                (quote ("dot" . graphviz-dot)))
 
   (use-package ox-md)
-  (use-package ob-ledger
-    :config
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t)
-       (go . t)
-       (dot . t)
-       (ditaa . t)
-       (latex . t)
-       (ledger .t)
-       (shell . t))))
+  (use-package ob-ledger)
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (go . t)
+     (dot . t)
+     (ditaa . t)
+     (latex . t)
+     (ledger .t)
+     (shell . t)))
 
   ;; colour source code listings
   (use-package ox-latex
@@ -498,7 +499,7 @@ A prefix arg forces clock in of the default task."
 	  ;;
 	  ;; NOTE: Since blocked items won't be shown, make sure the children are
 	  ;; TODO items, if they are check boxes, set the NOBLOCKING property.
-	  '(("a" "Agenda and TODOs"
+	  '(("A" "Agenda and TODOs"
 	     ((agenda ""
 		      ((org-agenda-overriding-header "Today's Agenda")
 		       (org-agenda-span 'day)
@@ -687,7 +688,7 @@ A prefix arg forces clock in of the default task."
 	      "* %^{Do What?} :refile:%^g\n%?%i")
 	     ("ws" "Standup Entries" entry
 	      (file+olp+datetree "standup.org")
-	      "* %^{Summary}\n  1. %i%?"))
+	      "* %^{Summary}\n  1. %i%?" :tree-type week))
 	   org-capture-templates))
 
     ;; system wide org-capture
@@ -735,6 +736,16 @@ A prefix arg forces clock in of the default task."
      org-brain-show-full-entry t)
 
     (add-hook 'before-save-hook #'org-brain-ensure-ids-in-buffer))
+
+  (org-link-set-parameters
+   "bz"
+   :follow 'org-bugzilla-follow
+   :face '(:foreground "red")
+   :help-echo "Open bug in a browser.")
+
+  (defun org-bugzilla-follow (link)
+    (message "Opening in browser")
+    (shell-command (format "bugalert open %s" link)))
 
   (use-package org-protocol))
 

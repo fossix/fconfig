@@ -13,9 +13,6 @@
   :defer t
   :init (setq ccls-executable "/usr/bin/ccls"))
 
-(use-package lsp-clients
-  :after lsp-mode)
-
 (use-package helm-lsp
   :requires helm
   :after lsp-mode)
@@ -29,11 +26,7 @@
   :config
   (setq lsp-ui-doc-include-signature t
         lsp-ui-doc-delay 2
-        lsp-ui-sideline-delay 1.5)
-
-  (add-hook 'lsp-ui-doc-frame-hook
-            (lambda (frame _w)
-              (set-face-attribute 'default frame :font "Monaco-10"))))
+        lsp-ui-sideline-delay 1.5))
 
 (use-package company-lsp
   :requires company

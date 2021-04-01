@@ -19,7 +19,9 @@
   :name "Bookmark and registers")
 
 (fconfig-C-c-bind
-  "s" 'shell)
+  "x s" 'eshell
+  "x r" 'projectile-run-async-shell-command-in-root
+  "s" 'projectile-run-eshell)
 
 (fconfig-bookmark-bind
   "B" 'bookmark-set
@@ -65,7 +67,11 @@
     "l" 'org-store-link
     "t" 'org-todo-list
     "b" 'org-brain-goto
-    "v" 'org-brain-visualize))
+    "v" 'org-brain-visualize
+    "o" 'org-occur-in-agenda-files
+    "s" 'org-search-view
+    "r" 'org-refile
+    "m" 'org-timer-set-timer))
 
 (when (featurep 'fconfig-vc)
   (fconfig-vc-bind
@@ -139,7 +145,3 @@
 ;; notmuch
 (general-def "C-<f3>" 'notmuch)
 (general-def "C-<f4>" 'helm-notmuch)
-
-;; (define-key (current-global-map) (kbd "s-L") nil)
-;; (general-unbind "<f11>")
-;; (general-def "w" 'self-insert-command)

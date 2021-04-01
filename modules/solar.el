@@ -3,7 +3,7 @@
 ;; Brady Trainor
 ;; http://stackoverflow.com/questions/22889036/custom-diary-sunrise-function-not-working-autoload-diary-emacs
 (require 'solar)
-(require 'cl)
+(require 'cl-lib)
 
 (defun solar-sunrise-string (date &optional nolocation)
   "String of *local* time of sunrise and daylight on Gregorian DATE."

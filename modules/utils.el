@@ -175,7 +175,7 @@
     ;; We have to expand the file names or else naming a directory in an
     ;; argument causes later arguments to be looked for in that directory,
     ;; not the starting directory
-    (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list
+    (mapc #'find-file (mapcar #'expand-file-name (flatten-tree
                                                   (reverse args))))))
 
 ;;; from emacswiki :: https://www.emacswiki.org/emacs/KeyboardMacrosTricks
