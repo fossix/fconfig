@@ -217,6 +217,18 @@
      `(company-tooltip-selection ((t (:inherit font-lock-function-name-face))))
      `(company-tooltip-common ((t (:inherit font-lock-constant-face)))))))
 
+(use-package treemacs
+  :ensure t
+  :init
+  (use-package lsp-treemacs
+    :ensure t)
+
+  (use-package treemacs-projectile
+    :ensure t)
+
+  (use-package treemacs-magit
+    :ensure t))
+
 ;;; diminish minor modes from mode-line-mode-menu
 (diminish 'abbrev-mode)
 (diminish 'eldoc-mode)

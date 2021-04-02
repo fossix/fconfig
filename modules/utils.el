@@ -254,13 +254,18 @@ point reaches the beginning or end of the buffer, stop there."
 (defun apply-frame-font ()
   (when fconfig-default-font
     (set-frame-font fconfig-default-font nil t))
-  (setq-default line-spacing 0.25))
+  (setq-default line-spacing 0.15))
 
 ;;; What should be done after frame creation?
 (defun create-frame-hook (&optional frame)
   (when fconfig-default-theme
     (load-theme fconfig-default-theme t))
   (apply-frame-font))
+
+;;; what should be done after out initial window is setup
+(defun after-window-create ()
+  (create-frame-hook)
+  (toggle-frame-maximized))
 
 (defun read-mode (width)
   (interactive "nBuffer width: ")

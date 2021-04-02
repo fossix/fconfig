@@ -114,11 +114,11 @@
   (fconfig-frame-bind
    "f" 'my-toggle-fullscreen))
 
-(when (featurep 'fconfig-mm)
-  (fconfig-mm-bind
-    "," #'spotify-previous
-    "." #'spotify-next
-    "<return>" #'spotify-playpause))
+;; (when (featurep 'fconfig-mm)
+;;   (fconfig-mm-bind
+;;     "," #'spotify-previous
+;;     "." #'spotify-next
+;;     "<return>" #'spotify-playpause))
 
 ;;; setting this with general-def doesn't work!
 (global-set-key "\C-l" 'backward-kill-line)
@@ -145,3 +145,8 @@
 ;; notmuch
 (general-def "C-<f3>" 'notmuch)
 (general-def "C-<f4>" 'helm-notmuch)
+
+;;; treemacs
+(general-def "C-c t s" 'treemacs-select-window)
+(general-def "C-c t t" 'treemacs)
+(general-def "C-c t e" 'lsp-treemacs-errors-list)
