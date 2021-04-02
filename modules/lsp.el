@@ -28,8 +28,8 @@
         lsp-ui-doc-delay 2
         lsp-ui-sideline-delay 1.5))
 
-(use-package company-lsp
+(use-package company-capf
   :requires company
   :after lsp-mode
   :config
-  (push 'company-lsp company-backends))
+  (push 'company-capf company-backends))
