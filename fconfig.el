@@ -2,9 +2,13 @@
 (defconst fconfig/1MB (* 1 1024 1024))
 
 ;; Variables that can be configured from outsite
-(defvar fconfig-dir "~/.emacs.d/modules")
+(defvar fconfig-dir (file-name-directory load-file-name))
 (defvar fconfig-default-theme nil)
 (defvar fconfig-default-font nil)
+(defvar fconfig-module-dir (concat fconfig-dir "/modules"))
+(defvar fconfig-pkg-dir (concat fconfig-dir "/pkgs"))
+
+(add-to-list 'load-path fconfig-pkg-dir)
 
 (require 'package)
 (setq package-archives nil)
@@ -31,7 +35,7 @@
 (defmacro fconfig! (module)
   (let*
       ((module-name (symbol-name module))
-       (config-file (concat (file-name-as-directory fconfig-dir)
+       (config-file (concat (file-name-as-directory fconfig-module-dir)
 			    (concat module-name ".el"))))
     `(progn (load-file ,config-file)
 	    (provide (intern (concat "fconfig-" ,module-name))))))
