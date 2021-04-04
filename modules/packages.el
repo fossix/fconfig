@@ -221,8 +221,20 @@
 (use-package treemacs
   :ensure t
   :init
+
   (use-package lsp-treemacs
-    :ensure t)
+    :ensure t
+    :config
+    (lsp-treemacs-sync-mode 1)
+
+    :init
+    (defun lsp-treemacs-symbols-toggle ()
+      "Toggle the lsp-treemacs-symbols buffer."
+      (interactive)
+      (if (get-buffer "*LSP Symbols List*")
+          (kill-buffer "*LSP Symbols List*")
+        (progn (lsp-treemacs-symbols)
+               (other-window -1)))))
 
   (use-package treemacs-projectile
     :ensure t)

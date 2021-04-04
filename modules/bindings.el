@@ -147,6 +147,11 @@
 (general-def "C-<f4>" 'helm-notmuch)
 
 ;;; treemacs
-(general-def "C-c t s" 'treemacs-select-window)
 (general-def "C-c t t" 'treemacs)
+(general-def "C-c t s" 'treemacs-select-window)
 (general-def "C-c t e" 'lsp-treemacs-errors-list)
+(general-def "C-c t y" 'lsp-treemacs-symbols-toggle)
+(general-def "C-c t r" 'lsp-treemacs-references)
+(general-def "C-c t i" 'lsp-treemacs-implementations)
+(general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
+(general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
