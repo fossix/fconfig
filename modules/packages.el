@@ -242,6 +242,11 @@
   (use-package treemacs-magit
     :ensure t))
 
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
+
 ;;; diminish minor modes from mode-line-mode-menu
 (diminish 'abbrev-mode)
 (diminish 'eldoc-mode)
