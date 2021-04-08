@@ -157,11 +157,13 @@
 
 
 (use-package openwith
+  :ensure t
   :defer 5
   :config (progn (openwith-mode t)
                (setq openwith-associations '(("\\.pdf\\'" "xdg-open" (file))))))
 
 (use-package powerline
+  :ensure t
   :defer 2
   :config (powerline-default-theme)
   (setq display-time-default-load-average nil))
@@ -170,7 +172,8 @@
   :diminish
   :hook (c-mode-common . flycheck-mode))
 
-(use-package all-the-icons)
+(use-package all-the-icons
+  :ensure t)
 
 (use-package projectile
   :diminish

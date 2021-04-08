@@ -15,7 +15,7 @@
 ;;; Auto add packages
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
 (add-to-list 'package-archives
-             '("melpa" . "http://melpa.milkbox.net/packages/") t)
+             '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 
 (package-initialize)
@@ -72,6 +72,6 @@
 
 (if (daemonp)
     (add-hook 'after-make-frame-functions 'create-frame-hook)
-  (add-hook 'after-init-hook 'create-frame-hook))
+  (add-hook 'after-init-hook 'after-frame-create))
 
 (provide 'fconfig)

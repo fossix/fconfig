@@ -263,7 +263,7 @@ point reaches the beginning or end of the buffer, stop there."
   (apply-frame-font))
 
 ;;; what should be done after out initial window is setup
-(defun after-window-create ()
+(defun after-frame-create ()
   (create-frame-hook)
   (toggle-frame-maximized))
 

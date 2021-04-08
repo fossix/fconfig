@@ -42,7 +42,8 @@
  transient-mark-mode t
  initial-scratch-message nil
  shift-select-mode nil
- bookmark-save-flag 1)
+ bookmark-save-flag 1
+ history-delete-duplicates t)
 
 ;;; diary related
 (setq
