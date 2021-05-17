@@ -34,8 +34,10 @@
    org-enforce-todo-checkbox-dependencies t
    org-agenda-dim-blocked-tasks t
    org-habit-preceding-days 7
+   org-habit-following-days 1
+   org-habit-show-done-always-green t
    org-habit-show-habits-only-for-today nil
-   org-habit-graph-column 55
+   org-habit-graph-column 75
    org-agenda-start-on-weekday 1
    org-agenda-todo-ignore-deadlines t
    org-agenda-include-diary t
@@ -81,7 +83,7 @@
    ;; case. Ordinarily a task (subtask mostly), shouldn't be spanning more than
    ;; a day. So the maximum subtask effort is set to 7 hours.
    org-global-properties (quote
-                          (("Effort_ALL" . "0:15 0:20 0:30 1:00 1:40 2:00 4:00 7:00 1d 2d 3d 4d 1w")))
+                          (("Effort_ALL" . "0:15 0:20 0:30 0:40 1:00 1:40 2:00 4:00 7:00 1d 2d 3d 4d 1w")))
 
    org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM"
    keep-clock-running nil
@@ -108,6 +110,8 @@
 
    org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
 
+  (set-face-attribute 'org-headline-done nil :strike-through t)
+
   (org-toggle-pretty-entities)
   (org-toggle-inline-images)
   (setq org-latex-preview t)
@@ -131,16 +135,15 @@
       (org-insert-time-stamp (current-time) t t)))
 
   (setq org-agenda-category-icon-alist
-        `(("Work" ,(list (all-the-icons-faicon "linux")) nil nil :ascent center)
-          ("Personal" ,(list (all-the-icons-faicon "user")) nil nil :ascent center)
-          ("Project" ,(list (all-the-icons-faicon "cogs")) nil nil :ascent center)
-          ("Learning" ,(list (all-the-icons-faicon "book")) nil nil :ascent center)
-          ("Language" ,(list (all-the-icons-faicon "globe")) nil nil :ascent center)
-          ("Writing" ,(list (all-the-icons-faicon "pencil")) nil nil :ascent center)
-          ("Sun" ,(list (all-the-icons-faicon "sun-o")) nil nil :ascent center)
-          ("Diary" ,(list (all-the-icons-faicon "calendar")) nil nil :ascent center)
-          ("Moon" ,(list (all-the-icons-faicon "moon-o")) nil nil :ascent center)
-          ))
+        `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
+          ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
+          ("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
+          ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
+          ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
+          ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
+          ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
+          ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
+          ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)))
 
   ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
   (setq org-agenda-tag-line-face
@@ -207,7 +210,7 @@
         (and is-a-task has-subtask))))
 
   (defun clock-in-to-next (kw)
-    "Switch a task from TODO to NEXT when clocking in.
+    "Switch a task from TODO to STARTED when clocking in.
    Skips capture tasks, projects, and subprojects.
    Switch projects and subprojects from NEXT back to TODO"
     (when (not (and (boundp 'org-capture-mode) org-capture-mode))
@@ -476,6 +479,18 @@ A prefix arg forces clock in of the default task."
     ;;       (org-end-of-subtree t)
     ;;     nil))
 
+    ;; https://blog.aaronbieber.com/2016/09/24/an-agenda-for-life-with-org-mode.html
+    (defun ss/org-agenda-skip-subtree-if-priority (priority)
+      "Skip an agenda subtree if it has a priority of PRIORITY.
+
+PRIORITY may be one of the characters ?A, ?B, or ?C."
+      (let ((subtree-end (save-excursion (org-end-of-subtree t)))
+            (pri-value (* 1000 (- org-lowest-priority priority)))
+            (pri-current (org-get-priority (thing-at-point 'line t))))
+        (if (= pri-value pri-current)
+            subtree-end
+          nil)))
+
     ;; Easy basic searches. Get a quick view of next actions, etc
     (setq org-agenda-custom-commands
 	  ;; We will have 5 blocks under the "Agenda and TODOs headline. The first
@@ -503,6 +518,9 @@ A prefix arg forces clock in of the default task."
 	     ((agenda ""
 		      ((org-agenda-overriding-header "Today's Agenda")
 		       (org-agenda-span 'day)
+                       (org-agenda-prefix-format " %i %?-12t% s")
+                       (org-agenda-scheduled-leaders '("" "%2dx "))
+                       (org-agenda-use-time-grid t)
 		       (org-deadline-warning-days 7)
 		       (org-agenda-skip-scheduled-if-deadline-is-shown 'not-today)
 		       (org-agenda-skip-deadline-prewarning-if-scheduled 3)
@@ -517,15 +535,17 @@ A prefix arg forces clock in of the default task."
 		     ;; If priority inheritance work's the following could be
 		     ;; uncommented, so only the next actionable child shows up.
 		     ;; (org-agenda-dim-blocked-tasks 'invisible)
-		     ))
+                     (org-agenda-prefix-format " %i % s")))
 
 	      (tags "/NEXT|STARTED|WAITING"
 		    ((org-agenda-sorting-strategy
 		      '(priority-down effort-down todo-state-down))
+                     (org-agenda-prefix-format " %i % s")
 		     (org-agenda-skip-function
 		      (progn
 			'(or (org-agenda-skip-if-blocked)
-			     (org-agenda-skip-entry-if 'scheduled))))
+			     (org-agenda-skip-entry-if 'scheduled)
+                             (ss/org-agenda-skip-subtree-if-priority ?A))))
 		     (org-agenda-overriding-header "Next and Ongoing tasks")))
 
 	      (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\"&TODO<>\"STARTED\""
@@ -537,7 +557,7 @@ A prefix arg forces clock in of the default task."
 
 	      (alltodo ""
 		       ((org-agenda-overriding-header "Pending items")
-			(org-agenda-prefix-format "[%e] ")
+			(org-agenda-prefix-format " %i [%e] ")
 			(org-agenda-sorting-strategy
 			 '(priority-down effort-up todo-state-down category-keep))
 			(org-agenda-skip-function
@@ -552,7 +572,7 @@ A prefix arg forces clock in of the default task."
 	     ((org-agenda-files '("~/notes/org/dump.org" "~/notes/org/TODO"
 				  "~/notes/org/work" "~/notes/org/journal.org"))))
 
-	    ("W" "Week review"
+	    ("W" "Work week review"
 	     ((agenda ""
 		      ((org-agenda-start-on-weekday 1)
 		       (org-agenda-show-log t)
@@ -561,6 +581,21 @@ A prefix arg forces clock in of the default task."
 		       (org-agenda-include-diary nil)
 		       (org-agenda-log-mode-items '(state clock))
 		       (org-agenda-files '("~/notes/org/work"))
+		       (org-agenda-start-with-clockreport-mode t)
+		       (org-agenda-span 'week)
+		       (org-agenda-start-day "-7")
+		       (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3))
+		       (org-agenda-overriding-header "Work week in Review")))))
+
+            ("T" "Todo week review"
+	     ((agenda ""
+		      ((org-agenda-start-on-weekday 1)
+		       (org-agenda-show-log t)
+		       (org-agenda-time-grid nil)
+		       (org-agenda-start-with-log-mode t)
+		       (org-agenda-include-diary nil)
+		       (org-agenda-log-mode-items '(state clock))
+		       (org-agenda-files '("~/notes/org/TODO"))
 		       (org-agenda-start-with-clockreport-mode t)
 		       (org-agenda-span 'week)
 		       (org-agenda-start-day "-7")
@@ -578,6 +613,10 @@ A prefix arg forces clock in of the default task."
 		      (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "CANCELLED"))
 		      (bh/skip-habits))))
 	      (org-agenda-files org-agenda-files)))))
+
+    (setq org-agenda-time-grid '((daily today remove-match)
+                                 (800 1000 1200 1400 1600 1800 2000)
+                                 "......" "----------------"))
 
     ;; functions to remind me to stop working for the day
     (defun ss/org-clock-total-sum-today ()
