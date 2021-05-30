@@ -1,0 +1,137 @@
+#+header-args: :tangle yes :noweb yes
+* Emacs Config
+** Fundamentals
+*** Setup packages and utility functions
+    #+begin_src elisp
+      (defun fconfig-load (file)
+        "This function is to be used to load org files."
+        (org-babel-load-file (expand-file-name file config-dir)))
+    #+end_src
+*** Custom file
+    Lets have a separate custom file.
+
+    #+begin_export elisp
+    (setq custom-file "~/.emacs.d/custom.el")
+    #+end_export
+
+*** Don't show startup
+    #+begin_src elisp
+      (setq inhibit-startup-screen t)
+    #+end_src
+*** All about backups
+    I would to keep backups and not delete the old ones, even if a file is part
+    of a VC.
+
+    #+begin_src elisp
+      (setq
+       backup-directory-alist '(("." . "~/.emacs.d/backups"))
+       delete-old-versions -1
+       version-control t
+       vc-make-backup-files t
+       auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+    #+end_src
+
+*** No bars
+    No menu bar, tool bar or scroll bar
+
+    #+begin_src elisp
+      (when (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+      (when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+      (when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+      (when (fboundp  'tooltip-mode) (tooltip-mode -1))
+    #+end_src
+
+*** Lets prefer utf-8
+    That's specifically for cygwin and windows
+
+    #+begin_src elisp
+      (set-default-coding-systems 'utf-8-unix)
+      (prefer-coding-system 'utf-8-unix)
+      (set-default buffer-file-coding-system 'utf-8-unix)
+    #+end_src
+
+*** Interact with the system clipboard
+    #+begin_src elisp
+      (setq select-enable-clipboard t
+            select-enable-primary t)
+    #+end_src
+
+** Package setup
+
+** Org-mode
+
+** Programming
+
+** General Keybindings
+
+** Load personal setup
+   #+begin_example elisp
+     (org-babel-load-file (expand-file-name (concat (user-login-name) ".org") "~/.emacs.d"))
+   #+end_example
+
+** Temporary
+   The following is a paste of a exiting config file, from which I will slowly
+   move everything to org files.
+
+   #+begin_src elisp
+     (add-to-list 'load-path config-dir)
+
+     (require 'fconfig)
+
+     (fconfig/theme! #'solarized-wombat-dark)
+     (fconfig/font! "Jet Brains Mono-11")
+     (custom-theme-set-faces
+      'user '(variable-pitch ((t (:family "Noto Sans")))))
+
+     ;; this is ugly
+     (setq notes-dir (expand-file-name "~/notes/"))
+
+     (fconfig/init)
+     (let ((file-name-handler-alist nil))
+       (fconfig! core)
+       (fconfig! utils)
+       (fconfig! packages)
+       (fconfig! buffer)
+       (fconfig! helm)
+       (fconfig! org-config)
+       (fconfig! solar)
+       (fconfig! dashboard)
+       (fconfig! vc)
+       (fconfig! search)
+       (fconfig! frame)
+       (fconfig! lsp)
+       (fconfig! mail)
+       (fconfig! progmode)
+       (fconfig! mm)
+       ;; (fconfig! finance)
+       ;; (fconfig! speak)
+       ;; (fconfig! devanagari)
+       (fconfig! bindings))
+
+     (defun santosh/org-agenda-open ()
+       (interactive)
+       (if (get-buffer "*Org Agenda*")
+           (progn
+             (switch-to-buffer-other-frame "*Org Agenda*")
+             (org-agenda-redo))
+         (progn
+           (let (
+                 (org-agenda-window-setup 'only-window)
+                 (org-frame (make-frame
+                             '((no-other-frame . t)
+                               (unsplittable . t)
+                               (height . 30)
+                               (buffer-list . '("*Org Agenda*"))
+                               (minibuffer . nil)
+                               (undecorated . t)))))
+             (set-frame-font "monospace-9" t nil)
+             (org-agenda nil "A")
+             (org-agenda-goto-today)
+             (set-window-dedicated-p (selected-window) t)
+             (delete-other-windows)))))
+
+     (global-map! "C-c o RET" 'santosh/org-agenda-open)
+
+     (server-start)
+     (fconfig/finish)
+   #+end_src
