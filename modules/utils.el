@@ -262,11 +262,6 @@ point reaches the beginning or end of the buffer, stop there."
     (load-theme fconfig-default-theme t))
   (apply-frame-font))
 
-;;; what should be done after out initial window is setup
-(defun after-frame-create ()
-  (create-frame-hook)
-  (toggle-frame-maximized))
-
 (defun read-mode (width)
   (interactive "nBuffer width: ")
   (let* ((adj (- (window-text-width)
