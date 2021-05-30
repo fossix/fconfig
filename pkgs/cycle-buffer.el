@@ -92,7 +92,7 @@
 ;; cycle-buffer-shorten-name: turn ` ' in buf name to `_', also save a couple
 ;; of spaces around each name.
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defvar cycle-buffer-filter
   '((not (eq (aref (buffer-name) 0) ? )) ; " buffer"
@@ -340,7 +340,7 @@ A prefix argument specifies the DISTANCE to skip, negative moves back."
         (setq s (concat (substring s 0 (match-beginning 0))
                         (substring s (match-end 0))))
       (setq s (copy-sequence s)))       ; else the loop below is destructive
-    (loop for i below (length s)
+    (cl-loop for i below (length s)
           do (if (eq (aref s i) ? ) (aset s i ?_)))
     (setq len (length s))
     (if (> len cycle-buffer-show-length)

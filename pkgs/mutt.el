@@ -55,9 +55,7 @@
 ;;; Required Packages
 
 (require 'derived)
-(require 'cl) ; Big but featureful. Do we need this?
 (require 'easymenu)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

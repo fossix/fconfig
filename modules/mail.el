@@ -287,7 +287,7 @@ the CLI and emacs interface."))
         (let* ((str (format "%s" cnt))
                (widget-push-button-prefix "")
                (widget-push-button-suffix "")
-               (oldest-first (case (plist-get elem :sort-order)
+               (oldest-first (cl-case (plist-get elem :sort-order)
                                (newest-first nil)
                                (oldest-first t)
                                (otherwise notmuch-search-oldest-first))))
@@ -326,7 +326,7 @@ the CLI and emacs interface."))
       (widget-insert "Recent searches:")
       (widget-insert "\n\n")
       (let ((start (point)))
-        (loop for i from 1 to notmuch-hello-recent-searches-max
+        (cl-loop for i from 1 to notmuch-hello-recent-searches-max
               for search in notmuch-search-history do
               (let ((widget-symbol (intern (format "notmuch-hello-search-%d" i))))
                 (set widget-symbol
