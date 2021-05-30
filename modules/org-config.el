@@ -14,8 +14,8 @@
              dired-notes)
   :init
   (setq
-   org-directory (concat notes-dir "/org")
-   org-default-notes-file (concat org-directory "/notes"))
+   org-directory (expand-file-name "org" notes-dir)
+   org-default-notes-file (expand-file-name "notes" org-directory))
   :config
   (setq
    org-ditaa-jar-path ""
