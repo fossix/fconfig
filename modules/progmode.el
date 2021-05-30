@@ -119,7 +119,8 @@
 (use-package rust-mode
   :mode ("\\.rs\\'" . rust-mode)
   :config
-  (setq rust-format-on-save t))
+  (setq rust-format-on-save t)
+  (setq electric-indent-mode t))
 
 ;; c-eldoc
 (use-package c-eldoc
