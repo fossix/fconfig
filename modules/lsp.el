@@ -7,11 +7,10 @@
   :bind (:map prog-mode-map
               ("M-g r" . lsp-rename))
   :config
-  (setq lsp-file-watch-threshold nil))
+  (setq lsp-file-watch-threshold nil
+        lsp-idle-delay 0.5)
 
-(use-package ccls
-  :defer t
-  :init (setq ccls-executable "/usr/bin/ccls"))
+  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
 (use-package helm-lsp
   :requires helm
