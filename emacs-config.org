@@ -4,8 +4,14 @@
 *** Setup packages and utility functions
     #+begin_src elisp
       (defun fconfig-load (file)
-        "This function is to be used to load org files."
-        (org-babel-load-file (expand-file-name file config-dir)))
+        "This function is to be used to load files. If a filename has org
+ extension babel will be used to load the file, or else just plain load-file"
+        (let (filename (expand-file-name file config-dir))
+          (if (file-exists-p filename)
+              (if (string= (file-name-extension filename) "org")
+                  (org-babel-load-file filename)
+                (load-file filename))
+            (message (format "file not found: %s" filename)))))
     #+end_src
 *** Custom file
     Lets have a separate custom file.
@@ -56,6 +62,16 @@
             select-enable-primary t)
     #+end_src
 
+*** Load location settings
+    This should be loaded early; and this cannot be part of the person config
+    load section, since it is loaded at the end.
+
+    #+begin_src elisp
+     (let ((location-file (expand-file-name "location.el" "~/.emacs.d")))
+       (when (file-exists-p location-file)
+         (load-file location-file)))
+     #+end_src
+
 ** Package setup
 
 ** Org-mode
@@ -63,11 +79,6 @@
 ** Programming
 
 ** General Keybindings
-
-** Load personal setup
-   #+begin_example elisp
-     (org-babel-load-file (expand-file-name (concat (user-login-name) ".org") "~/.emacs.d"))
-   #+end_example
 
 ** Temporary
    The following is a paste of a exiting config file, from which I will slowly
@@ -135,3 +146,9 @@
      (server-start)
      (fconfig/finish)
    #+end_src
+
+** Load personal setup
+   #+begin_example elisp
+     (org-babel-load-file (expand-file-name (concat (user-login-name) ".org") "~/.emacs.d"))
+     (load custom-file)
+   #+end_example
