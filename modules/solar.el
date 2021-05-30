@@ -9,7 +9,7 @@
   "String of *local* time of sunrise and daylight on Gregorian DATE."
   (let ((l (solar-sunrise-sunset date)))
     (format
-     "%s (%s hours daylight)"
+     "%s"
      (if (car l)
          (concat "Sunrise " (apply 'solar-time-string (car l)))
        "no sunrise")
