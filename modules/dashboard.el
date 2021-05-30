@@ -4,6 +4,7 @@
 
 (use-package dashboard
   :requires (org all-the-icons page-break-lines)
+  :ensure t
   :diminish dashboard-mode
   :commands dashboard-open
   :hook ((dashboard-mode . (lambda () (setq-local tab-width 1))))

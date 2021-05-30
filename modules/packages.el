@@ -184,6 +184,7 @@
   (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
 
 (use-package helm-projectile
+  :ensure t
   :hook ((after-init . helm-projectile-on))
   :init
   (setq projectile-completion-system 'helm))
