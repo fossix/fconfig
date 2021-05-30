@@ -112,7 +112,8 @@
 
 (use-package ace-window
   :defer 3
-  :init (ace-window-display-mode))
+  :init (ace-window-display-mode)
+  :config (setq aw-scope 'frame))
 
 (use-package ispell :defer 5)
 
@@ -250,6 +251,12 @@
   :ensure t
   :config
   (setq graphviz-dot-indent-width 4))
+
+(use-package golden-ratio-scroll-screen
+  :defer 2
+  :config
+  (global-map! [remap scroll-down-command] 'golden-ratio-scroll-screen-down)
+  (global-map! [remap scroll-up-command] 'golden-ratio-scroll-screen-up))
 
 ;;; diminish minor modes from mode-line-mode-menu
 (diminish 'abbrev-mode)
