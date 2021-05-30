@@ -7,6 +7,7 @@
 (defvar fconfig-default-font nil)
 (defvar fconfig-module-dir (concat fconfig-dir "/modules"))
 (defvar fconfig-pkg-dir (concat fconfig-dir "/pkgs"))
+(defvar fconfig-gc-threshold (* 500 fconfig/1MB))
 
 (add-to-list 'load-path fconfig-pkg-dir)
 
@@ -49,7 +50,7 @@
 (defun fconfig/init ()
   "Increases garbage collection threshold for faster
   startup. `fconfig/finish` must be called later"
-  (setq gc-cons-threshold (* 500 fconfig/1MB))
+  (setq gc-cons-threshold (* 1000 fconfig/1MB))
   (add-hook 'emacs-startup-hook
             (lambda ()
               (message "Emacs loaded in %s with %d garbage collections."
@@ -60,7 +61,7 @@
 
 (defun fconfig/finish ()
   ;; Should be called only if fconfig/init is called earlier
-  (setq gc-cons-threshold (* 100 fconfig/1MB)))
+  (setq gc-cons-threshold fconfig-gc-threshold))
 
 (defun fconfig/theme! (theme &optional custom-path)
   (when custom-path
@@ -70,8 +71,9 @@
 (defun fconfig/font! (font)
   (setq fconfig-default-font font))
 
-(if (daemonp)
-    (add-hook 'after-make-frame-functions 'create-frame-hook)
-  (add-hook 'after-init-hook 'after-frame-create))
+(add-hook 'after-make-frame-functions 'create-frame-hook)
+(add-hook 'emacs-startup-hook 'create-frame-hook)
+(add-hook 'emacs-startup-hook 'toggle-frame-maximized)
+
 
 (provide 'fconfig)

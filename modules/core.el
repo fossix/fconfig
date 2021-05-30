@@ -81,8 +81,8 @@
 (add-hook 'post-command-hook 'set-cursor-with-file-mode)
 
 ;; Setup text mode
-(add-hook 'text-mode-hook '(lambda() (auto-fill-mode 1)))
-(add-hook 'text-mode-hook '(lambda() (setq fill-column 80)))
+(add-hook 'text-mode-hook (lambda() (auto-fill-mode 1)))
+(add-hook 'text-mode-hook (lambda() (setq fill-column 80)))
 
 ;; byte compile elisp files when killing files
 ;(add-hook 'kill-buffer-hook 'auto-byte-compile)
