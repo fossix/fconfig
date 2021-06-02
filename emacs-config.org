@@ -72,9 +72,28 @@
          (load-file location-file)))
      #+end_src
 
+*** Font setup
+
+    #+begin_src elisp
+      (custom-theme-set-faces
+       'user
+       '(variable-pitch ((t (:family "Source Sans Pro" :height 120 :weight thin))))
+       '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120)))))
+    #+end_src
+
 ** Package setup
 
 ** Org-mode
+   Don't want to see markers for /italics/ and *bold* and _underline_
+   #+begin_src elisp
+     (setq org-hide-emphasis-markers t)
+   #+end_src
+
+   #+begin_src elisp
+     (use-package org-bullets
+       :ensure t
+       :hook (org-mode . (lambda () (org-bullets-mode 1))))
+   #+end_src
 
 ** Programming
 
@@ -91,8 +110,6 @@
 
      (fconfig/theme! #'solarized-wombat-dark)
      (fconfig/font! "Jet Brains Mono-11")
-     (custom-theme-set-faces
-      'user '(variable-pitch ((t (:family "Noto Sans")))))
 
      ;; this is ugly
      (setq notes-dir (expand-file-name "~/notes/"))
