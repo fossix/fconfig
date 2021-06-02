@@ -16,9 +16,9 @@
 *** Custom file
     Lets have a separate custom file.
 
-    #+begin_export elisp
+    #+begin_src elisp
     (setq custom-file "~/.emacs.d/custom.el")
-    #+end_export
+    #+end_src
 
 *** Don't show startup
     #+begin_src elisp
