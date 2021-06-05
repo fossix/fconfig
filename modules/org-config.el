@@ -685,10 +685,6 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	      (file+headline "notes" "Captured")
 	      "* %^{Title} :browser:%^g\n %i%?\n"))
 
-	   '(("d" "Task Dump" entry
-	      (file "dump.org")
-	      "* %? :refile:%^g\n"))
-
 	   '(("p" "Phone call" entry
 	      (file "journal.org" "Phone Calls")
 	      "* PHONE %? :PHONE:%^g\n%U" :clock-in t :clock-resume t))
