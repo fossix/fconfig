@@ -153,6 +153,7 @@
       (setq notes-dir (expand-file-name "~/notes/"))
 
       (fconfig/init)
+      (fconfig! utils)
 
     #+end_src
 *** Org-mode
@@ -281,7 +282,7 @@
             message-mail-alias-type 'ecomplete
             message-auto-save-directory nil)
     #+end_src
-   
+
 ***** Email Workflow
       Use org to store links from notmuch, and setup a capture template for mails.
 
@@ -375,7 +376,6 @@
     #+begin_src elisp
       (let ((file-name-handler-alist nil))
         (fconfig! core)
-        (fconfig! utils)
         (fconfig! packages)
         (fconfig! buffer)
         (fconfig! helm)
