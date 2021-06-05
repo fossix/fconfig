@@ -385,7 +385,8 @@ A prefix arg forces clock in of the default task."
      (ditaa . t)
      (latex . t)
      (ledger .t)
-     (shell . t)))
+     (shell . t)
+     (rust . t)))
 
   ;; colour source code listings
   (use-package ox-latex
