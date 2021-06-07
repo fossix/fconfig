@@ -2,6 +2,44 @@
 #+header-args: :tangle yes :noweb yes
 
 * Emacs Config
+*** Package setup
+    We will use melpa and elpa as our package archives, and load
+    =use-package=, which will be used extensively everywhere else.
+
+    #+begin_src elisp
+      (require 'package)
+      (setq package-archives nil)
+      ;;; Auto add packages
+      (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
+      (add-to-list 'package-archives
+		   '("melpa" . "https://melpa.org/packages/") t)
+      (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+
+      (package-initialize)
+
+      (require 'use-package)
+      (use-package diminish :ensure t)
+      (use-package general :ensure t)
+    #+end_src
+
+    Load the config manager =fconfig=, so it will be easier to load utility
+    function from =.el= files.
+
+    #+begin_src elisp
+      (add-to-list 'load-path config-dir)
+
+      (require 'fconfig)
+
+      (fconfig/theme! #'solarized-wombat-dark)
+      (fconfig/font! "Jet Brains Mono-11")
+
+      ;; this is ugly
+      (setq notes-dir (expand-file-name "~/notes/"))
+
+      (fconfig/init)
+      (fconfig! utils)
+
+    #+end_src
 *** Fundamentals
 ***** Setup packages and utility functions
       #+begin_src elisp
@@ -118,44 +156,6 @@
           (doom-modeline-major-mode-icon nil))
       #+end_src
 
-*** Package setup
-    We will use melpa and elpa as our package archives, and load
-    =use-package=, which will be used extensively everywhere else.
-
-    #+begin_src elisp
-      (require 'package)
-      (setq package-archives nil)
-      ;;; Auto add packages
-      (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
-      (add-to-list 'package-archives
-		   '("melpa" . "https://melpa.org/packages/") t)
-      (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
-
-      (package-initialize)
-
-      (require 'use-package)
-      (use-package diminish :ensure t)
-      (use-package general :ensure t)
-    #+end_src
-
-    Load the config manager =fconfig=, so it will be easier to load utility
-    function from =.el= files.
-
-    #+begin_src elisp
-      (add-to-list 'load-path config-dir)
-
-      (require 'fconfig)
-
-      (fconfig/theme! #'solarized-wombat-dark)
-      (fconfig/font! "Jet Brains Mono-11")
-
-      ;; this is ugly
-      (setq notes-dir (expand-file-name "~/notes/"))
-
-      (fconfig/init)
-      (fconfig! utils)
-
-    #+end_src
 *** Org-mode
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
