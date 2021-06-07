@@ -374,6 +374,13 @@
       #+end_src
 
 *** Programming
+
+***** Compilation
+      Always scroll to the first error
+
+      #+begin_src elisp
+        (setq compilation-scroll-output 'first-error)
+      #+end_src
 *** General Keybindings
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
@@ -429,6 +436,7 @@
 
 *** Load personal setup
     #+begin_src elisp
-      (org-babel-load-file (expand-file-name (concat (user-login-name) ".org") "~/.emacs.d"))
+      (org-babel-load-file (expand-file-name
+                            (concat (user-login-name) ".org") "~/.emacs.d"))
       (load custom-file)
     #+end_src
