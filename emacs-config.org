@@ -141,19 +141,16 @@
           :ensure t
           :hook (emacs-startup . doom-modeline-init)
           :custom-face
-          (mode-line ((t (:height 0.85))))
-          (mode-line-inactive ((t (:height 0.85))))
+          (mode-line ((t (:height 1.20))))
           :custom
           (doom-modeline-height 15)
           (doom-modeline-bar-width 6)
           (doom-modeline-lsp t)
           (doom-modeline-github nil)
-          (doom-modeline-mu4e nil)
           (doom-modeline-irc nil)
-          (doom-modeline-minor-modes t)
           (doom-modeline-persp-name nil)
-          (doom-modeline-buffer-file-name-style 'truncate-except-project)
-          (doom-modeline-major-mode-icon nil))
+          (doom-modeline-buffer-file-name-style 'relative-from-project)
+          (doom-modeline-major-mode-icon t))
       #+end_src
 
 *** Org-mode
