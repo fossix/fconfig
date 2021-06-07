@@ -118,7 +118,7 @@
         #+begin_src elisp
           (custom-theme-set-faces
            'user
-           '(variable-pitch ((t (:family "Source Sans Pro" :height 120 :weight thin))))
+           '(variable-pitch ((t (:family "Source Sans Pro" :height 140 :weight thin))))
            '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120)))))
         #+end_src
 
@@ -163,6 +163,8 @@
       (setq org-hide-emphasis-markers t
             org-odd-levels-only t
             org-pretty-entities t)
+
+      (add-hook 'org-mode-hook 'variable-pitch-mode)
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.
