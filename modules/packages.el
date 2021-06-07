@@ -163,12 +163,6 @@
   :config (progn (openwith-mode t)
                (setq openwith-associations '(("\\.pdf\\'" "xdg-open" (file))))))
 
-(use-package powerline
-  :ensure t
-  :defer 2
-  :config (powerline-default-theme)
-  (setq display-time-default-load-average nil))
-
 (use-package flycheck
   :diminish
   :hook (c-mode-common . flycheck-mode))
