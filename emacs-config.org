@@ -394,7 +394,9 @@
        '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
        '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
        '(variable-pitch ((t (:family "Source Sans Pro" :height 140 :weight thin))))
-       '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120)))))
+       '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120))))
+       '(show-paren-match ((t (:foreground "light gray" :background "gray10" :extend t))))
+       '(bookmark-face ((t (:foreground nil :background "DodgerBlue4")))))
     #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
