@@ -112,21 +112,12 @@
            (load-file location-file)))
        #+end_src
 
-***** Appearance
-******* Font setup
 
-        #+begin_src elisp
-          (custom-theme-set-faces
-           'user
-           '(variable-pitch ((t (:family "Source Sans Pro" :height 140 :weight thin))))
-           '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120)))))
-        #+end_src
+      Let have some space between lines, make the text more legible.
 
-        Let have some space between lines, make the text more legible.
-
-        #+begin_src elisp
-          (setq-default line-spacing 0.25)
-        #+end_src
+      #+begin_src elisp
+        (setq-default line-spacing 0.25)
+      #+end_src
 
 ***** Mode line
       A minimilatic, non-cluttering mode line is what is needed. Doom mode line
@@ -179,6 +170,15 @@
     #+begin_src elisp
       (setq org-startup-with-latex-preview t)
       (add-hook 'org-brain-visualize-text-hook 'org-latex-preview)
+    #+end_src
+
+    Let the syntax highlight be enabled in the source blocks. Also editing in
+    the same window is less distracting.
+
+    #+begin_src elisp
+      (setq org-src-fontify-natively t
+            org-src-window-setup 'current-window
+            org-src-strip-leading-and-trailing-blank-lines t)
     #+end_src
 
 ***** Setup org modules
@@ -382,6 +382,20 @@
         (setq compilation-scroll-output 'first-error)
       #+end_src
 *** General Keybindings
+*** Theme
+
+    Will theme customisation till I integrate with the theme (=aanila=).
+
+    #+begin_src elisp
+      (custom-theme-set-faces
+       'user
+       '(org-block ((t (:background "gray3" :extend t))))
+       '(org-meta-line ((t (:foreground "dim gray"))))
+       '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
+       '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
+       '(variable-pitch ((t (:family "Source Sans Pro" :height 140 :weight thin))))
+       '(fixed-pitch ((t ( :family "Jet Brains Mono" :height 120)))))
+    #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
     move everything to org files.

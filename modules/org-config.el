@@ -43,8 +43,6 @@
    org-agenda-include-diary t
    org-insert-mode-line-in-empty-file t
    org-use-speed-commands t
-   org-src-fontify-natively t
-   org-src-tab-acts-natively t
    org-clock-out-remove-zero-time-clocks t
    org-clock-out-when-done t
    org-clock-persist-query-resume nil
