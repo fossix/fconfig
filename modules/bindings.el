@@ -101,18 +101,27 @@
     "M-r" 'magit-reset-worktree))
 
 ;; searching and jumping
-(when (featurep 'fconfig-search)
-  (fconfig-search-bind
-    "o" 'switch-to-or-occur
-    "O" 'helm-occur
-    "s" 'helm-ag
-    "SPC" 'ace-jump-mode
-    "C-x SPC" 'ace-jump-mode-pop-mark
-    "w" 'ace-window))
+(general-create-definer fconfig-search-bind
+  :prefix "M-g"
+  :name "Search and jump"
+  "" '(:ignore t :which-key "Search and jump"))
 
-(when (featurep 'fconfig-frame)
-  (fconfig-frame-bind
-   "f" 'my-toggle-fullscreen))
+(fconfig-search-bind
+  "o" 'switch-to-or-occur
+  "O" 'helm-occur
+  "s" 'helm-ag
+  "SPC" 'ace-jump-mode
+  "C-x SPC" 'ace-jump-mode-pop-mark
+  "w" 'ace-window)
+
+;; Everything related to frame
+(general-create-definer fconfig-frame-bind
+  :prefix "C-c f"
+  :name "Frame actions"
+    "" '(:ignore t :which-key "Frame options"))
+
+(fconfig-frame-bind
+  "f" 'toggle-frame-fullscreen)
 
 ;; (when (featurep 'fconfig-mm)
 ;;   (fconfig-mm-bind

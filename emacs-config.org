@@ -410,8 +410,6 @@
         (fconfig! solar)
         (fconfig! dashboard)
         (fconfig! vc)
-        (fconfig! search)
-        (fconfig! frame)
         (fconfig! lsp)
         (fconfig! progmode)
         (fconfig! mm)
