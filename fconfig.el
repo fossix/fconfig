@@ -11,20 +11,6 @@
 
 (add-to-list 'load-path fconfig-pkg-dir)
 
-(require 'package)
-(setq package-archives nil)
-;;; Auto add packages
-(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
-
-(package-initialize)
-
-(require 'use-package)
-(use-package diminish :ensure t)
-(use-package general :ensure t)
-
 (defmacro set-fconfig-modules-dir! (path)
   (let (module-dir)
     (if (stringp path)

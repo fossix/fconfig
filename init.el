@@ -1,6 +1,8 @@
 (setq config-dir (file-name-directory
                   (file-truename (or load-file-name (buffer-file-name)))))
 
+(add-to-list 'load-path config-dir)
+
 (add-hook 'after-init-hook
           `(lambda ()
              (require 'org)

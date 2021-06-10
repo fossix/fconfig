@@ -26,8 +26,6 @@
     function from =.el= files.
 
     #+begin_src elisp
-      (add-to-list 'load-path config-dir)
-
       (require 'fconfig)
 
       (fconfig/theme! #'solarized-wombat-dark)
