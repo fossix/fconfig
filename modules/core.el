@@ -1,22 +1,3 @@
-;;; backups
-(setq
- backup-directory-alist '(("." . "~/.emacs.d/backups"))
- delete-old-versions -1
- version-control t
- vc-make-backup-files t
- auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
-
-(when (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-(when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-(when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-(when (fboundp  'tooltip-mode) (tooltip-mode -1))
-(setq inhibit-startup-screen t)
-
-;;; specifically for cygwin and windows
-(set-default-coding-systems 'utf-8-unix)
-(prefer-coding-system 'utf-8-unix)
-(set-default buffer-file-coding-system 'utf-8-unix)
-
 ;;; General setup
 (setq
  frame-title-format '("%b %* %m")
@@ -33,14 +14,11 @@
  global-auto-revert-mode t
  scroll-preserve-screen-position 1 ; Pgup/dn will return exactly to the starting
                                    ; point.
- text-mode-hook 'turn-on-auto-fill ; Sets autofill on in text mode automatically
  ;; Some pretty stuff
  font-lock-maximum-decoration t
- inhibit-startup-message t
  query-replace-highlight t
  search-highlight t
  transient-mark-mode t
- initial-scratch-message nil
  shift-select-mode nil
  bookmark-save-flag 1
  history-delete-duplicates t)

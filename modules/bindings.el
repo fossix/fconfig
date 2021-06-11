@@ -71,7 +71,8 @@
     "o" 'org-occur-in-agenda-files
     "s" 'org-search-view
     "r" 'org-refile
-    "m" 'org-timer-set-timer))
+    "m" 'org-timer-set-timer
+    "p" 'org-present))
 
 (when (featurep 'fconfig-vc)
   (fconfig-vc-bind

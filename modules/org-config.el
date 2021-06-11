@@ -13,6 +13,7 @@
              my-term-agenda
              dired-notes)
   :init
+  (add-to-list 'org-modules 'org-habit 'drill)
   (setq
    org-directory (expand-file-name "org" notes-dir)
    org-default-notes-file (expand-file-name "notes" org-directory))
@@ -120,7 +121,6 @@
   (setf org-special-ctrl-a/e t)
   (setf org-special-ctrl-k t)
   (org-clock-persistence-insinuate)
-  (add-to-list 'org-modules 'org-habit 'drill)
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 
   (defun org-insert-clock-range (&optional n)

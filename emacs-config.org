@@ -43,8 +43,8 @@
       #+begin_src elisp
         (defun fconfig-load (file)
           "This function is to be used to load files. If a filename has org
-   extension babel will be used to load the file, or else just plain load-file"
-          (let (filename (expand-file-name file config-dir))
+        extension babel will be used to load the file, or else just plain load-file"
+          (let ((filename (expand-file-name file config-dir)))
             (if (file-exists-p filename)
                 (if (string= (file-name-extension filename) "org")
                     (org-babel-load-file filename)
@@ -60,7 +60,9 @@
 
 ***** Don't show startup
       #+begin_src elisp
-        (setq inhibit-startup-screen t)
+        (setq inhibit-startup-screen t
+              initial-scratch-message nil
+              inhibit-startup-message t)
       #+end_src
 ***** All about backups
       I would to keep backups and not delete the old ones, even if a file is part
@@ -128,7 +130,7 @@
 
         (use-package doom-modeline
           :ensure t
-          :hook (emacs-startup . doom-modeline-init)
+          :hook (emacs-startup . doom-modeline-mode)
           :custom-face
           (mode-line ((t (:height 1.20))))
           :custom
