@@ -260,9 +260,9 @@
                     (whitespace-mode -1)))
         ;; We add items later in reverse order with (add-to-list ...):
         (setq notmuch-hello-sections '())
-        (add-to-list 'notmuch-hello-sections 'my-notmuch-hello-insert-recent-searches)
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-recent-searches)
         (add-to-list 'notmuch-hello-sections 'notmuch-hello-insert-search)
-        (add-to-list 'notmuch-hello-sections 'my-notmuch-hello-insert-searches))
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-searches))
     #+end_src
 
     Let's autoload =mail-hist= and and =sendmail=
@@ -339,6 +339,8 @@
         (general-def notmuch-search-mode-map "<tab>" 'notmuch-tree-from-search-thread)
         (general-def notmuch-search-mode-map "<up>" 'previous-line)
         (general-def notmuch-search-mode-map "d" 'fconfig/notmuch-delete-thread)
+        (general-def notmuch-search-mode-map "]" 'ss/mail-read-later)
+        (general-def notmuch-search-mode-map "," 'ss/mail-follow-up)
       #+end_src
 
       Bindings in the show mode map
@@ -354,7 +356,12 @@
         (general-def notmuch-show-mode-map "b" 'fconfig/notmuch-bounce-message)
         (general-def notmuch-show-mode-map "d" 'fconfig/notmuch-delete-message)
         (general-def notmuch-show-mode-map "," 'ss/mail-follow-up)
-        (general-def notmuch-show-mode-map "." 'ss/mail-read-later)
+        (general-def notmuch-show-mode-map "]" 'ss/mail-read-later)
+        (general-def notmuch-show-mode-map "X"
+          '(lambda ()
+             (interactive)
+             (fconfig/notmuch-export-patch (notmuch-show-get-message-id)
+                                           (notmuch-show-get-prop :headers))))
       #+end_src
 
       Bindings in the tree mode (threaded view)
@@ -365,6 +372,7 @@
         (general-def notmuch-tree-mode-map "<down>" 'next-line)
         (general-def notmuch-tree-mode-map "<up>" 'previous-line)
         (general-def notmuch-tree-mode-map "d" 'fconfig/notmuch-delete-message)
+        (general-def notmuch-tree-mode-map "X" '(lambda () (interactive) (notmuch-tree-thread-mapcar 'fconfig/notmuch-tree-get-patch)))
       #+end_src
 
       Bindings to show patch in diff mode

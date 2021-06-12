@@ -66,28 +66,6 @@ the tag string."
   (fconfig/notmuch-set-tags (list "-unread"))
   (fconfig/notmuch-toggle-tag "deleted"))
 
-(defun fconfig/notmuch-show-view-as-patch ()
-  "View the the current message as a patch."
-  (interactive)
-  (let* ((id (notmuch-show-get-message-id))
-         (msg (notmuch-show-get-message-properties))
-         (part (notmuch-show-get-part-properties))
-         (subject (concat "Subject: " (notmuch-show-get-subject) "\n"))
-         (diff-default-read-only t)
-         (buf (get-buffer-create (concat "*notmuch-patch-" id "*")))
-         (map (make-sparse-keymap)))
-    (define-key map "q" 'notmuch-bury-or-kill-this-buffer)
-    (switch-to-buffer buf)
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (insert subject)
-      (insert (notmuch-get-bodypart-text msg part nil)))
-    (set-buffer-modified-p nil)
-    (diff-mode)
-    (lexical-let ((new-ro-bind (cons 'buffer-read-only map)))
-      (add-to-list 'minor-mode-overriding-map-alist new-ro-bind))
-    (goto-char (point-min))))
-
 (defun fconfig/notmuch-bounce-message (&optional address)
   "Bounce the current message."
   (interactive "sBounce To: ")
@@ -95,14 +73,10 @@ the tag string."
   (message-resend address))
 
 ;; extract patch from mail
-;; from: http://www.holgerschurig.de/en/emacs-notmuch-export-patch/
-(defun my-notmuch-export-patch ()
+;; mostly from: http://www.holgerschurig.de/en/emacs-notmuch-export-patch/
+(defun fconfig/notmuch-export-patch (id headers)
   (interactive)
-  (let* ((from (notmuch-show-get-from))
-         (date (notmuch-show-get-date))
-         (subject (notmuch-show-get-subject))
-         (id (notmuch-show-get-message-id))
-         (filename subject)
+  (let* ((filename (plist-get headers :Subject))
          (patchnum))
     (when (string-match "\\[PATCH.+?0*\\([0-9]+\\)/[0-9]+\\]" filename)
       (setq patchnum (string-to-number (match-string 1 filename))))
@@ -120,16 +94,19 @@ the tag string."
     (save-excursion
       (let ((buf (generate-new-buffer (concat "*notmuch-export-patch-" id "*"))))
         (with-current-buffer buf
-          (insert (format "Subject: %s\n" subject))
-          (insert (format "From: %s\n" from))
-          (insert (format "Date: %s\n" date))
+          (insert (format "Subject: %s\n" (plist-get headers :Subject)))
+          (insert (format "From: %s\n" (plist-get headers :From)))
+          (insert (format "Date: %s\n" (plist-get headers :Date)))
           (insert (format "Message-Id: %s\n\n" (substring id 3)))
           (let ((coding-system-for-read 'no-conversion))
             (call-process notmuch-command nil t nil "show" "--part:1" id))
           (write-file filename))
         (kill-buffer buf)))))
 
-
+(defun fconfig/notmuch-tree-get-patch ()
+  (let ((headers (notmuch-tree-get-prop :headers)))
+    (if (not (string-match "^re:\\ " (plist-get headers :Subject)))
+        (fconfig/notmuch-export-patch (notmuch-tree-get-message-id) headers))))
 
 ;; Utilities: Most copied/based on snippets from
 ;; 1.https://notmuchmail.org/emacstips
@@ -156,7 +133,7 @@ the tag string."
       (add-to-list 'minor-mode-overriding-map-alist new-ro-bind))
     (goto-char (point-min))))
 
-(defun my-count-query (query)
+(defun fconfig/notmuch-count-query (query)
   (with-temp-buffer
     (insert query "\n")
     (unless (= (call-process-region (point-min) (point-max) notmuch-command
@@ -172,7 +149,7 @@ the CLI and emacs interface."))
           nil
         (notmuch-hello-nice-number n)))))
 
-(defun my-notmuch-hello-query-insert (cnt query elem)
+(defun fconfig/notmuch-hello-query-insert (cnt query elem)
   (if cnt
       (let* ((str (format "%s" cnt))
              (widget-push-button-prefix "")
@@ -191,17 +168,17 @@ the CLI and emacs interface."))
     (widget-insert "        ")))
 
 
-(defun my-notmuch-hello-insert-searches ()
+(defun fconfig/notmuch-hello-insert-searches ()
   "Insert the saved-searches section."
   (widget-insert (propertize "New     Total      Key  List\n" 'face 'my-notmuch-hello-header-face))
   (mapc (lambda (elem)
           (when elem
             (let* ((q_tot (plist-get elem :query))
                    (q_new (concat q_tot " AND tag:unread"))
-                   (n_tot (my-count-query q_tot))
-                   (n_new (my-count-query q_new)))
-              (my-notmuch-hello-query-insert n_new q_new elem)
-              (my-notmuch-hello-query-insert n_tot q_tot elem)
+                   (n_tot (fconfig/notmuch-count-query q_tot))
+                   (n_new (fconfig/notmuch-count-query q_new)))
+              (fconfig/notmuch-hello-query-insert n_new q_new elem)
+              (fconfig/notmuch-hello-query-insert n_tot q_tot elem)
               (widget-insert "   ")
               (widget-insert (plist-get elem :key))
               (widget-insert "    ")
@@ -210,7 +187,7 @@ the CLI and emacs interface."))
 
         notmuch-saved-searches))
 
-(defun my-notmuch-hello-insert-recent-searches ()
+(defun fconfig/notmuch-hello-insert-recent-searches ()
   "Insert recent searches."
   (when notmuch-search-history
     (widget-insert "Recent searches:")
@@ -255,7 +232,6 @@ the CLI and emacs interface."))
        :weight bold))
   "Font for the header in `my-notmuch-hello-insert-searches`."
   :group 'notmuch-faces)
-
 
 (defun my-notmuch-hello-insert-separator ()
   (insert "\n\f\n"))
