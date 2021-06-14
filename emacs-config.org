@@ -396,7 +396,7 @@
         (use-package geiser-guile
           :config
           (setq geiser-defauslt-implementation 'guile
-                setq geiser-guile-binary "guile2.2"))
+                geiser-guile-binary "guile2.2"))
       #+end_src
 *** General Keybindings
 *** Theme
