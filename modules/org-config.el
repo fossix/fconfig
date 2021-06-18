@@ -385,7 +385,8 @@ A prefix arg forces clock in of the default task."
      (ledger .t)
      (shell . t)
      (rust . t)
-     (scheme . t)))
+     (scheme . t)
+     (gnuplot . t)))
 
   ;; colour source code listings
   (use-package ox-latex
