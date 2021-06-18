@@ -181,6 +181,14 @@
             org-src-strip-leading-and-trailing-blank-lines t)
     #+end_src
 
+    Exiting org code block edit buffer, I see leading whitespaces in the file,
+    which is not in the code blocks itself, but at a file level. I don't like
+    seeing leading/trailing whitespaces in the ~git diff~ output.
+
+    #+begin_src elisp
+      (advice-add 'org-edit-src-exit :after 'whitespace-cleanup)
+    #+end_src
+
 ***** Setup org modules
       The two most important org packages that we need are org-agenda
       and org-capture, set those up fist.
