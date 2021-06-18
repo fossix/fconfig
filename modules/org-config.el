@@ -670,8 +670,12 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	      "* %^{Quote} -- %^{Author}"))
 
 	   '(("t" "Todo" entry
-	      (file+headline "TODO" "Tasks")
+	      (file+headline "dump.org" "Tasks")
 	      "* TODO %^{Do-what?} %^g\n  %i%?"))
+
+	   '(("d" "Idea/Project dump" entry
+	      (file+headline "dump.org" "Dump")
+	      "* TODO %^{Do-what?} :refile:%^g\n  %i%?"))
 
 	   '(("m" "Meetings" entry
 	      (file+headline "TODO" "Meetings/Appointments/Calls")
