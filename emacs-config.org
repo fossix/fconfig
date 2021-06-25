@@ -407,6 +407,13 @@
                 geiser-guile-binary "guile2.2"))
       #+end_src
 *** General Keybindings
+    Enable use of arrows in read-mode
+
+    #+begin_src elisp
+      (general-def read-mode-map "<down>" 'next-line)
+      (general-def read-mode-map "<up>" 'previous-line)
+    #+end_src
+
 *** Theme
 
     Will theme customisation till I integrate with the theme (=aanila=).
