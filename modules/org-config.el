@@ -613,7 +613,14 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 		 '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
 		      (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "CANCELLED"))
 		      (bh/skip-habits))))
-	      (org-agenda-files org-agenda-files)))))
+	      (org-agenda-files org-agenda-files)))
+
+            ("X" agenda ""
+                ((org-agenda-prefix-format " [ ] ")
+                 (org-agenda-with-colors t)
+                 (org-agenda-remove-tags t))
+                ("~//tmp/agenda.html"))
+            ))
 
     (setq org-agenda-time-grid '((daily today remove-match)
                                  (800 1000 1200 1400 1600 1800 2000)
@@ -786,6 +793,13 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
   (defun org-bugzilla-follow (link)
     (message "Opening in browser")
     (shell-command (format "bugalert open %s" link)))
+
+  (setq org-agenda-exporter-settings
+      '((ps-number-of-columns 2)
+        (ps-landscape-mode t)
+        (org-agenda-add-entry-text-maxlines 5)
+        (htmlize-output-type 'css)
+        (htmlize-pre-style t)))
 
   (use-package org-protocol))
 
