@@ -29,7 +29,6 @@
       (require 'fconfig)
 
       (fconfig/theme! #'solarized-wombat-dark)
-      (fconfig/font! "Jet Brains Mono-11")
 
       ;; this is ugly
       (setq notes-dir (expand-file-name "~/notes/"))
@@ -421,7 +420,7 @@
     #+begin_src elisp
       (custom-theme-set-faces
        'user
-       '(org-block ((t (:background "gray3" :extend t))))
+       '(org-block ((t (:inherit fixed-pitch :background "gray3" :extend t))))
        '(org-meta-line ((t (:foreground "dim gray"))))
        '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
        '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
@@ -474,13 +473,22 @@
 
       (global-map! "C-c o RET" 'santosh/org-agenda-open)
 
-      (server-start)
+
+      (if (not (server-running-p))
+          (server-start))
+
       (fconfig/finish)
     #+end_src
 
 *** Load personal setup
+    Load personal setup file, which can have personal information like email
+    address, location etc, and load host specific setup file, which I only use
+    for setting up font.
+
     #+begin_src elisp
       (org-babel-load-file (expand-file-name
                             (concat (user-login-name) ".org") "~/.emacs.d"))
+      (org-babel-load-file (expand-file-name
+                            (concat (system-name) ".org") "~/.emacs.d"))
       (load custom-file)
     #+end_src
