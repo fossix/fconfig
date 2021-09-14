@@ -165,3 +165,9 @@
 (general-def "C-c t i" 'lsp-treemacs-implementations)
 (general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
 (general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
+
+;; Everything related to note taking, currently org-roam
+(general-create-definer fconfig-notes-bind
+  :prefix "C-c n"
+  :name "Notes actions"
+    "" '(:ignore t :which-key "Notes options"))

@@ -150,8 +150,6 @@
       (setq org-hide-emphasis-markers t
             org-odd-levels-only t
             org-pretty-entities t)
-
-      (add-hook 'org-mode-hook 'variable-pitch-mode)
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.

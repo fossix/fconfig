@@ -43,7 +43,7 @@
   (fci-mode)
   (highlight-parentheses-mode)
   (configure-prettify-symbols-alist)
-  (autopair-mode)
+  (phi-autopair-mode)
   (auto-fill-mode 1)
   (bind-key "<tab>" 'indent-for-tab-command)
   (when (featurep 'yasnippet)

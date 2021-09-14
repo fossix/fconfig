@@ -29,7 +29,7 @@
   :defer 3
   :diminish)
 
-(use-package autopair
+(use-package phi-autopair
   :ensure t
   :defer 3
   :diminish)
