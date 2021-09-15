@@ -228,6 +228,51 @@
                       (hide-mode-line-mode -1))))
       #+end_src
 
+***** Note taking with org-roam
+      #+begin_src elisp
+        (use-package websocket
+          :after org-roam)
+
+        (use-package org-roam
+          :ensure t
+          :init
+          (setq org-roam-v2-ack t)
+          :custom
+          (setq org-roam-directory "~/notes/org/roam")
+          (setq org-roam-completion-everywhere t)
+          :config
+          (org-roam-setup))
+
+        (fconfig-notes-bind
+          "l" 'org-roam-buffer-toggle
+          "f" 'org-roam-node-find
+          "d" 'org-roam-dailies-find-date
+          "C" 'org-roam-capture
+          "T" 'org-roam-dailies-capture-today
+          "R" 'org-roam-dailies-capture-tomorrow
+          "Y" 'org-roam-dailies-capture-yesterday
+          "t" 'org-roam-dailies-find-today
+          "r" 'org-roam-dailies-find-tomorrow
+          "y" 'org-roam-dailies-find-yesterday
+          "g" 'org-roam-graph
+          "u" 'org-roam-ui-mode)
+
+        (fconfig-org-config-bind
+         "i" 'org-roam-node-insert
+         "I" 'org-roam-insert-immediate)
+
+         (general-def org-mode-map "C-M-i" 'completion-at-point)
+
+        (use-package org-roam-ui
+          :load-path "~/.emacs.d/site-lisp/org-roam-ui"
+          :after org-roam
+          :config
+          (setq org-roam-ui-sync-theme t
+                org-roam-ui-follow t
+                org-roam-ui-update-on-save t
+                org-roam-ui-open-on-start t))
+      #+end_src
+
 *** Mail
     Notmuch mail setup
 
