@@ -237,8 +237,8 @@
           :ensure t
           :init
           (setq org-roam-v2-ack t)
-          :custom
           (setq org-roam-directory "~/notes/org/roam")
+          :custom
           (setq org-roam-completion-everywhere t)
           :config
           (org-roam-setup))
