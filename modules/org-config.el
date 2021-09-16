@@ -802,8 +802,3 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
         (htmlize-pre-style t)))
 
   (use-package org-protocol))
-
-(general-create-definer fconfig-org-config-bind
-  :prefix "C-c o"
-  :name "Org mode bindings"
-  "" '(:ignore t :which-key "Org-mode bindings"))
