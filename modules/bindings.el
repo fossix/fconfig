@@ -1,18 +1,3 @@
-;;; For bookmarks and registers, Lets make all bindings follow C-c
-;;; C-x prefix for single key commands
-
-(general-unbind "C-c")                  ; we will C-c as base for all modules
-(general-unbind "C-x v")                ; unbind vc map
-(general-unbind "C-x r")                ; unbind bookmark and register
-
-(general-create-definer fconfig-C-c-bind
-  :prefix "C-c"
-  :name "Global shortcuts with C-c prefix")
-
-(general-create-definer fconfig-C-x-bind
-  :prefix "C-x"
-  :name "Global shortcuts with C-x prefix")
-
 (general-create-definer fconfig-bookmark-bind
   :prefix "C-c r"
   "" '(:ignore t :which-key "Bookmark and registers")
