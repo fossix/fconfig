@@ -493,6 +493,17 @@
     #+begin_src elisp
       (general-def read-mode-map "<down>" 'next-line)
       (general-def read-mode-map "<up>" 'previous-line)
+
+      ;;; switch between light and dark themes
+      (general-def "C-c l t l" '(lambda()
+                                  (interactive)
+                                  (disable-theme 'solarized-wombat-dark)
+                                  (load-theme 'solarized-selenized-white t)))
+
+      (general-def "C-c l t d" '(lambda()
+                                  (interactive)
+                                  (disable-theme 'solarized-selenized-white)
+                                  (load-theme 'solarized-wombat-dark t)))
     #+end_src
 
 *** Theme
@@ -502,7 +513,7 @@
     #+begin_src elisp
       (custom-theme-set-faces
        'user
-       '(org-block ((t (:inherit fixed-pitch :background "gray3" :extend t))))
+       '(org-block ((t (:inherit))))
        '(org-meta-line ((t (:foreground "dim gray"))))
        '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
        '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
@@ -568,9 +579,9 @@
     for setting up font.
 
     #+begin_src elisp
-      (org-babel-load-file (expand-file-name
-			    (concat (user-login-name) ".org") "~/.emacs.d"))
-      (org-babel-load-file (expand-file-name
-			    (concat (system-name) ".org") "~/.emacs.d"))
       (load custom-file)
+      (org-babel-load-file (expand-file-name
+                            (concat (user-login-name) ".org") "~/.emacs.d"))
+      (org-babel-load-file (expand-file-name
+                            (concat (system-name) ".org") "~/.emacs.d"))
     #+end_src
