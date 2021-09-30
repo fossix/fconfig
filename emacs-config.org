@@ -513,7 +513,7 @@
     #+begin_src elisp
       (custom-theme-set-faces
        'user
-       '(org-block ((t (:inherit))))
+       '(org-block ((t (:inherit t))))
        '(org-meta-line ((t (:foreground "dim gray"))))
        '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
        '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
