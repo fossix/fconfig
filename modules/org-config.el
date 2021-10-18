@@ -406,8 +406,8 @@ A prefix arg forces clock in of the default task."
 
     :init
     (setq org-agenda-files nil)
-    (add-to-list 'org-agenda-files (concat org-directory "/TODO"))
-    (add-to-list 'org-agenda-files (concat org-directory "/work"))
+    (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
+    (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
   ;;; Breaks and other misc activities will be here, only for clocking
     (add-to-list 'org-agenda-files (concat org-directory "/journal.org"))
     (setq org-refile-targets
