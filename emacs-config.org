@@ -506,7 +506,7 @@
                                   (load-theme 'solarized-wombat-dark t)))
     #+end_src
 
-*** Theme
+*** Appearance
 
     Will theme customisation till I integrate with the theme (=aanila=).
 
@@ -520,6 +520,28 @@
        '(show-paren-match ((t (:foreground "light gray" :background "gray10" :extend t))))
        '(bookmark-face ((t (:foreground nil :background "DodgerBlue4")))))
     #+end_src
+
+    Some transparency won't hurt
+
+    #+begin_src elisp
+      (defun toggle-transparency ()
+         (interactive)
+         (let ((alpha (frame-parameter nil 'alpha)))
+           (set-frame-parameter
+            nil 'alpha
+            (if (eql (cond ((numberp alpha) alpha)
+                           ((numberp (cdr alpha)) (cdr alpha))
+                           ;; Also handle undocumented (<active> <inactive>) form.
+                           ((numberp (cadr alpha)) (cadr alpha)))
+                     100)
+                '(85 . 50) '(100 . 100)))))
+
+      (fconfig-frame-bind "t" 'toggle-transparency)
+
+      ;;; set transparency
+      (toggle-transparency)
+    #+end_src
+
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
     move everything to org files.
