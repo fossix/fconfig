@@ -32,7 +32,6 @@
    org-agenda-skip-scheduled-if-deadline-is-shown t
    org-return-follows-link t
    org-enforce-todo-dependencies t
-   org-enforce-todo-checkbox-dependencies t
    org-agenda-dim-blocked-tasks t
    org-habit-preceding-days 7
    org-habit-following-days 1

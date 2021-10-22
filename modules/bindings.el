@@ -100,15 +100,6 @@
   "C-x SPC" 'ace-jump-mode-pop-mark
   "w" 'ace-window)
 
-;; Everything related to frame
-(general-create-definer fconfig-frame-bind
-  :prefix "C-c f"
-  :name "Frame actions"
-    "" '(:ignore t :which-key "Frame options"))
-
-(fconfig-frame-bind
-  "f" 'toggle-frame-fullscreen)
-
 ;; (when (featurep 'fconfig-mm)
 ;;   (fconfig-mm-bind
 ;;     "," #'spotify-previous

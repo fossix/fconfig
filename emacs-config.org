@@ -12,7 +12,7 @@
       ;;; Auto add packages
       (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
       (add-to-list 'package-archives
-                   '("melpa" . "https://melpa.org/packages/") t)
+		   '("melpa" . "https://melpa.org/packages/") t)
       (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 
       (package-initialize)
@@ -29,12 +29,12 @@
       (general-unbind "C-x r")                ; unbind bookmark and register
 
       (general-create-definer fconfig-C-c-bind
-        :prefix "C-c"
-        :name "Global shortcuts with C-c prefix")
+	:prefix "C-c"
+	:name "Global shortcuts with C-c prefix")
 
       (general-create-definer fconfig-C-x-bind
-        :prefix "C-x"
-        :name "Global shortcuts with C-x prefix")
+	:prefix "C-x"
+	:name "Global shortcuts with C-x prefix")
     #+end_src
 
     Load the config manager =fconfig=, so it will be easier to load utility
@@ -162,7 +162,7 @@
       Don't as when opening a symlink, always follow it.
 
       #+begin_src elisp
-        (setq vc-follow-symlinks t)
+	(setq vc-follow-symlinks t)
       #+end_src
 *** Org-mode
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
@@ -256,60 +256,60 @@
 
 ***** Note taking with org-roam
       #+begin_src elisp
-        ;; Everything related to note taking, currently org-roam
-        (general-create-definer fconfig-notes-bind
-          :prefix "C-c n"
-          :name "Notes actions"
-            "" '(:ignore t :which-key "Notes options"))
+	;; Everything related to note taking, currently org-roam
+	(general-create-definer fconfig-notes-bind
+	  :prefix "C-c n"
+	  :name "Notes actions"
+	    "" '(:ignore t :which-key "Notes options"))
 
-        (use-package websocket
-          :after org-roam)
+	(use-package websocket
+	  :after org-roam)
 
-        (use-package org-roam
-          :ensure t
-          :init
-          (setq org-roam-v2-ack t)
-          (setq org-roam-directory "~/notes/org/roam")
-          :custom
-          (setq org-roam-completion-everywhere t)
-          :config
-          (use-package org-roam-protocol)
-          (org-roam-setup)
-          (defun org-roam-node-insert-immediate (arg &rest args)
-            (interactive "P")
-            (let ((args (cons arg args))
-                  (org-roam-capture-templates (list (append (car org-roam-capture-templates)
-                                                            '(:immediate-finish t)))))
-              (apply #'org-roam-node-insert args))))
+	(use-package org-roam
+	  :ensure t
+	  :init
+	  (setq org-roam-v2-ack t)
+	  (setq org-roam-directory "~/notes/org/roam")
+	  :custom
+	  (setq org-roam-completion-everywhere t)
+	  :config
+	  (use-package org-roam-protocol)
+	  (org-roam-setup)
+	  (defun org-roam-node-insert-immediate (arg &rest args)
+	    (interactive "P")
+	    (let ((args (cons arg args))
+		  (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+							    '(:immediate-finish t)))))
+	      (apply #'org-roam-node-insert args))))
 
 
-        (fconfig-notes-bind
-          "l" 'org-roam-buffer-toggle
-          "f" 'org-roam-node-find
-          "d" 'org-roam-dailies-find-date
-          "C" 'org-roam-capture
-          "T" 'org-roam-dailies-capture-today
-          "R" 'org-roam-dailies-capture-tomorrow
-          "Y" 'org-roam-dailies-capture-yesterday
-          "t" 'org-roam-dailies-find-today
-          "r" 'org-roam-dailies-find-tomorrow
-          "y" 'org-roam-dailies-find-yesterday
-          "g" 'org-roam-graph
-          "u" 'org-roam-ui-mode
-          "i" 'org-roam-node-insert
-          "I" 'org-roam-node-insert-immediate
-          "o i" 'org-id-get-create)
+	(fconfig-notes-bind
+	  "l" 'org-roam-buffer-toggle
+	  "f" 'org-roam-node-find
+	  "d" 'org-roam-dailies-find-date
+	  "C" 'org-roam-capture
+	  "T" 'org-roam-dailies-capture-today
+	  "R" 'org-roam-dailies-capture-tomorrow
+	  "Y" 'org-roam-dailies-capture-yesterday
+	  "t" 'org-roam-dailies-find-today
+	  "r" 'org-roam-dailies-find-tomorrow
+	  "y" 'org-roam-dailies-find-yesterday
+	  "g" 'org-roam-graph
+	  "u" 'org-roam-ui-mode
+	  "i" 'org-roam-node-insert
+	  "I" 'org-roam-node-insert-immediate
+	  "o i" 'org-id-get-create)
 
-         (general-def org-mode-map "C-M-i" 'completion-at-point)
+	 (general-def org-mode-map "C-M-i" 'completion-at-point)
 
-        (use-package org-roam-ui
-          :load-path "~/.emacs.d/site-lisp/org-roam-ui"
-          :after org-roam
-          :config
-          (setq org-roam-ui-sync-theme t
-                org-roam-ui-follow t
-                org-roam-ui-update-on-save t
-                org-roam-ui-open-on-start t))
+	(use-package org-roam-ui
+	  :load-path "~/.emacs.d/site-lisp/org-roam-ui"
+	  :after org-roam
+	  :config
+	  (setq org-roam-ui-sync-theme t
+		org-roam-ui-follow t
+		org-roam-ui-update-on-save t
+		org-roam-ui-open-on-start t))
       #+end_src
 
 *** Mail
@@ -487,6 +487,16 @@
 	  (setq geiser-defauslt-implementation 'guile
 		geiser-guile-binary "guile2.2"))
       #+end_src
+*** Shell
+    Setup completion in eshell
+
+    #+begin_src elisp
+      (use-package bash-completion
+	:init (bash-completion-setup)
+	(add-hook 'shell-dynamic-complete-functions
+		  'bash-completion-dynamic-complete))
+
+    #+end_src
 *** General Keybindings
     Enable use of arrows in read-mode
 
@@ -496,16 +506,18 @@
 
       ;;; switch between light and dark themes
       (general-def "C-c l t l" '(lambda()
-                                  (interactive)
-                                  (disable-theme 'solarized-wombat-dark)
-                                  (load-theme 'solarized-selenized-white t)))
+				  (interactive)
+				  (disable-theme 'solarized-wombat-dark)
+				  (load-theme 'solarized-selenized-white t)))
 
       (general-def "C-c l t d" '(lambda()
-                                  (interactive)
-                                  (disable-theme 'solarized-selenized-white)
-                                  (load-theme 'solarized-wombat-dark t)))
+				  (interactive)
+				  (disable-theme 'solarized-selenized-white)
+				  (load-theme 'solarized-wombat-dark t)))
     #+end_src
+*** Frame
 
+    <#+
 *** Appearance
 
     Will theme customisation till I integrate with the theme (=aanila=).
@@ -525,18 +537,19 @@
 
     #+begin_src elisp
       (defun toggle-transparency ()
-         (interactive)
-         (let ((alpha (frame-parameter nil 'alpha)))
-           (set-frame-parameter
-            nil 'alpha
-            (if (eql (cond ((numberp alpha) alpha)
-                           ((numberp (cdr alpha)) (cdr alpha))
-                           ;; Also handle undocumented (<active> <inactive>) form.
-                           ((numberp (cadr alpha)) (cadr alpha)))
-                     100)
-                '(85 . 50) '(100 . 100)))))
+	(interactive)
+	(let ((alpha (frame-parameter nil 'alpha)))
+	  (set-frame-parameter
+	   nil 'alpha
+	   (if (eql (cond ((numberp alpha) alpha)
+			  ((numberp (cdr alpha)) (cdr alpha))
+			  ;; Also handle undocumented (<active> <inactive>) form.
+			  ((numberp (cadr alpha)) (cadr alpha)))
+		    100)
+	       '(85 . 50) '(100 . 100)))))
 
-      (fconfig-frame-bind "t" 'toggle-transparency)
+      (general-def "C-c f f" 'toggle-frame-fullscreen)
+      (general-def "C-c f t" 'toggle-transparency)
 
       ;;; set transparency
       (toggle-transparency)
@@ -603,7 +616,7 @@
     #+begin_src elisp
       (load custom-file)
       (org-babel-load-file (expand-file-name
-                            (concat (user-login-name) ".org") "~/.emacs.d"))
+			    (concat (user-login-name) ".org") "~/.emacs.d"))
       (org-babel-load-file (expand-file-name
-                            (concat (system-name) ".org") "~/.emacs.d"))
+			    (concat (system-name) ".org") "~/.emacs.d"))
     #+end_src
