@@ -130,7 +130,7 @@
       Let have some space between lines, make the text more legible.
 
       #+begin_src elisp
-	(setq-default line-spacing 0.25)
+	(setq-default line-spacing 3)
       #+end_src
 
 ***** Mode line

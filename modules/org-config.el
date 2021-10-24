@@ -161,6 +161,11 @@
 
   (add-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
 
+  (defun agenda-finalize-misc ()
+    (goto-char (point-min)))
+
+  (add-hook 'org-agenda-finalize-hook 'agenda-finalize-misc)
+
   (eval-after-load 'org-src
     '(define-key org-src-mode-map
        (kbd "C-x C-s") #'org-edit-src-exit))
