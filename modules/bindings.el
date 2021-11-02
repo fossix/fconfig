@@ -4,9 +4,9 @@
   :name "Bookmark and registers")
 
 (fconfig-C-c-bind
-  "x s" 'eshell
+  "x s" 'shell
   "x r" 'projectile-run-async-shell-command-in-root
-  "s" 'projectile-run-eshell)
+  "s" 'projectile-run-shell)
 
 (fconfig-bookmark-bind
   "B" 'bookmark-set
