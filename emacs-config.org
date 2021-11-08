@@ -164,6 +164,11 @@
       #+begin_src elisp
 	(setq vc-follow-symlinks t)
       #+end_src
+
+      Enable auto-revert of buffers
+      #+begin_src elisp
+        (global-auto-revert-mode)
+      #+end_src
 *** Org-mode
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
@@ -529,11 +534,10 @@
     Setup completion in eshell
 
     #+begin_src elisp
-      (use-package bash-completion
-	:init (bash-completion-setup)
-	(add-hook 'shell-dynamic-complete-functions
-		  'bash-completion-dynamic-complete))
-
+      ;; (use-package bash-completion
+      ;;   :init (bash-completion-setup)
+      ;;   (add-hook 'shell-dynamic-complete-functions
+      ;;             'bash-completion-dynamic-complete))
     #+end_src
 *** General Keybindings
     Enable use of arrows in read-mode
