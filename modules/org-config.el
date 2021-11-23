@@ -131,17 +131,6 @@
       (insert "--")
       (org-insert-time-stamp (current-time) t t)))
 
-  (setq org-agenda-category-icon-alist
-        `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
-          ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
-          ("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
-          ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
-          ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
-          ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
-          ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
-          ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
-          ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)))
-
   ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
   (setq org-agenda-tag-line-face
         '(("meeting" . (:foreground "DeepSkyBlue" :weight bold))

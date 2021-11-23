@@ -234,6 +234,17 @@
 	(use-package org-capture)
       #+end_src
 
+***** Reproducible research
+      After a source block is executed, and if that has a image as a result, by
+      default the image is not displayed. One has to run
+      ~org-display-inline-images~ after every source block evaluation to view the
+      image result. To avoid that, add a hook to run the display command after
+      every babel execution.
+
+      #+begin_src elisp
+        (eval-after-load 'org
+          (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+      #+end_src
 ***** Presentation using org-mode
       The slides for a presentation are usually generated from org file, through
       beamer and $\LaTeX$. Instead of doing that, =org-present= combined with
@@ -354,7 +365,21 @@
 
           (general-def [f8] 'deft)
         #+end_src
-
+***** Agenda
+      #+begin_src elisp
+        (setq org-agenda-category-icon-alist
+              `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
+                ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
+                ("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
+                ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
+                ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
+                ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
+                ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
+                ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
+                ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-white)) nil nil :ascent center)
+                ("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-white)) nil nil :ascent center)))
+      #+end_src
 *** Mail
     Notmuch mail setup
 
@@ -539,6 +564,7 @@
       ;;   (add-hook 'shell-dynamic-complete-functions
       ;;             'bash-completion-dynamic-complete))
     #+end_src
+
 *** General Keybindings
     Enable use of arrows in read-mode
 
@@ -597,6 +623,12 @@
       (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
     #+end_src
 
+    A function to display the ansi color sequences in log files.
+    #+begin_src elisp
+      (defun display-ansi-colors ()
+        (interactive)
+        (ansi-color-apply-on-region (point-min) (point-max)))
+    #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
     move everything to org files.
