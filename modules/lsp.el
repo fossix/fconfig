@@ -12,8 +12,8 @@
 
   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
-(use-package helm-lsp
-  :requires helm
+(use-package consult-lsp
+  :ensure t
   :after lsp-mode)
 
 (use-package lsp-ui

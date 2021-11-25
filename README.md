@@ -19,7 +19,6 @@ directory.
   (fconfig! utils)
   (fconfig! packages)
   (fconfig! buffer)
-  (fconfig! helm)
   (fconfig! org-config)
   (fconfig! solar)
   (fconfig! dashboard)

@@ -132,11 +132,3 @@
 (use-package slime-autoloads
   :defer 5
   :config (setq inferior-lisp-program "/usr/bin/clisp"))
-
-(use-package helm-xref
-  :diminish
-  :bind (:map prog-mode-map
-              ("M-." . xref-find-definitions)
-              ("C-M-," . xref-find-references)
-              ("C-M-." . xref-find-apropos)
-              ("M-," . xref-pop-marker-stack)))

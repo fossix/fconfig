@@ -126,8 +126,6 @@
   :defer 3
   :init (global-ace-isearch-mode 0))
 
-(use-package helm-ag :defer 5)
-
 (use-package dired
   :defer 3
   :requires hl-line
@@ -178,11 +176,8 @@
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
 
-(use-package helm-projectile
-  :ensure t
-  :hook ((after-init . helm-projectile-on))
-  :init
-  (setq projectile-completion-system 'helm))
+(use-package consult-projectile
+  :ensure t)
 
 (use-package shell
   :defer t

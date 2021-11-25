@@ -71,9 +71,8 @@
     "b" 'magit-blame-addition
     "s" 'magit-status
     "t" 'git-timemachine-toggle
-    "g" 'helm-git-grep
+    "g" 'consult-git-grep
     "c" 'magit-branch-checkout
-    "<RET>" 'helm-ls-git-ls
     "i" 'gist-region-or-buffer-private
     "I" 'gist-region-or-buffer
     "M-p" 'magit-pull-from-upstream
@@ -93,9 +92,10 @@
   "" '(:ignore t :which-key "Search and jump"))
 
 (fconfig-search-bind
-  "o" 'switch-to-or-occur
-  "O" 'helm-occur
-  "s" 'helm-ag
+  "o" 'consult-line
+  "O" 'consult-line-multi
+  "g" 'consult-goto-line
+  "s" 'consult-ripgrep
   "SPC" 'ace-jump-mode
   "C-x SPC" 'ace-jump-mode-pop-mark
   "w" 'ace-window)
@@ -130,7 +130,7 @@
 
 ;; notmuch
 (general-def "C-<f3>" 'notmuch)
-(general-def "C-<f4>" 'helm-notmuch)
+(general-def "C-<f4>" 'consult-notmuch)
 
 ;;; treemacs
 (general-def "C-c t t" 'treemacs)

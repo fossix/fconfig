@@ -113,7 +113,6 @@
   (org-toggle-pretty-entities)
   (org-toggle-inline-images)
   (setq org-latex-preview t)
-  (org-superstar-mode)
 
   (add-hook 'before-save-hook 'org-update-all-dblocks)
 

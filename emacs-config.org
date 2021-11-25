@@ -13,7 +13,6 @@
       (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
       (add-to-list 'package-archives
 		   '("melpa" . "https://melpa.org/packages/") t)
-      (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 
       (package-initialize)
 
@@ -167,30 +166,60 @@
 
       Enable auto-revert of buffers
       #+begin_src elisp
-        (global-auto-revert-mode)
+	(global-auto-revert-mode)
       #+end_src
+
+*** Completions
+    #+begin_src elisp
+      (use-package vertico
+        :ensure t
+        :init (vertico-mode))
+
+      (use-package vertico-posframe
+        :ensure t
+        :after vertico
+        :init (vertico-posframe-mode)
+        :config
+        (setq vertico-posframe-parameters
+              '((alpha . 100)
+                (left-fringe . 9)
+                (right-fringe . 9))))
+
+      (use-package marginalia
+        :ensure t
+        :after vertico
+        :init (marginalia-mode))
+
+      (use-package orderless
+        :ensure t
+        :after vertico
+        :custom (completion-styles '(orderless)))
+
+    #+end_src
+
 *** Org-mode
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
     #+begin_src elisp
       (setq org-hide-emphasis-markers t
-	    org-odd-levels-only t
-	    org-pretty-entities t)
+            org-odd-levels-only t
+            org-pretty-entities t
+            org-adapt-indentation t)
 
       (general-create-definer fconfig-org-config-bind
-	:prefix "C-c o"
-	:name "Org mode bindings"
-	"" '(:ignore t :which-key "Org-mode bindings"))
+        :prefix "C-c o"
+        :name "Org mode bindings"
+        "" '(:ignore t :which-key "Org-mode bindings"))
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.
     #+begin_src elisp
       (use-package org-bullets
-        :ensure t
-        :hook (org-mode . org-bullets-mode)
-        :custom
-        (org-bullets-bullet-list '("◉" "○" "■" "◆" "▲" "▶"))
-        (org-ellipsis "⤵"))
+	:ensure t
+	:hook (org-mode . org-bullets-mode)
+	:custom
+	(org-bullets-bullet-list '("◉" "○" "■" "◆" "▲" "▶"))
+	(org-ellipsis "⤵"))
     #+end_src
 
     Always show latex previews, and pretty entities
@@ -242,8 +271,8 @@
       every babel execution.
 
       #+begin_src elisp
-        (eval-after-load 'org
-          (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+	(eval-after-load 'org
+	  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
       #+end_src
 ***** Presentation using org-mode
       The slides for a presentation are usually generated from org file, through
@@ -280,106 +309,113 @@
 
 ***** Note taking
 ******* org-roam
-        #+begin_src elisp
-          ;; Everything related to note taking, currently org-roam
-          (general-create-definer fconfig-notes-bind
-            :prefix "C-c n"
-            :name "Notes actions"
-              "" '(:ignore t :which-key "Notes options"))
+	#+begin_src elisp
+	  ;; Everything related to note taking, currently org-roam
+	  (general-create-definer fconfig-notes-bind
+	    :prefix "C-c n"
+	    :name "Notes actions"
+	      "" '(:ignore t :which-key "Notes options"))
 
-          (use-package websocket
-            :after org-roam)
+	  (use-package websocket
+	    :after org-roam)
 
-          (use-package org-roam
-            :ensure t
-            :init
-            (setq org-roam-v2-ack t)
-            (setq org-roam-directory "~/notes/org/roam")
-            :custom
-            (setq org-roam-completion-everywhere t)
-            :config
-            (use-package org-roam-protocol)
-            (org-roam-setup)
-            (defun org-roam-node-insert-immediate (arg &rest args)
-              (interactive "P")
-              (let ((args (cons arg args))
-                    (org-roam-capture-templates (list (append (car org-roam-capture-templates)
-                                                              '(:immediate-finish t)))))
-                (apply #'org-roam-node-insert args))))
+	  (use-package org-roam
+	    :ensure t
+	    :init
+	    (setq org-roam-v2-ack t)
+	    (setq org-roam-directory "~/notes/org/roam")
+	    :custom
+	    (setq org-roam-completion-everywhere t)
+	    :config
+	    (use-package org-roam-protocol)
+	    (org-roam-setup)
+	    (defun org-roam-node-insert-immediate (arg &rest args)
+	      (interactive "P")
+	      (let ((args (cons arg args))
+		    (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+							      '(:immediate-finish t)))))
+		(apply #'org-roam-node-insert args))))
 
 
-          (fconfig-notes-bind
-            "l" 'org-roam-buffer-toggle
-            "f" 'org-roam-node-find
-            "d" 'org-roam-dailies-find-date
-            "C" 'org-roam-capture
-            "T" 'org-roam-dailies-capture-today
-            "R" 'org-roam-dailies-capture-tomorrow
-            "Y" 'org-roam-dailies-capture-yesterday
-            "t" 'org-roam-dailies-find-today
-            "r" 'org-roam-dailies-find-tomorrow
-            "y" 'org-roam-dailies-find-yesterday
-            "g" 'org-roam-graph
-            "u" 'org-roam-ui-mode
-            "i" 'org-roam-node-insert
-            "I" 'org-roam-node-insert-immediate
-            "o i" 'org-id-get-create)
+	  (fconfig-notes-bind
+	    "l" 'org-roam-buffer-toggle
+	    "f" 'org-roam-node-find
+	    "d" 'org-roam-dailies-find-date
+	    "C" 'org-roam-capture
+	    "T" 'org-roam-dailies-capture-today
+	    "R" 'org-roam-dailies-capture-tomorrow
+	    "Y" 'org-roam-dailies-capture-yesterday
+	    "t" 'org-roam-dailies-find-today
+	    "r" 'org-roam-dailies-find-tomorrow
+	    "y" 'org-roam-dailies-find-yesterday
+	    "g" 'org-roam-graph
+	    "u" 'org-roam-ui-mode
+	    "i" 'org-roam-node-insert
+	    "I" 'org-roam-node-insert-immediate
+	    "o i" 'org-id-get-create)
 
-           (general-def org-mode-map "C-M-i" 'completion-at-point)
+	   (general-def org-mode-map "C-M-i" 'completion-at-point)
 
-          (use-package org-roam-ui
-            :load-path "~/.emacs.d/site-lisp/org-roam-ui"
-            :after org-roam
-            :config
-            (setq org-roam-ui-sync-theme t
-                  org-roam-ui-follow t
-                  org-roam-ui-update-on-save t
-                  org-roam-ui-open-on-start t))
-        #+end_src
+	  (use-package org-roam-ui
+	    :load-path "~/.emacs.d/site-lisp/org-roam-ui"
+	    :after org-roam
+	    :config
+	    (setq org-roam-ui-sync-theme t
+		  org-roam-ui-follow t
+		  org-roam-ui-update-on-save t
+		  org-roam-ui-open-on-start t))
+	#+end_src
 ******* deft
-        #+begin_src elisp
-          (setq deft-directory "~/.deft"
-                deft-recursive t
-                deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
-                deft-default-extension "org")
+	#+begin_src elisp
+	  (setq deft-directory "~/.deft"
+		deft-recursive t
+		deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
+		deft-default-extension "org")
 
-          ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
-          (defun cm/deft-parse-title (file contents)
-            "Parse the given FILE and CONTENTS and determine the title.
-            If `deft-use-filename-as-title' is nil, the title is taken to
-            be the first non-empty line of the FILE.  Else the base name of the FILE is
-            used as title."
-            (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
-              (if begin
-                  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
-                (deft-base-filename file))))
+	  ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
+	  (defun cm/deft-parse-title (file contents)
+	    "Parse the given FILE and CONTENTS and determine the title.
+	    If `deft-use-filename-as-title' is nil, the title is taken to
+	    be the first non-empty line of the FILE.  Else the base name of the FILE is
+	    used as title."
+	    (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
+	      (if begin
+		  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
+		(deft-base-filename file))))
 
-          (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
+	  (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
 
-          (setq deft-strip-summary-regexp
-                (concat "\\("
-                        "[\n\t]" ;; blank
-                        "\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
-                        "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
-                        "\\)"))
+	  (setq deft-strip-summary-regexp
+		(concat "\\("
+			"[\n\t]" ;; blank
+			"\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
+			"\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
+			"\\)"))
 
-          (general-def [f8] 'deft)
-        #+end_src
+	  (general-def [f8] 'deft)
+	#+end_src
 ***** Agenda
       #+begin_src elisp
-        (setq org-agenda-category-icon-alist
-              `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
-                ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
-                ("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
-                ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
-                ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
-                ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
-                ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
-                ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
-                ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-white)) nil nil :ascent center)
-                ("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-white)) nil nil :ascent center)))
+	(use-package all-the-icons
+	  :ensure t)
+
+	(setq org-agenda-category-icon-alist
+	      `(("Work" ,(list (all-the-icons-octicon "terminal" :face 'all-the-icons-blue)) nil nil :ascent center)
+		("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
+		("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
+		("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
+		("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
+		("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
+		("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
+		("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
+		("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
+		("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-white)) nil nil :ascent center)
+		("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-white)) nil nil :ascent center)
+		("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-white)) nil nil :ascent center)
+		("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-white)) nil nil :ascent center)
+		))
       #+end_src
+
 *** Mail
     Notmuch mail setup
 
@@ -395,31 +431,32 @@
 	(fconfig! mail))
     #+end_src
 
-    Helm and notmuch hello. The saved searches for notmuch-hello are defined in
+    Consult and notmuch hello. The saved searches for notmuch-hello are defined in
     personal config file.
 
     #+begin_src elisp
-      (use-package helm-notmuch
-	:ensure t
-	:commands helm-notmuch)
+      (use-package consult-notmuch
+        :ensure t
+        :after (consult notmuch)
+        :commands consult-notmuch)
 
-	 ;;; from http://www.coli.uni-saarland.de/~slemaguer/emacs/main.html
+         ;;; from http://www.coli.uni-saarland.de/~slemaguer/emacs/main.html
       (use-package notmuch-hello
-	:commands (notmuch notmuch-hello)
-	:config
+        :commands (notmuch notmuch-hello)
+        :config
 
-	(setq notmuch-hello-thousands-separator "," ;; Add a thousand separator
-	      notmuch-column-control 1.0)           ;; don't display columns
-	(general-def notmuch-hello-mode-map "h" 'helm-notmuch)
+        (setq notmuch-hello-thousands-separator "," ;; Add a thousand separator
+              notmuch-column-control 1.0)           ;; don't display columns
+        (general-def notmuch-hello-mode-map "h" 'consult-notmuch)
 
-	(add-hook 'notmuch-hello-refresh-hook
-		  (lambda ()
-		    (whitespace-mode -1)))
-	;; We add items later in reverse order with (add-to-list ...):
-	(setq notmuch-hello-sections '())
-	(add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-recent-searches)
-	(add-to-list 'notmuch-hello-sections 'notmuch-hello-insert-search)
-	(add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-searches))
+        (add-hook 'notmuch-hello-refresh-hook
+                  (lambda ()
+                    (whitespace-mode -1)))
+        ;; We add items later in reverse order with (add-to-list ...):
+        (setq notmuch-hello-sections '())
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-recent-searches)
+        (add-to-list 'notmuch-hello-sections 'notmuch-hello-insert-search)
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-searches))
     #+end_src
 
     Let's autoload =mail-hist= and and =sendmail=
@@ -555,6 +592,10 @@
 	  (setq geiser-defauslt-implementation 'guile
 		geiser-guile-binary "guile2.2"))
       #+end_src
+***** LSP
+      #+begin_src elisp
+        (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
+      #+end_src
 *** Shell
     Setup completion in eshell
 
@@ -605,16 +646,16 @@
 
     #+begin_src elisp
       (defun toggle-transparency ()
-        (interactive)
-        (let ((alpha (frame-parameter nil 'alpha)))
-          (set-frame-parameter
-           nil 'alpha
-           (if (eql (cond ((numberp alpha) alpha)
-                          ((numberp (cdr alpha)) (cdr alpha))
-                          ;; Also handle undocumented (<active> <inactive>) form.
-                          ((numberp (cadr alpha)) (cadr alpha)))
-                    100)
-               '(85 . 50) '(100 . 100)))))
+	(interactive)
+	(let ((alpha (frame-parameter nil 'alpha)))
+	  (set-frame-parameter
+	   nil 'alpha
+	   (if (eql (cond ((numberp alpha) alpha)
+			  ((numberp (cdr alpha)) (cdr alpha))
+			  ;; Also handle undocumented (<active> <inactive>) form.
+			  ((numberp (cadr alpha)) (cadr alpha)))
+		    100)
+	       '(85 . 50) '(100 . 100)))))
 
       (general-def "C-c f f" 'toggle-frame-fullscreen)
       (general-def "C-c f t" 'toggle-transparency)
@@ -626,8 +667,8 @@
     A function to display the ansi color sequences in log files.
     #+begin_src elisp
       (defun display-ansi-colors ()
-        (interactive)
-        (ansi-color-apply-on-region (point-min) (point-max)))
+	(interactive)
+	(ansi-color-apply-on-region (point-min) (point-max)))
     #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
@@ -635,49 +676,48 @@
 
     #+begin_src elisp
       (let ((file-name-handler-alist nil))
-	(fconfig! core)
-	(fconfig! packages)
-	(fconfig! buffer)
-	(fconfig! helm)
-	(fconfig! org-config)
-	(fconfig! solar)
-	(fconfig! dashboard)
-	(fconfig! vc)
-	(fconfig! lsp)
-	(fconfig! progmode)
-	(fconfig! mm)
-	;; (fconfig! finance)
-	;; (fconfig! speak)
-	;; (fconfig! devanagari)
-	(fconfig! bindings))
+        (fconfig! core)
+        (fconfig! packages)
+        (fconfig! buffer)
+        (fconfig! org-config)
+        (fconfig! solar)
+        (fconfig! dashboard)
+        (fconfig! vc)
+        (fconfig! lsp)
+        (fconfig! progmode)
+        (fconfig! mm)
+        ;; (fconfig! finance)
+        ;; (fconfig! speak)
+        ;; (fconfig! devanagari)
+        (fconfig! bindings))
 
       (defun santosh/org-agenda-open ()
-	(interactive)
-	(if (get-buffer "*Org Agenda*")
-	    (progn
-	      (switch-to-buffer-other-frame "*Org Agenda*")
-	      (org-agenda-redo))
-	  (progn
-	    (let (
-		  (org-agenda-window-setup 'only-window)
-		  (org-frame (make-frame
-			      '((no-other-frame . t)
-				(unsplittable . t)
-				(height . 30)
-				(buffer-list . '("*Org Agenda*"))
-				(minibuffer . nil)
-				(undecorated . t)))))
-	      (set-frame-font "monospace-9" t nil)
-	      (org-agenda nil "A")
-	      (org-agenda-goto-today)
-	      (set-window-dedicated-p (selected-window) t)
-	      (delete-other-windows)))))
+        (interactive)
+        (if (get-buffer "*Org Agenda*")
+            (progn
+              (switch-to-buffer-other-frame "*Org Agenda*")
+              (org-agenda-redo))
+          (progn
+            (let (
+                  (org-agenda-window-setup 'only-window)
+                  (org-frame (make-frame
+                              '((no-other-frame . t)
+                                (unsplittable . t)
+                                (height . 30)
+                                (buffer-list . '("*Org Agenda*"))
+                                (minibuffer . nil)
+                                (undecorated . t)))))
+              (set-frame-font "monospace-9" t nil)
+              (org-agenda nil "A")
+              (org-agenda-goto-today)
+              (set-window-dedicated-p (selected-window) t)
+              (delete-other-windows)))))
 
       (global-map! "C-c o RET" 'santosh/org-agenda-open)
 
 
       (if (not (server-running-p))
-	  (server-start))
+          (server-start))
 
       (fconfig/finish)
     #+end_src
