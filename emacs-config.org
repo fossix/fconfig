@@ -12,9 +12,13 @@
       ;;; Auto add packages
       (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
       (add-to-list 'package-archives
-		   '("melpa" . "https://melpa.org/packages/") t)
+                   '("melpa" . "https://melpa.org/packages/") t)
+      (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
 
       (package-initialize)
+
+      (unless (package-installed-p 'use-package)
+        (package-install 'use-package))
 
       (require 'use-package)
       (use-package diminish :ensure t)
