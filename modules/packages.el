@@ -247,6 +247,9 @@
   (global-map! [remap scroll-down-command] 'golden-ratio-scroll-screen-down)
   (global-map! [remap scroll-up-command] 'golden-ratio-scroll-screen-up))
 
+(use-package writegood-mode
+  :defer t)
+
 ;;; diminish minor modes from mode-line-mode-menu
 (diminish 'abbrev-mode)
 (diminish 'eldoc-mode)
