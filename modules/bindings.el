@@ -85,21 +85,6 @@
     "M-B" 'magit-rebase
     "M-r" 'magit-reset-worktree))
 
-;; searching and jumping
-(general-create-definer fconfig-search-bind
-  :prefix "M-g"
-  :name "Search and jump"
-  "" '(:ignore t :which-key "Search and jump"))
-
-(fconfig-search-bind
-  "o" 'consult-line
-  "O" 'consult-line-multi
-  "g" 'consult-goto-line
-  "s" 'consult-ripgrep
-  "SPC" 'ace-jump-mode
-  "C-x SPC" 'ace-jump-mode-pop-mark
-  "w" 'ace-window)
-
 ;; (when (featurep 'fconfig-mm)
 ;;   (fconfig-mm-bind
 ;;     "," #'spotify-previous
@@ -116,12 +101,6 @@
 ;; remap C-a to `smarter-move-beginning-of-line'
 (general-def [remap move-beginning-of-line]
   'smarter-move-beginning-of-line)
-
-;; buffer related global shortcuts
-(general-def "<f11>" 'cycle-buffer-backward)
-(general-def "<f12>" 'cycle-buffer)
-(general-def "<shift f11>" 'cycle-buffer-backward-permissive)
-(general-def "<shift f12>" 'cycle-buffer-permissive)
 
 (general-def "M-o" 'ace-window)
 
