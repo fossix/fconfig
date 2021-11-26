@@ -678,15 +678,15 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	      "* TODO %^{Do-what?} :refile:%^g\n  %i%?"))
 
 	   '(("m" "Meetings" entry
-	      (file+headline "TODO" "Meetings/Appointments/Calls")
+	      (file+headline "todo.org" "Meetings/Appointments/Calls")
 	      "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?"))
 
 	   '(("n" "Today's Notes" entry
-	      (file+olp+datetree "notes" "Unfiled")
+	      (file+olp+datetree "notes.org" "Unfiled")
 	      "* %^{Title} %^g\n %i%?\n %a"))
 
 	   '(("f" "Remote Capture" entry
-	      (file+headline "notes" "Captured")
+	      (file+headline "notes.org" "Captured")
 	      "* %^{Title} :browser:%^g\n %i%?\n"))
 
 	   '(("p" "Phone call" entry
@@ -694,7 +694,7 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	      "* PHONE %? :PHONE:%^g\n%U" :clock-in t :clock-resume t))
 
 	   '(("r" "Random" entry
-	      (file+headline "misc" "Random")
+	      (file+headline "misc.org" "Random")
 	      "* %u %?\n  %i"))
 
 	   '(("j" "Journal entries")
@@ -711,19 +711,19 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 
 	   '(("w" "Work related entries")
 	     ("wm" "Misc clockable entries" entry
-	      (file+olp+datetree "work")
+	      (file+olp+datetree "work.org")
 	      "* %U %^{Activity} :time:%^g\n" :clock-in t :clock-resume t)
 	     ("wM" "Work meetings" entry
-	      (file+headline "work" "Meetings")
+	      (file+headline "work.org" "Meetings")
 	      "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
 	     ("wp" "Calls from Work-phone calls" entry
 	      (file "journal.org" "Phone Calls")
 	      "* PHONE to: %^{Call to} :PHONE:%^g\n%U" :clock-in t :clock-resume t)
 	     ("wt" "Todo" entry
-	      (file+headline "work" "Tasks")
+	      (file+headline "work.org" "Tasks")
 	      "* TODO %^{Do-what?} %^g\n    %?%i")
 	     ("wd" "Task dump" entry
-	      (file+headline "work" "Task dump")
+	      (file+headline "work.org" "Task dump")
 	      "* %^{Do What?} :refile:%^g\n%?%i")
 	     ("ws" "Standup Entries" entry
 	      (file+olp+datetree "standup.org")
