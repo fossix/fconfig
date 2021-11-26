@@ -177,15 +177,17 @@
     #+begin_src elisp
       (use-package vertico
         :ensure t
-        :init (vertico-mode))
+        :init (vertico-mode)
+        :config (general-def vertico-map "<tab>" 'vertico-insert))
 
+      ;;; This is really slow, disable if it is very noticeable
       (use-package vertico-posframe
         :ensure t
         :after vertico
         :init (vertico-posframe-mode)
         :config
         (setq vertico-posframe-parameters
-              '((alpha . 100)
+              '((alpha . 0)
                 (left-fringe . 9)
                 (right-fringe . 9))))
 
@@ -197,8 +199,11 @@
       (use-package orderless
         :ensure t
         :after vertico
-        :custom (completion-styles '(orderless)))
+        :custom (completion-styles '(orderless flex)))
 
+      (use-package savehist
+        :init
+        (savehist-mode))
     #+end_src
 
 *** Org-mode
