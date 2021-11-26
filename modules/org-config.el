@@ -390,6 +390,7 @@ A prefix arg forces clock in of the default task."
   (use-package org-tempo)
   (use-package ol-notmuch)
   (use-package ol-git-link)
+  (use-package org-checklist)
 
   (use-package org-agenda
     :bind (:map org-agenda-mode-map ([C-f9] . org-agenda-goto-today))
