@@ -412,19 +412,35 @@
 	      `(("Work" ,(list (all-the-icons-octicon "terminal" :face 'all-the-icons-blue)) nil nil :ascent center)
 		("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
 		("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
-		("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-white)) nil nil :ascent center)
+		("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-silver)) nil nil :ascent center)
 		("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
-		("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-gray)) nil nil :ascent center)
+		("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-dsilver)) nil nil :ascent center)
 		("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
 		("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
 		("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-white)) nil nil :ascent center)
-		("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-white)) nil nil :ascent center)
-		("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-white)) nil nil :ascent center)
-		("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-white)) nil nil :ascent center)
-		))
+		("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-silver)) nil nil :ascent center)
+		("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-silver)) nil nil :ascent center)
+		("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-silver)) nil nil :ascent center)
+		("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-red)) nil nil :ascent center)))
       #+end_src
-
+***** Keybindings
+      #+begin_src elisp
+        (fconfig-org-config-bind
+          "I" 'punch-in
+          "O" 'punch-out
+          "l" 'clock-in-last-task
+          "c" 'org-capture
+          "a" 'org-agenda
+          "l" 'org-store-link
+          "t" 'org-todo-list
+          "b" 'org-brain-goto
+          "v" 'org-brain-visualize
+          "o" 'org-occur-in-agenda-files
+          "s" 'org-search-view
+          "r" 'org-refile
+          "m" 'org-timer-set-timer
+          "p" 'org-present)
+      #+end_src
 *** Mail
     Notmuch mail setup
 
@@ -690,7 +706,33 @@
         :config
         (global-blamer-mode 1))
     #+end_src
-
+***** Keybindings
+      #+begin_src elisp
+        (fconfig-vc-bind
+          "d" 'magit-diff-buffer-file
+          "D" 'magit-diff-dwim
+          "C-d" 'magit-diff-staged
+          "F" 'magit-file-dispatch
+          "M" 'magit-dispatch
+          "l" 'magit-log-buffer-file
+          "L" 'magit-log-all
+          "b" 'magit-blame-addition
+          "s" 'magit-status
+          "t" 'git-timemachine-toggle
+          "g" 'consult-git-grep
+          "c" 'magit-branch-checkout
+          "i" 'gist-region-or-buffer-private
+          "I" 'gist-region-or-buffer
+          "M-p" 'magit-pull-from-upstream
+          "M-P" 'magit-pull
+          "M-f" 'magit-fetch-from-upstream
+          "M-F" 'magit-fetch-all
+          "M-u" 'magit-push-current-to-upstream
+          "M-U" 'magit-push-current
+          "M-b" 'magit-rebase-branch
+          "M-B" 'magit-rebase
+          "M-r" 'magit-reset-worktree)
+      #+end_src
 
 *** Frame
 
@@ -749,6 +791,16 @@
         :name "Buffer related bindings"
         :prefix "C-c b"
         "" '(:ignore t :which-key "Buffer related"))
+
+      (fconfig-buffer-bind
+        "g" 'writegood-mode
+        "w" 'whitespace-mode
+        "l" 'recenter-top-bottom
+        "p" 'reposition-window
+        "s" 'flyspell-buffer
+        "b" 'bury-buffer
+        "r" 'revert-buffer
+        "f" 'fci-mode)
     #+end_src
 
 *** Appearance
@@ -825,6 +877,75 @@
         "SPC" 'ace-jump-mode
         "C-x SPC" 'ace-jump-mode-pop-mark
         "w" 'ace-window)
+
+      ;; (when (featurep 'fconfig-mm)
+      ;;   (fconfig-mm-bind
+      ;;     "," #'spotify-previous
+      ;;     "." #'spotify-next
+      ;;     "<return>" #'spotify-playpause))
+
+      ;;; setting this with general-def doesn't work!
+      (global-set-key "\C-l" 'backward-kill-line)
+      (general-def "C-x C-\\" 'save-buffers-kill-emacs)
+      (general-def "C-x C-c" 'kill-this-buffer)
+      (general-def "C-x C-b" 'ibuffer)
+      (general-def "<S-f3>" 'match-paren)
+
+      ;; remap C-a to `smarter-move-beginning-of-line'
+      (general-def [remap move-beginning-of-line]
+        'smarter-move-beginning-of-line)
+
+      (general-def "M-o" 'ace-window)
+
+      ;; type-break
+      (general-def "M-S-<f10>" 'type-break-statistics)
+
+      ;; notmuch
+      (general-def "C-<f3>" 'notmuch)
+      (general-def "C-<f4>" 'consult-notmuch)
+
+      ;;; treemacs
+      (general-def "C-c t t" 'treemacs)
+      (general-def "C-c t s" 'treemacs-select-window)
+      (general-def "C-c t e" 'lsp-treemacs-errors-list)
+      (general-def "C-c t y" 'lsp-treemacs-symbols-toggle)
+      (general-def "C-c t r" 'lsp-treemacs-references)
+      (general-def "C-c t i" 'lsp-treemacs-implementations)
+      (general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
+      (general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
+
+      (fconfig-C-c-bind
+        "x s" 'shell
+        "x r" 'projectile-run-async-shell-command-in-root
+        "s" 'projectile-run-shell)
+
+      (general-create-definer fconfig-bookmark-bind
+        :prefix "C-c r"
+        "" '(:ignore t :which-key "Bookmark and registers")
+        :name "Bookmark and registers")
+
+      (fconfig-bookmark-bind
+        "B" 'bookmark-set
+        "b" 'bookmark-set-no-overwrite
+        "l" 'list-bookmarks
+        "j" 'bookmark-jump
+        "J" 'bookmark-jump-other-window
+        "r" 'view-register
+        "C-l" 'list-registers
+        "d" 'register-describe-oneline
+        "p" 'point-to-register
+        "." 'jump-to-register
+        "s" 'copy-to-register
+        "i" 'insert-register
+        "a" 'append-to-register
+        "C-p" 'prepend-to-register
+        "R" 'copy-rectangle-to-register
+        "w" 'window-configuration-to-register
+        "f" 'frame-configuration-to-register
+        "n" 'number-to-register
+        "+" 'increment-register
+        "m" 'kmacro-to-register
+        "C-s" 'bookmark-save)
     #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly
@@ -834,7 +955,6 @@
       (let ((file-name-handler-alist nil))
         (fconfig! core)
         (fconfig! packages)
-        (fconfig! buffer)
         (fconfig! org-config)
         (fconfig! solar)
         (fconfig! dashboard)
@@ -843,7 +963,7 @@
         ;; (fconfig! finance)
         ;; (fconfig! speak)
         ;; (fconfig! devanagari)
-        (fconfig! bindings))
+      )
 
       (defun santosh/org-agenda-open ()
         (interactive)
@@ -868,7 +988,6 @@
               (delete-other-windows)))))
 
       (global-map! "C-c o RET" 'santosh/org-agenda-open)
-
 
       (if (not (server-running-p))
           (server-start))
