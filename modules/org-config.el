@@ -86,7 +86,10 @@
    org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM"
    keep-clock-running nil
    org-todo-keywords
-   '((sequence "TODO(t)" "MAYBE(m)" "NEXT(n)" "STARTED(s!)" "WAITING(@/!)""|" "DONE(d!)")
+   '((sequence "TODO(t)" "MAYBE(m)" "NEXT(n)" "STARTED(s!)" "WAITING(w@/!)""|"
+               "DONE(d!)")
+     (sequence "ASSIGNED(a)" "INPROGRESS(p!)" "MOVED(o@/!)" "NEEDINFO(n@/!)" "|"
+               "CLOSED(c@/!)" )
      (sequence "|" "CANCELLED(c@/!)"))
 
    ;; Don't ask when I evaluate code
@@ -357,7 +360,7 @@ A prefix arg forces clock in of the default task."
   (setq org-archive-location "archive/%s::")
 
   (setq org-stuck-projects
-        '("+project|reading|learn/WAITING-CANCELLED-DONE-STARTED" ()
+        '("+project|reading|learn/WAITING-CANCELLED-DONE-CLOSED-FIXED-STARTED" ()
           () "\\<IGNORE\\>"))
 
   (add-to-list 'org-src-lang-modes
@@ -524,14 +527,14 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 			'(time-up todo-state-up priority-down))
 		       (org-agenda-skip-function 'org-agenda-skip-if-blocked)))
 
-	      (tags "PRIORITY=\"A\"/-DONE-CANCELLED"
+	      (tags "PRIORITY=\"A\"/-DONE-CLOSED-FIXED-CANCELLED"
 		    ((org-agenda-overriding-header "High priority")
 		     ;; If priority inheritance work's the following could be
 		     ;; uncommented, so only the next actionable child shows up.
 		     ;; (org-agenda-dim-blocked-tasks 'invisible)
                      (org-agenda-prefix-format " %i % s")))
 
-	      (tags "/NEXT|STARTED|WAITING"
+	      (tags "/NEXT|STARTED|WAITING|ASSIGNED|INPROGRESS"
 		    ((org-agenda-sorting-strategy
 		      '(priority-down effort-down todo-state-down))
                      (org-agenda-prefix-format " %i % s")
@@ -560,7 +563,8 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 				(org-agenda-skip-entry-if 'regexp "\\[#A\\]")
 				(org-agenda-skip-subtree-if 'regexp ":someday:")
 				(org-agenda-skip-if nil '(scheduled deadline timestamp))
-				(org-agenda-skip-entry-if 'todo '("STARTED" "NEXT" "WAITING")))))))))
+				(org-agenda-skip-entry-if 'todo '("STARTED"
+		       "NEXT" "WAITING" "MOVED")))))))))
 
 	    ("r" "Tasks to be refiled" tags "refile"
 	     ((org-agenda-files '("~/notes/org/dump.org" "~/notes/org/TODO"
@@ -574,7 +578,7 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 		       (org-agenda-start-with-log-mode t)
 		       (org-agenda-include-diary nil)
 		       (org-agenda-log-mode-items '(state clock))
-		       (org-agenda-files '("~/notes/org/work"))
+		       (org-agenda-files '("~/notes/org/work.org"))
 		       (org-agenda-start-with-clockreport-mode t)
 		       (org-agenda-span 'week)
 		       (org-agenda-start-day "-7")
@@ -604,7 +608,8 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	      (org-agenda-skip-function
 	       (progn
 		 '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
-		      (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "CANCELLED"))
+		      (org-agenda-skip-entry-if 'scheduled 'deadline 'todo
+	                                        '("DONE" "CANCELLED" "CLOSED"))
 		      (bh/skip-habits))))
 	      (org-agenda-files org-agenda-files)))
 
