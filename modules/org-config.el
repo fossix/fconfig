@@ -57,8 +57,6 @@
    org-catch-invisible-edits t
    org-outline-path-complete-in-steps nil
    org-refile-use-outline-path t
-   org-refile-targets '((nil :maxlevel . 5)
-                          (org-agenda-files :maxlevel . 5))
    org-log-note-clock-out nil
    org-password-file "~/.passwds/credentials.gpg"
    org-agenda-show-future-repeats 'next
@@ -90,7 +88,7 @@
                "DONE(d!)")
      (sequence "ASSIGNED(a)" "INPROGRESS(p!)" "MOVED(o@/!)" "NEEDINFO(n@/!)" "|"
                "CLOSED(c@/!)" )
-     (sequence "|" "CANCELLED(c@/!)"))
+     (sequence "|" "CANCELLED(l@/!)"))
 
    ;; Don't ask when I evaluate code
    org-confirm-babel-evaluate nil
@@ -401,14 +399,9 @@ A prefix arg forces clock in of the default task."
     :hook (org-agenda-mode . hl-line-mode)
 
     :init
-    (setq org-agenda-files nil)
-    (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
-    (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
-  ;;; Breaks and other misc activities will be here, only for clocking
-    (add-to-list 'org-agenda-files (concat org-directory "/journal.org"))
     (setq org-refile-targets
-	  '((nil :maxlevel . 3)
-	    (org-agenda-files :maxlevel . 3)))
+	  '((nil :maxlevel . 5)
+	    (org-agenda-files :maxlevel . 5)))
 
     :config
     (appt-activate t)

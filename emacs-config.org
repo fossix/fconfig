@@ -404,6 +404,16 @@
 	  (general-def [f8] 'deft)
 	#+end_src
 ***** Agenda
+
+      Add agenda files
+      #+begin_src elisp
+        (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
+        (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
+        ;;; Breaks and other misc activities will be here, only for clocking
+        (add-to-list 'org-agenda-files (concat org-directory "/journal.org"))
+      #+end_src
+
+      Setup category icons
       #+begin_src elisp
 	(use-package all-the-icons
 	  :ensure t)
@@ -702,9 +712,7 @@
         (blamer-face ((t :foreground "#7a88cf"
                           :background nil
                           :height 90
-                          :italic t)))
-        :config
-        (global-blamer-mode 1))
+                          :italic t))))
     #+end_src
 ***** Keybindings
       #+begin_src elisp
