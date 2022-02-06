@@ -29,11 +29,6 @@
   :defer 3
   :diminish)
 
-(use-package phi-autopair
-  :ensure t
-  :defer 3
-  :diminish)
-
 (use-package fic-mode
   :ensure t
   :defer 5

@@ -316,6 +316,11 @@
 		      (hide-mode-line-mode -1))))
       #+end_src
 
+      Sometimes presentation using ~reveal.js~ does make an impact
+      #+begin_src elisp
+        (use-package ox-reveal)
+      #+end_src
+
 ***** Note taking
 ******* org-roam
 	#+begin_src elisp
@@ -406,33 +411,52 @@
 ***** Agenda
 
       Add agenda files
-      #+begin_src elisp
+      #+begin_src elisp :results none
         (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
         (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
         ;;; Breaks and other misc activities will be here, only for clocking
         (add-to-list 'org-agenda-files (concat org-directory "/journal.org"))
       #+end_src
-
+
       Setup category icons
-      #+begin_src elisp
-	(use-package all-the-icons
-	  :ensure t)
+      #+begin_src elisp "results none
+        (use-package all-the-icons
+          :ensure t)
 
-	(setq org-agenda-category-icon-alist
-	      `(("Work" ,(list (all-the-icons-octicon "terminal" :face 'all-the-icons-blue)) nil nil :ascent center)
-		("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
-		("Kernel" ,(list (all-the-icons-material "laptop_mac" :face 'all-the-icons-cyan)) nil nil :ascent center)
-		("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
-		("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-dsilver)) nil nil :ascent center)
-		("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
-		("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
-		("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-silver)) nil nil :ascent center)
-		("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-red)) nil nil :ascent center)))
+        (setq org-agenda-category-icon-alist
+              `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
+                ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
+                ("Kernel" ,(list (all-the-icons-octicon "terminal" :face 'all-the-icons-cyan)) nil nil :ascent center)
+                ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
+                ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-dsilver)) nil nil :ascent center)
+                ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
+                ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
+                ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-silver)) nil nil :ascent center)
+                ("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-red)) nil nil :ascent center)
+                ("Project" ,(list (all-the-icons-octicon "diff" :face 'all-the-icons-green)) nil nil :ascent center)
+                ))
       #+end_src
+
+      #+RESULTS:
+      | Work      | () | nil | nil | :ascent | center |
+      | Personal  | () | nil | nil | :ascent | center |
+      | Kernel    | () | nil | nil | :ascent | center |
+      | Learning  | () | nil | nil | :ascent | center |
+      | Language  | () | nil | nil | :ascent | center |
+      | Default   | () | nil | nil | :ascent | center |
+      | Sun       | () | nil | nil | :ascent | center |
+      | Diary     | () | nil | nil | :ascent | center |
+      | Moon      | () | nil | nil | :ascent | center |
+      | Books     | () | nil | nil | :ascent | center |
+      | Technical | () | nil | nil | :ascent | center |
+      | Meeting   | () | nil | nil | :ascent | center |
+      | Bug       | () | nil | nil | :ascent | center |
+      | Project   | () | nil | nil | :ascent | center |
+
 ***** Keybindings
       #+begin_src elisp
         (fconfig-org-config-bind
@@ -617,6 +641,17 @@
       #+begin_src elisp
 	(setq compilation-scroll-output 'first-error)
       #+end_src
+
+      Show compilation buffer in colors
+      #+begin_src elisp
+        (use-package xterm-color
+          :init
+          (setq compilation-environment '("TERM=xterm-256color"))
+          (defun my/advice-compilation-filter (f proc string)
+            (funcall f proc (xterm-color-filter string)))
+          (advice-add 'compilation-filter :around #'my/advice-compilation-filter))
+      #+end_src
+
 ***** Scheme
       Let us use ~guile~ which is the default in fedora distributions. The default
       guile is old, and ~geiser~ is not happy with it.
@@ -810,6 +845,21 @@
         "r" 'revert-buffer
         "f" 'fci-mode)
     #+end_src
+
+*** Blogging
+
+***** Hugo
+      #+begin_src elisp
+        (use-package easy-hugo
+          :init
+
+          (setq easy-hugo-basedir "~/work/blog/")
+          (setq easy-hugo-url "https://ssivaraj.gitlab-master-pages.nvidia.com/notes")
+          (setq easy-hugo-postdir "content/posts")
+          ; (setq easy-hugo-root "~/work/blog/")
+          (setq easy-hugo-previewtime "300")
+          :bind ("C-c b h" . easy-hugo))
+      #+end_src
 
 *** Appearance
 

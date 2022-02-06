@@ -38,13 +38,11 @@
   (whitespace-mode 1)
   (flyspell-prog-mode)
   (hs-minor-mode)
-  (linum-mode)
   (fic-mode)
   (fci-mode)
   (highlight-parentheses-mode)
   (configure-prettify-symbols-alist)
-  (phi-autopair-mode)
-  (auto-fill-mode 1)
+  (smartparens-mode)
   (bind-key "<tab>" 'indent-for-tab-command)
   (when (featurep 'yasnippet)
     (yas-minor-mode)))
@@ -59,20 +57,7 @@
         gdb-many-windows 1
         c-hungry-delete-key t
         backward-delete-function nil)
-  (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
   (set-compile-command))
-
-;;; from emacswiki
-(defun set-compile-command ()
-  "our compile command"
-  (unless (file-exists-p "Makefile")
-    (set (make-local-variable 'compile-command)
-         (let ((file (file-name-nondirectory buffer-file-name)))
-           (format "%s -o %s %s %s"
-                   (or (getenv "CC") "gcc")
-                   (file-name-sans-extension file)
-                   (or (getenv "CFLAGS") "-DDEBUG -pedantic -Wall -ggdb")
-                   file)))))
 
 (defun list-lang-hooks ()
   (paredit-mode +1))
@@ -116,11 +101,10 @@
   (set (make-local-variable 'compile-command) "go build -v")
   (use-package go-eldoc))
 
-(use-package rust-mode
-  :mode ("\\.rs\\'" . rust-mode)
+(use-package rustic
+  :mode ("\\.rs\\'" . rustic-mode)
   :config
-  (setq rust-format-on-save t)
-  (setq electric-indent-mode t))
+  (setq rustic-format-on-save t))
 
 ;; c-eldoc
 (use-package c-eldoc

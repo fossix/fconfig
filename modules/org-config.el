@@ -586,11 +586,13 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 		       (org-agenda-start-with-log-mode t)
 		       (org-agenda-include-diary nil)
 		       (org-agenda-log-mode-items '(state clock))
-		       (org-agenda-files '("~/notes/org/TODO"))
+		       (org-agenda-files '("~/notes/org/todo.org"))
 		       (org-agenda-start-with-clockreport-mode t)
 		       (org-agenda-span 'week)
 		       (org-agenda-start-day "-7")
-		       (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3))
+		       (org-agenda-clockreport-parameter-plist '(:link t
+	                                                               :maxlevel 3))
+                       (org-agenda-t)
 		       (org-agenda-overriding-header "Week in Review")))))
 
 	    ("e" tags "EFFORT>\"0\""
