@@ -701,6 +701,11 @@
 
         (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
       #+end_src
+***** Misc
+      Add a keybinding for recompile
+      #+begin_src elisp
+        (general-def "C-c RET" 'recompile)
+      #+end_src
 *** Shell
     Setup completion in eshell
 
@@ -1004,6 +1009,13 @@
         "+" 'increment-register
         "m" 'kmacro-to-register
         "C-s" 'bookmark-save)
+    #+end_src
+
+    Some keybindings for hideshow minor mode
+
+    #+begin_src elisp
+      (general-def "C-c h h" 'hs-toggle-hiding)
+
     #+end_src
 *** Temporary
     The following is a paste of a exiting config file, from which I will slowly

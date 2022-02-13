@@ -56,8 +56,7 @@
         fill-column 80
         gdb-many-windows 1
         c-hungry-delete-key t
-        backward-delete-function nil)
-  (set-compile-command))
+        backward-delete-function nil))
 
 (defun list-lang-hooks ()
   (paredit-mode +1))
