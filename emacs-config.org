@@ -189,7 +189,8 @@
         (setq vertico-posframe-parameters
               '((alpha . 0)
                 (left-fringe . 9)
-                (right-fringe . 9))))
+                (right-fringe . 9))
+              vertico-posframe-font "Monospace-13"))
 
       (use-package marginalia
         :ensure t
@@ -861,7 +862,6 @@
           (setq easy-hugo-basedir "~/work/blog/")
           (setq easy-hugo-url "https://ssivaraj.gitlab-master-pages.nvidia.com/notes")
           (setq easy-hugo-postdir "content/posts")
-          ; (setq easy-hugo-root "~/work/blog/")
           (setq easy-hugo-previewtime "300")
           :bind ("C-c b h" . easy-hugo))
       #+end_src
@@ -1071,9 +1071,9 @@
     for setting up font.
 
     #+begin_src elisp
-      (load custom-file)
       (org-babel-load-file (expand-file-name
 			    (concat (user-login-name) ".org") "~/.emacs.d"))
       (org-babel-load-file (expand-file-name
 			    (concat (system-name) ".org") "~/.emacs.d"))
+      (load custom-file)
     #+end_src

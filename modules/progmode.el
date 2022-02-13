@@ -7,31 +7,6 @@
   (define-key c-mode-base-map [f5] 'recompile))
 (add-hook 'c-mode-common-hook 'fconfig/c-mode-bindings)
 
-;; My C style
-(defconst c-style-santosh
-  '( "linux"
-     (c-echo-syntactic-information-p . nil)
-     (setq-default c-basic-offset 8)
-     (c-hanging-braces-alist . ((brace-list-open)
-                                (brace-entry-open)
-                                (statement-cont)
-                                (defun-open before after)
-                                (defun-close before after)
-                                (block-open )
-                                (block-close . c-snug-do-while)))
-     (c-cleanup-list . (brace-else-brace
-                        brace-elseif-brace
-                        scope-operator
-                        empty-defun-braces
-                        defun-close-semi
-                        comment-close-slash
-                        defun-close-semi
-                        list-close-comma
-                        empty-defun-braces)))
-    "C Style Santosh")
-
-(c-add-style "santosh" c-style-santosh)
-
 ;; Hooks
 (defun program-mode-hook ()
   (which-function-mode 1)
@@ -50,7 +25,7 @@
 (add-to-list 'prog-mode-hook 'program-mode-hook)
 
 (defun c-specfic-hooks ()
-  (c-set-style "santosh")
+  (c-set-style "linux")
   (setq indent-tabs-mode t
         tab-width 8
         fill-column 80
