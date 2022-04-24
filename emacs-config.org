@@ -325,90 +325,119 @@
 ***** Note taking
 ******* org-roam
 	#+begin_src elisp
-	  ;; Everything related to note taking, currently org-roam
-	  (general-create-definer fconfig-notes-bind
-	    :prefix "C-c n"
-	    :name "Notes actions"
-	      "" '(:ignore t :which-key "Notes options"))
+          ;; Everything related to note taking, currently org-roam
+          (general-create-definer fconfig-notes-bind
+            :prefix "C-c n"
+            :name "Notes actions"
+              "" '(:ignore t :which-key "Notes options"))
 
-	  (use-package websocket
-	    :after org-roam)
+          (use-package websocket
+            :after org-roam)
 
-	  (use-package org-roam
-	    :ensure t
-	    :init
-	    (setq org-roam-v2-ack t)
-	    (setq org-roam-directory "~/notes/org/roam")
-	    :custom
-	    (setq org-roam-completion-everywhere t)
-	    :config
-	    (use-package org-roam-protocol)
-	    (org-roam-setup)
-	    (defun org-roam-node-insert-immediate (arg &rest args)
-	      (interactive "P")
-	      (let ((args (cons arg args))
-		    (org-roam-capture-templates (list (append (car org-roam-capture-templates)
-							      '(:immediate-finish t)))))
-		(apply #'org-roam-node-insert args))))
+          (use-package org-roam
+            :ensure t
+            :init
+            (setq org-roam-v2-ack t)
+            (setq org-roam-directory "~/notes/org/roam")
+            :custom
+            (setq org-roam-completion-everywhere t)
+            :config
+            (use-package org-roam-protocol)
+            (org-roam-setup)
+            (defun org-roam-node-insert-immediate (arg &rest args)
+              (interactive "P")
+              (let ((args (cons arg args))
+                    (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+                                                              '(:immediate-finish t)))))
+                (apply #'org-roam-node-insert args))))
 
 
-	  (fconfig-notes-bind
-	    "l" 'org-roam-buffer-toggle
-	    "f" 'org-roam-node-find
-	    "d" 'org-roam-dailies-find-date
-	    "C" 'org-roam-capture
-	    "T" 'org-roam-dailies-capture-today
-	    "R" 'org-roam-dailies-capture-tomorrow
-	    "Y" 'org-roam-dailies-capture-yesterday
-	    "t" 'org-roam-dailies-find-today
-	    "r" 'org-roam-dailies-find-tomorrow
-	    "y" 'org-roam-dailies-find-yesterday
-	    "g" 'org-roam-graph
-	    "u" 'org-roam-ui-mode
-	    "i" 'org-roam-node-insert
-	    "I" 'org-roam-node-insert-immediate
-	    "o i" 'org-id-get-create)
+          (fconfig-notes-bind
+            "l" 'org-roam-buffer-toggle
+            "f" 'org-roam-node-find
+            "d" 'org-roam-dailies-find-date
+            "C" 'org-roam-capture
+            "T" 'org-roam-dailies-capture-today
+            "R" 'org-roam-dailies-capture-tomorrow
+            "Y" 'org-roam-dailies-capture-yesterday
+            "t" 'org-roam-dailies-find-today
+            "r" 'org-roam-dailies-find-tomorrow
+            "y" 'org-roam-dailies-find-yesterday
+            "g" 'org-roam-graph
+            "u" 'org-roam-ui-mode
+            "i" 'org-roam-node-insert
+            "I" 'org-roam-node-insert-immediate
+            "o i" 'org-id-get-create)
 
-	   (general-def org-mode-map "C-M-i" 'completion-at-point)
+           (general-def org-mode-map "C-M-i" 'completion-at-point)
 
-	  (use-package org-roam-ui
-	    :load-path "~/.emacs.d/site-lisp/org-roam-ui"
-	    :after org-roam
-	    :config
-	    (setq org-roam-ui-sync-theme t
-		  org-roam-ui-follow t
-		  org-roam-ui-update-on-save t
-		  org-roam-ui-open-on-start t))
+          (use-package org-roam-ui
+            :load-path "~/.emacs.d/site-lisp/org-roam-ui"
+            :after org-roam
+            :config
+            (setq org-roam-ui-sync-theme t
+                  org-roam-ui-follow t
+                  org-roam-ui-update-on-save t
+                  org-roam-ui-open-on-start t))
+
+          ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
+          (defun my/preview-fetcher ()
+            (let* ((elem (org-element-context))
+                   (parent (org-element-property :parent elem)))
+              ;; TODO: alt handling for non-paragraph elements
+              (string-trim-right (buffer-substring-no-properties
+                                  (org-element-property :begin parent)
+                                  (org-element-property :end parent)))))
+
+          (setq org-roam-preview-function #'my/preview-fetcher)
 	#+end_src
 ******* deft
 	#+begin_src elisp
-	  (setq deft-directory "~/.deft"
-		deft-recursive t
-		deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
-		deft-default-extension "org")
+          ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
+          (defun cm/deft-parse-title (file contents)
+            "Parse the given FILE and CONTENTS and determine the title.
+            If `deft-use-filename-as-title' is nil, the title is taken to
+            be the first non-empty line of the FILE.  Else the base name of the FILE is
+            used as title."
+            (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
+              (if begin
+                  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
+                (deft-base-filename file))))
 
-	  ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
-	  (defun cm/deft-parse-title (file contents)
-	    "Parse the given FILE and CONTENTS and determine the title.
-	    If `deft-use-filename-as-title' is nil, the title is taken to
-	    be the first non-empty line of the FILE.  Else the base name of the FILE is
-	    used as title."
-	    (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
-	      (if begin
-		  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
-		(deft-base-filename file))))
+          (use-package deft
+            :bind ("<f8>" . deft)
+            :commands (deft)
+            :config (progn
+                      (setq deft-directory "~/.deft"
+                                  deft-recursive t
+                                  deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                                  deft-default-extension "org"
+                                  deft-strip-summary-regexp
+                (concat "\\("
+                        "[\n\t]" ;; blank
+                        "\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
+                        "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                        "\\)"))
+                      (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
+                      ))
 
-	  (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
-
-	  (setq deft-strip-summary-regexp
-		(concat "\\("
-			"[\n\t]" ;; blank
-			"\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
-			"\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
-			"\\)"))
-
-	  (general-def [f8] 'deft)
+          (general-def [f8] 'deft)
+          (general-def :keymaps 'deft-mode-map
+            "g"   'deft-refresh
+            "C-s" 'deft-filter
+            "C-n" 'next-line
+            "n" 'next-line
+            "p"   'previous-line
+            "C-D" 'deft-delete-file
+            "C-R" 'deft-rename-file
+            "a"   'deft-new-file
+            "A"   'deft-new-file-named
+            "D"   'deft-delete-file
+            "q"   'kill-current-buffer)
 	#+end_src
+
+        #+RESULTS:
+
 ***** Agenda
 
       Add agenda files
@@ -691,14 +720,17 @@
           :after lsp-ui
           :config
           (setq lsp-ui-doc-include-signature t
-                lsp-ui-doc-delay 2
+                lsp-ui-doc-delay 1.5
                 lsp-ui-sideline-delay 1.5))
 
         (use-package company-capf
           :requires company
           :after lsp-mode
           :config
-          (push 'company-capf company-backends))
+          (push 'company-capf company-backends)
+          (setq company-minimum-prefix-length 1
+              company-idle-delay 0.0)
+          )
 
         (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
       #+end_src
@@ -817,6 +849,13 @@
     Avoid window resizing and reuse windows when possible.
 
     #+begin_src elisp
+      (setq display-buffer-base-action
+            '((display-buffer-reuse-window
+               display-buffer-reuse-mode-window
+               display-buffer-same-window
+               display-buffer-in-previous-window)
+      ))
+
       ;;; https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html
       (setq display-buffer-alist
             '(("\\*Help\\*"
@@ -824,9 +863,8 @@
                (reusable-frames . visible))
               (".*"
                (display-buffer-reuse-window display-buffer-pop-up-window)
-               (reusable-frames . visible))
-              ("\\*Org Agenda\\*"
                (inhibit-same-window . t)
+               '((mode . (org-mode helpful-mode help-mode c-mode rust-mode go-mode)))
                (reusable-frames . visible))))
 
       (setq even-window-sizes nil)
@@ -908,6 +946,14 @@
       (defun display-ansi-colors ()
 	(interactive)
 	(ansi-color-apply-on-region (point-min) (point-max)))
+    #+end_src
+
+*** Help
+    #+begin_src elisp
+      (global-set-key (kbd "C-h f") #'helpful-callable)
+      (global-set-key (kbd "C-h v") #'helpful-variable)
+      (global-set-key (kbd "C-h k") #'helpful-key)
+
     #+end_src
 *** General Keybindings
     Enable use of arrows in read-mode

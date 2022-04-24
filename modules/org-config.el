@@ -112,6 +112,7 @@
   (set-face-attribute 'org-headline-done nil :strike-through t)
 
   (org-toggle-pretty-entities)
+  (configure-prettify-symbols-alist)
   (org-toggle-inline-images)
   (setq org-latex-preview t)
 
@@ -379,7 +380,8 @@ A prefix arg forces clock in of the default task."
      (shell . t)
      (rust . t)
      (scheme . t)
-     (gnuplot . t)))
+     (gnuplot . t)
+     (sql . t)))
 
   ;; colour source code listings
   (use-package ox-latex

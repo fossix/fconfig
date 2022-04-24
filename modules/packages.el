@@ -96,7 +96,7 @@
 (use-package ace-isearch
   :diminish
   :defer 3
-  :init (global-ace-isearch-mode 0))
+  :init (global-ace-isearch-mode 1))
 
 (use-package dired
   :defer 3
