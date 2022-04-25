@@ -381,7 +381,7 @@
                   org-roam-ui-open-on-start t))
 
           ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
-          (defun my/preview-fetcher ()
+          (defun santosh/preview-fetcher ()
             (let* ((elem (org-element-context))
                    (parent (org-element-property :parent elem)))
               ;; TODO: alt handling for non-paragraph elements
@@ -389,8 +389,61 @@
                                   (org-element-property :begin parent)
                                   (org-element-property :end parent)))))
 
-          (setq org-roam-preview-function #'my/preview-fetcher)
+          (setq org-roam-preview-function #'santosh/preview-fetcher)
 	#+end_src
+******* Journal
+        I use a journal to keep a log of activities I did on a particular day,
+        and also as a first place to dump my thoughts and ideas.
+
+        #+begin_src elisp
+          (defun santosh/journal-old-carryover (old_carryover)
+            (save-excursion
+              (let ((matcher (cdr (org-make-tags-matcher org-journal-carryover-items))))
+                (dolist (entry (reverse old_carryover))
+                  (save-restriction
+                    (narrow-to-region (car entry) (cadr entry))
+                    (goto-char (point-min))
+                    (org-scan-tags '(lambda ()
+                                      (org-set-tags ":carried:"))
+                                   matcher org--matcher-tags-todo-only))))))
+
+          (use-package org-journal
+            :ensure t
+            :init
+            ;; Change default prefix key; needs to be set before loading org-journal
+            (setq org-journal-prefix-key "C-c j")
+            :config
+            (setq org-journal-dir "~/notes/org/journal/"
+                  org-journal-file-type 'weekly
+                  org-journal-date-format "%A, %d %B %Y"
+                  org-journal-enable-agenda-integration t
+                  org-journal-skip-carryover-drawers (list "LOGBOOK")
+                  org-journal-handle-old-carryover 'santosh/journal-old-carryover))
+
+          (general-create-definer fconfig-journal-bind
+            :prefix "C-c j"
+            :name "Journal actions"
+            "" '(:ignore t :which-key "Journal options"))
+
+          (general-unbind
+              "C-c C-s"
+              "C-c C-f"
+              "C-c C-b"
+              "C-c C-j")
+
+          (fconfig-journal-bind
+            "o" 'org-journal-open-current-journal-file
+            "j" 'org-journal-new-entry
+            "f" 'org-journal-open-next-entry
+            "b" 'org-journal-open-previous-entry
+            "d" 'org-journal-new-date-entry
+            "s" 'org-journal-search
+            "e" 'org-journal-new-scheduled-entry
+            "v" 'org-journal-schedule-view)
+        #+end_src
+
+        #+RESULTS:
+
 ******* deft
 	#+begin_src elisp
           ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
@@ -423,17 +476,9 @@
 
           (general-def [f8] 'deft)
           (general-def :keymaps 'deft-mode-map
-            "g"   'deft-refresh
-            "C-s" 'deft-filter
+            "C-r" 'deft-refresh
             "C-n" 'next-line
-            "n" 'next-line
-            "p"   'previous-line
-            "C-D" 'deft-delete-file
-            "C-R" 'deft-rename-file
-            "a"   'deft-new-file
-            "A"   'deft-new-file-named
-            "D"   'deft-delete-file
-            "q"   'kill-current-buffer)
+            "C-D" 'deft-delete-file)
 	#+end_src
 
         #+RESULTS:
