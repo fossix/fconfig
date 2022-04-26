@@ -211,15 +211,30 @@
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
     #+begin_src elisp
-      (setq org-hide-emphasis-markers t
-            org-odd-levels-only t
-            org-pretty-entities t
-            org-adapt-indentation t)
+      (use-package org
+        :mode ("\\.org$" . org-mode)
+        :commands (org
+                   org-capture
+                   org-mode
+                   org-store-link
+                   update-org-hours
+                   my-term-agenda
+                   dired-notes)
+        :init
+        (add-to-list 'org-modules 'org-habit 'drill)
+        (setq
+         org-directory (expand-file-name "org" notes-dir)
+         org-default-notes-file (expand-file-name "notes" org-directory)))
 
       (general-create-definer fconfig-org-config-bind
         :prefix "C-c o"
         :name "Org mode bindings"
         "" '(:ignore t :which-key "Org-mode bindings"))
+
+      (setq org-hide-emphasis-markers t
+            org-odd-levels-only t
+            org-pretty-entities t
+            org-adapt-indentation t)
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.
@@ -264,6 +279,12 @@
       (org-set-emph-re 'org-emphasis-regexp-components org-emphasis-regexp-components)
     #+end_src
 
+    Move the point to the beginning of the agenda
+
+    #+begin_src elisp
+      (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
+    #+end_src
+
 ***** Setup org modules
       The two most important org packages that we need are org-agenda
       and org-capture, set those up fist.
@@ -284,6 +305,33 @@
 	(eval-after-load 'org
 	  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
       #+end_src
+
+      Some of the languages that I use with ~org-babel~.
+      #+begin_src elisp
+        (use-package ob-ledger)
+
+        (org-babel-do-load-languages
+         'org-babel-load-languages
+         '((emacs-lisp . t)
+           (python . t)
+           (go . t)
+           (dot . t)
+           (ditaa . t)
+           (latex . t)
+           (ledger .t)
+           (shell . t)
+           (rust . t)
+           (scheme . t)
+           (gnuplot . t)
+           (sql . t)
+           (plantuml . t)))
+
+        (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml-1.2022.4.jar")
+              org-ditaa-jar-path (expand-file-name "~/bin/ditaa-0.11.0-standalone.jar")
+              ;; Don't ask when I evaluate code
+              org-confirm-babel-evaluate nil)
+      #+end_src
+
 ***** Presentation using org-mode
       The slides for a presentation are usually generated from org file, through
       beamer and $\LaTeX$. Instead of doing that, =org-present= combined with
@@ -355,14 +403,16 @@
           (fconfig-notes-bind
             "l" 'org-roam-buffer-toggle
             "f" 'org-roam-node-find
-            "d" 'org-roam-dailies-find-date
+            "d" 'org-roam-dailies-goto-date
             "C" 'org-roam-capture
             "T" 'org-roam-dailies-capture-today
             "R" 'org-roam-dailies-capture-tomorrow
             "Y" 'org-roam-dailies-capture-yesterday
-            "t" 'org-roam-dailies-find-today
-            "r" 'org-roam-dailies-find-tomorrow
-            "y" 'org-roam-dailies-find-yesterday
+            "t" 'org-roam-dailies-goto-today
+            "r" 'org-roam-dailies-goto-tomorrow
+            "y" 'org-roam-dailies-goto-yesterday
+            "p" 'org-roam-dailies-goto-previous-note
+            "n" 'org-roam-dailies-goto-next-note
             "g" 'org-roam-graph
             "u" 'org-roam-ui-mode
             "i" 'org-roam-node-insert
@@ -442,8 +492,6 @@
             "v" 'org-journal-schedule-view)
         #+end_src
 
-        #+RESULTS:
-
 ******* deft
 	#+begin_src elisp
           ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
@@ -481,8 +529,6 @@
             "C-D" 'deft-delete-file)
 	#+end_src
 
-        #+RESULTS:
-
 ***** Agenda
 
       Add agenda files
@@ -515,22 +561,6 @@
                 ("Project" ,(list (all-the-icons-octicon "diff" :face 'all-the-icons-green)) nil nil :ascent center)
                 ))
       #+end_src
-
-      #+RESULTS:
-      | Work      | () | nil | nil | :ascent | center |
-      | Personal  | () | nil | nil | :ascent | center |
-      | Kernel    | () | nil | nil | :ascent | center |
-      | Learning  | () | nil | nil | :ascent | center |
-      | Language  | () | nil | nil | :ascent | center |
-      | Default   | () | nil | nil | :ascent | center |
-      | Sun       | () | nil | nil | :ascent | center |
-      | Diary     | () | nil | nil | :ascent | center |
-      | Moon      | () | nil | nil | :ascent | center |
-      | Books     | () | nil | nil | :ascent | center |
-      | Technical | () | nil | nil | :ascent | center |
-      | Meeting   | () | nil | nil | :ascent | center |
-      | Bug       | () | nil | nil | :ascent | center |
-      | Project   | () | nil | nil | :ascent | center |
 
 ***** Keybindings
       #+begin_src elisp
