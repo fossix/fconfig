@@ -285,6 +285,12 @@
       (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
     #+end_src
 
+    Always show org files in the same windows, especially useful when browsing
+    through org-roam files. If needed I can explicitly split windows and open
+    another buffer.
+    #+begin_src elisp
+      (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
+    #+end_src
 ***** Setup org modules
       The two most important org packages that we need are org-agenda
       and org-capture, set those up fist.
@@ -385,10 +391,14 @@
           (use-package org-roam
             :ensure t
             :init
-            (setq org-roam-v2-ack t)
-            (setq org-roam-directory "~/notes/org/roam")
+            (setq org-roam-v2-ack t
+                  org-roam-directory "~/notes/org/roam"
+                  org-roam-completion-everywhere t)
+            (org-roam-db-autosync-mode)
+
             :custom
-            (setq org-roam-completion-everywhere t)
+            (concat "${type:4}   ${title:*} "
+                    (propertize "${tags:40}" 'face 'org-tag)))
             :config
             (use-package org-roam-protocol)
             (org-roam-setup)
@@ -441,6 +451,7 @@
 
           (setq org-roam-preview-function #'santosh/preview-fetcher)
 	#+end_src
+
 ******* Journal
         I use a journal to keep a log of activities I did on a particular day,
         and also as a first place to dump my thoughts and ideas.
@@ -936,9 +947,16 @@
             '(("\\*Help\\*"
                (display-buffer-reuse-window display-buffer-pop-up-frame)
                (reusable-frames . visible))
+              ("\\*org-roam\\*" display-buffer-in-side-window
+               (side . right)
+               (slot . 0)
+               (window-width . 0.30)
+               (window-parameters .
+                                  ((no-other-window . t)
+                                   (no-delete-other-windows . t))))
+
               (".*"
                (display-buffer-reuse-window display-buffer-pop-up-window)
-               (inhibit-same-window . t)
                '((mode . (org-mode helpful-mode help-mode c-mode rust-mode go-mode)))
                (reusable-frames . visible))))
 
