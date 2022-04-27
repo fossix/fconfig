@@ -532,8 +532,7 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 		                                                "NEXT" "WAITING" "MOVED")))))))))
 
 	  ("r" "Tasks to be refiled" tags "refile"
-	   ((org-agenda-files '("~/notes/org/dump.org" "~/notes/org/TODO"
-				"~/notes/org/work" "~/notes/org/journal.org"))))
+	   ((org-agenda-files '("~/notes/org/TODO" "~/notes/org/work"))))
 
 	  ("W" "Work week review"
 	   ((agenda ""
@@ -642,65 +641,20 @@ PRIORITY may be one of the characters ?A, ?B, or ?C."
 	    (file+headline (concat notes-dir "/quotes") "Quotes")
 	    "* %^{Quote} -- %^{Author}"))
 
-	 '(("t" "Todo" entry
-	    (file+headline "dump.org" "Tasks")
+	 '(("t" "Personal Todo" entry
+	    (file+headline "todo.org" "Tasks/Misc")
 	    "* TODO %^{Do-what?} %^g\n  %i%?"))
 
-	 '(("d" "Idea/Project dump" entry
-	    (file+headline "dump.org" "Dump")
-	    "* TODO %^{Do-what?} :refile:%^g\n  %i%?"))
-
-	 '(("m" "Meetings" entry
+	 '(("m" "Personal Meeting" entry
 	    (file+headline "todo.org" "Meetings/Appointments/Calls")
 	    "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?"))
 
-	 '(("n" "Today's Notes" entry
-	    (file+olp+datetree "notes.org" "Unfiled")
-	    "* %^{Title} %^g\n %i%?\n %a"))
-
-	 '(("f" "Remote Capture" entry
-	    (file+headline "notes.org" "Captured")
-	    "* %^{Title} :browser:%^g\n %i%?\n"))
-
-	 '(("p" "Phone call" entry
-	    (file "journal.org" "Phone Calls")
-	    "* PHONE %? :PHONE:%^g\n%U" :clock-in t :clock-resume t))
-
-	 '(("r" "Random" entry
-	    (file+headline "misc.org" "Random")
-	    "* %u %?\n  %i"))
-
-	 '(("j" "Journal entries")
-	   ("jl" "General logging" entry
-	    (file+olp+datetree "journal.org")
-	    "** %U %^{Activity}  :log:%^g" :immediate-finish t)
-	   ("jc" "Misc clockable entries" entry
-	    (file+olp+datetree "journal.org")
-	    "* %U %^{Activity} :time:%^g\n" :clock-in t :clock-resume t)
-	   ;; A quick way to file breaks with running clock
-	   ("jb" "Take a break!" entry
-	    (file+olp+datetree "journal.org")
-	    "* %U %^{Activity} :time:break:%^g\n" :clock-in t :clock-resume t))
-
-	 '(("w" "Work related entries")
-	   ("wm" "Misc clockable entries" entry
-	    (file+olp+datetree "work.org")
-	    "* %U %^{Activity} :time:%^g\n" :clock-in t :clock-resume t)
-	   ("wM" "Work meetings" entry
+	 '(("M" "Work meeting" entry
 	    (file+headline "work.org" "Meetings")
-	    "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
-	   ("wp" "Calls from Work-phone calls" entry
-	    (file "journal.org" "Phone Calls")
-	    "* PHONE to: %^{Call to} :PHONE:%^g\n%U" :clock-in t :clock-resume t)
-	   ("wt" "Todo" entry
-	    (file+headline "work.org" "Tasks")
-	    "* TODO %^{Do-what?} %^g\n    %?%i")
-	   ("wd" "Task dump" entry
-	    (file+headline "work.org" "Task dump")
-	    "* %^{Do What?} :refile:%^g\n%?%i")
-	   ("ws" "Standup Entries" entry
-	    (file+olp+datetree "standup.org")
-	    "* %^{Summary}\n  1. %i%?" :tree-type week))
+	    "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?"))
+	 '(("T" "Work Todo" entry
+	    (file+headline "work.org" "Tasks/Misc")
+	    "* TODO %^{Do-what?} %^g\n    %?%i"))
 	 org-capture-templates))
 
   ;; system wide org-capture
