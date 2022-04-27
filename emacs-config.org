@@ -402,7 +402,7 @@
 
             :custom
             (setq org-roam-node-display-template
-                  (concat "${type:4}   ${title:*} "
+                  (concat "${title:*} "
                           (propertize "${tags:40}" 'face 'org-tag)))
             :config
             (defun santosh/tag-new-node-as-draft ()
@@ -458,6 +458,13 @@
                                   (org-element-property :end parent)))))
 
           (setq org-roam-preview-function #'santosh/preview-fetcher)
+
+          (setq org-roam-capture-templates
+                '(("r" "random" plain "%?"
+                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: :random:\n")
+                   :unnarrowed t
+                   :jump-to-captured)))
 	#+end_src
 
 ******* Journal
@@ -1244,7 +1251,6 @@
       #+end_src
 
 *** Frame
-
 *** Buffer
     To move through buffers, I used to use the ~cycle-buffer~ package. But I
     rarely use the ~cycle-buffer-permissive~ and ~cycle-buffer-backward-permissive~
