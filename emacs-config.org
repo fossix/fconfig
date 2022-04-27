@@ -162,7 +162,7 @@
       #+end_src
 
 ***** Misc
-      Don't as when opening a symlink, always follow it.
+      Don't ask when opening a symlink, always follow it.
 
       #+begin_src elisp
 	(setq vc-follow-symlinks t)
@@ -173,6 +173,11 @@
 	(global-auto-revert-mode)
       #+end_src
 
+***** Window Management
+      Enable winner mode
+      #+begin_src elisp
+        (winner-mode)
+      #+end_src
 *** Completions
     #+begin_src elisp
       (use-package vertico

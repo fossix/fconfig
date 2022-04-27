@@ -74,6 +74,7 @@
   :diminish)
 
 (use-package undo-tree
+  :disabled t
   :diminish undo-tree-mode
   :defer 3
   :config
