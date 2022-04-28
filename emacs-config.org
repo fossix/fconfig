@@ -405,9 +405,6 @@
                   (concat "${title:*} "
                           (propertize "${tags:40}" 'face 'org-tag)))
             :config
-            (defun santosh/tag-new-node-as-draft ()
-              (org-roam-tag-add '("draft")))
-            (add-hook 'org-roam-capture-new-node-hook #'santosh/tag-new-node-as-draft)
             (add-hook 'org-roam-mode-hook #'turn-on-visual-line-mode)
             (use-package org-roam-protocol)
             (org-roam-setup)
@@ -418,9 +415,15 @@
                                                               '(:immediate-finish t)))))
                 (apply #'org-roam-node-insert args))))
 
+          (defun santosh/org-roam-node-find ()
+            "Don't prompt for a roam template, use the first entry from the template list"
+            (interactive)
+            (let ((org-roam-capture-templates (list (append (car org-roam-capture-templates)))))
+              (org-roam-node-find)))
+
           (fconfig-notes-bind
             "l" 'org-roam-buffer-toggle
-            "f" 'org-roam-node-find
+            "f" 'santosh/org-roam-node-find
             "d" 'org-roam-dailies-goto-date
             "c" 'org-roam-capture
             "T" 'org-roam-dailies-capture-today
@@ -460,11 +463,28 @@
           (setq org-roam-preview-function #'santosh/preview-fetcher)
 
           (setq org-roam-capture-templates
-                '(("r" "random" plain "%?"
+                '(
+                  ("d" "default" plain "%?"
+                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: %^g\n\n"))
+
+                  ;; Some random things that I would like to keep
+                  ("r" "random" plain "%?"
                    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                                       "#+title: ${title}\n#+filetags: :random:\n")
-                   :unnarrowed t
-                   :jump-to-captured)))
+                   :jump-to-captured)
+
+                  ;; Personal thoughts and ideas, not to be exported
+                  ("p" "personal" plain "%?"
+                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: :personal:noexport:\n"))
+
+                  ("b" "book quote" plain "#+begin_quote\n%^{Quote}\n#+end_quote\n\n%?"
+                   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: :book:\n\n"))
+                  ("n" "book notes" item "- %?\n\n"
+                   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: :book:\n\n"))))
 	#+end_src
 
 ******* Journal
