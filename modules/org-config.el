@@ -318,21 +318,20 @@ A prefix arg forces clock in of the default task."
 
 (advice-add 'org-add-note :around #'org-add-note-outside-drawer)
 
-  ;; colors, lots of colors
+;;   ;; colors, lots of colors
+;; (setf org-todo-keyword-faces nil)
+;; (setf org-todo-keyword-faces
+;;       '(("TODO" . (:foreground "LightSkyBlue" :weight bold))
+;;         ("MAYBE" . (:foreground "DarkSlateGray" :weight bold))
+;;         ("STARTED" . (:foreground "royalblue" :weight bold))
+;;         ("DONE" . (:foreground "MediumSeaGreen" :weight bold))
+;;         ("WAITING" . (:foreground "darkgray" :weight bold))))
 
-(setf org-todo-keyword-faces
-      '(("TODO" . (:foreground "LightSkyBlue" :weight bold))
-        ("MAYBE" . (:foreground "DarkSlateGray" :weight bold))
-        ("STARTED" . (:foreground "royalblue" :weight bold))
-        ("DONE" . (:foreground "MediumSeaGreen" :weight bold))
-        ("WAITING" . (:foreground "darkgray" :weight bold))))
+;; (setq org-priority-faces '((?A . (:foreground "#ee4e4e" :bold t :weight bold))
+;;                            (?B . (:foreground "#9f7f7f"))
+;;                            (?C . (:foreground "#717171"))))
 
-(setq org-priority-faces '((?A . (:foreground "#ee4e4e" :bold t :weight bold))
-                           (?B . (:foreground "#9f7f7f"))
-                           (?C . (:foreground "#717171"))))
-
-  ;; Remove empty LOGBOOK drawers on clock out
-
+;; Remove empty LOGBOOK drawers on clock out
 (defun remove-empty-drawer-on-clock-out ()
   (interactive)
   (save-excursion

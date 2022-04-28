@@ -387,7 +387,7 @@
           (general-create-definer fconfig-notes-bind
             :prefix "C-c n"
             :name "Notes actions"
-              "" '(:ignore t :which-key "Notes options"))
+            "" '(:ignore t :which-key "Notes options"))
 
           (use-package websocket
             :after org-roam)
@@ -440,7 +440,7 @@
             "I" 'org-roam-node-insert-immediate
             "o i" 'org-id-get-create)
 
-           (general-def org-mode-map "C-M-i" 'completion-at-point)
+          (general-def org-mode-map "C-M-i" 'completion-at-point)
 
           (use-package org-roam-ui
             :load-path "~/.emacs.d/site-lisp/org-roam-ui"
@@ -479,12 +479,15 @@
                    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                                       "#+title: ${title}\n#+filetags: :personal:noexport:\n"))
 
-                  ("b" "book quote" plain "#+begin_quote\n%^{Quote}\n#+end_quote\n\n%?"
+                  ("b" "book quote" plain "- %^{Summary} [page: %^{Page number}]\n  #+begin_quote\n  %^{Quote}\n  #+end_quote\n\n%?"
                    :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :book:\n\n"))
+                                      "#+title: ${title}\n#+filetags: :book:\n\n")
+                   :empty-lines 1
+                   )
                   ("n" "book notes" item "- %?\n\n"
                    :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :book:\n\n"))))
+                                      "#+title: ${title}\n#+filetags: :book:\n\n")
+                   :empty-lines 1)))
 	#+end_src
 
 ******* Journal
@@ -562,6 +565,36 @@
             "C-n" 'next-line
             "C-D" 'deft-delete-file)
 	#+end_src
+
+***** Published notes
+      #+begin_src elisp
+        (use-package ox-hugo
+          :defer t
+          :commands (santosh/org-roam-publish-to-hugo)
+          :init
+          (setq org-hugo-base-dir (expand-file-name "~/dev/repos/forrest"))
+          :config
+          (defun santosh/note-modified? (orgfile)
+            "Test if the orgfile is newer than the generated markdown file.
+        The markdown file is generated from the org-hugo-base-dir
+        variable."
+            (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base orgfile) ".md"))))
+              (not (time-less-p (nth 5 (file-attributes orgfile))
+                              (nth 5 (file-attributes mdfile))))))
+
+          (defun santosh/org-roam-publish-to-hugo (arg)
+            "Publish the org-roam files into hugo markdown using ox-hugo exporter.
+        The function exports only modified files by default; call the
+        function with a prefix key to force re-generation of all org-roam
+        files, regardless of the file modification time."
+
+            (interactive "P")
+            (let ((notes-files (org-roam-list-files)))
+              (dolist (file notes-files)
+                (if (or (santosh/note-modified? file) arg)
+                    (with-current-buffer (find-file-noselect file)
+                      (org-hugo-export-wim-to-md)))))))
+      #+end_src
 
 ***** Agenda
 
@@ -1393,13 +1426,10 @@
 			  ;; Also handle undocumented (<active> <inactive>) form.
 			  ((numberp (cadr alpha)) (cadr alpha)))
 		    100)
-	       '(85 . 50) '(100 . 100)))))
+	       '(95 . 50) '(100 . 100)))))
 
       (general-def "C-c f f" 'toggle-frame-fullscreen)
       (general-def "C-c f t" 'toggle-transparency)
-
-      ;;; set transparency
-      (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
     #+end_src
 
     A function to display the ansi color sequences in log files.
