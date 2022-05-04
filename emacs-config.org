@@ -334,7 +334,8 @@
            (scheme . t)
            (gnuplot . t)
            (sql . t)
-           (plantuml . t)))
+           (plantuml . t)
+           (calc . t)))
 
         (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml-1.2022.4.jar")
               org-ditaa-jar-path (expand-file-name "~/bin/ditaa-0.11.0-standalone.jar")
