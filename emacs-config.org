@@ -569,7 +569,34 @@
             "C-D" 'deft-delete-file)
 	#+end_src
 
-***** Published notes
+******* org-transclusion
+        To seamlessly view and add notes and files into a org-buffer without
+        copying them.
+
+        #+begin_src elisp
+          (use-package org-transclusion
+            :init
+            (general-create-definer fconfig-transclude-bind
+              :prefix "C-c c"
+              :name "Transclusion actions"
+              "" '(:ignore t :which-key "Transclusion options"))
+            :config
+            (fconfig-transclude-bind
+              "m" 'org-transclusion-make-from-link
+              "a" 'org-transclusion-add
+              "r" 'org-transclusion-remove
+              "A" 'org-transclusion-add-all
+              "R" 'org-transclusion-remove-all
+              "g" 'org-transclusion-refresh
+              "o" 'org-transclusion-open-source
+              "l" 'org-transclusion-live-sync-start
+              "s" 'org-store-link))
+        #+end_src
+
+        #+RESULTS:
+        : t
+
+***** Publishing notes
       #+begin_src elisp
         (use-package ox-hugo
           :defer t
