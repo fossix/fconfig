@@ -439,7 +439,9 @@
             "u" 'org-roam-ui-mode
             "i" 'org-roam-node-insert
             "I" 'org-roam-node-insert-immediate
-            "o i" 'org-id-get-create)
+            "o i" 'org-id-get-create
+            ";" 'org-roam-tag-add
+            "/" 'org-roam-tag-remove)
 
           (general-def org-mode-map "C-M-i" 'completion-at-point)
 
@@ -467,7 +469,7 @@
                 '(
                   ("d" "default" plain "%?"
                    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: %^g\n\n"))
+                                      "#+title: ${title}\n\n"))
 
                   ;; Some random things that I would like to keep
                   ("r" "random" plain "%?"
