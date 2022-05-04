@@ -609,8 +609,9 @@
         The markdown file is generated from the org-hugo-base-dir
         variable."
             (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base orgfile) ".md"))))
-              (not (time-less-p (nth 5 (file-attributes orgfile))
-                              (nth 5 (file-attributes mdfile))))))
+              (or (not (file-exists-p mdfile))
+                  (not (time-less-p (nth 5 (file-attributes orgfile))
+                                  (nth 5 (file-attributes mdfile)))))))
 
           (defun santosh/org-roam-publish-to-hugo (arg)
             "Publish the org-roam files into hugo markdown using ox-hugo exporter.
