@@ -287,7 +287,7 @@
     Move the point to the beginning of the agenda
 
     #+begin_src elisp
-      (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
+      ; (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
     #+end_src
 
     Always show org files in the same windows, especially useful when browsing
@@ -721,6 +721,14 @@
           (run-with-timer 0 1800 'ss/clocked-time-notify))
       #+end_src
 
+
+******* Planning
+        Four todo states, *TODO*, *NEXT*, *PROG*, *DONE*.
+        #+begin_src elisp
+          (setq org-log-done 'note)
+          (setq org-todo-keywords
+                '((sequence "TODO(t@!/)" "NEXT(n!/@)" "PROG(p!/@!)" "|" "DONE(d)")))
+        #+end_src
 ***** Custom agenda
       We will have 5 blocks under the "Agenda and TODOs headline. The first
       block will show the scheduled items for today, deadlines, meetings etc.
@@ -785,8 +793,25 @@
                 subtree-end
               nil)))
 
-        ;; Easy basic searches. Get a quick view of next actions, etc
+        (defun santosh/since-last-update (days)
+          "Checks if headline update is older than DAYS.
+                If no timestamps, then return nil."
+          (interactive)
+          (let ((next-headline (save-excursion (or (outline-next-heading) (point-max)))))
+            (let ((timestamp (santosh/org-logbook-last-state-update)))
+              (message timestamp)
+              (if (>= (org-time-stamp-to-now timestamp) (- days))
+                  next-headline
+                nil
+                ))))
 
+        (defun santosh/org-logbook-last-state-update ()
+          (interactive)
+          (save-match-data ; is usually a good idea
+            (if (re-search-forward ":LOGBOOK:.*\n.*\\(\\[.*\\]\\)")
+                (match-string 1))))
+
+        ;; Easy basic searches. Get a quick view of next actions, etc
         (setq org-agenda-custom-commands
               ;; NOTE: Since blocked items won't be shown, make sure the children are
               ;; TODO items, if they are check boxes, set the NOBLOCKING property.
@@ -806,32 +831,39 @@
                             '(time-up todo-state-up priority-down))
                            (org-agenda-skip-function 'org-agenda-skip-if-blocked)))
 
-                  (tags "PRIORITY=\"A\"/-DONE-CLOSED-FIXED-CANCELLED"
-                        ((org-agenda-overriding-header "High priority")
-                         ;; If priority inheritance work's the following could be
-                         ;; uncommented, so only the next actionable child shows up.
-                         ;; (org-agenda-dim-blocked-tasks 'invisible)
-                         (org-agenda-prefix-format " %i % s")))
-
-                  (tags "/NEXT|STARTED|WAITING|ASSIGNED|INPROGRESS"
+                  (todo "NEXT|PROG|STARTED"
                         ((org-agenda-sorting-strategy
                           '(priority-down effort-down todo-state-down))
                          (org-agenda-prefix-format " %i % s")
-                         (org-agenda-skip-function
-                          (progn
-                            '(or (org-agenda-skip-if-blocked)
-                                 (org-agenda-skip-entry-if 'scheduled)
-                                 (ss/org-agenda-skip-subtree-if-priority ?A))))
                          (org-agenda-overriding-header "Next and Ongoing tasks")))
 
-                  (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\"&TODO<>\"STARTED\""
-                             ((org-agenda-overriding-header "Due Within a Month")
+                  (tags "PRIORITY={A}/-NEXT-PROG-DONE"
+                        (
+                         (org-agenda-overriding-header "High Priority & Deadline (Pending)")
+                         (org-agenda-sorting-strategy
+                          '(priority-down effort-down todo-state-down))
+                         ;; If priority inheritance work's the following could be
+                         ;; uncommented, so only the next actionable child shows up.
+                         ;; (org-agenda-dim-blocked-tasks 'invisible)
+                         (org-agenda-skip-function
+                          (progn '(or
+                                  (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
+                         (org-agenda-prefix-format " %i % s")))
+
+                  (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\"&TODO<>\"PROG\""
+                             ((org-agenda-overriding-header "")
                               (org-agenda-skip-function
                                (progn
                                  '(or
                                    (org-agenda-skip-entry-if 'notdeadline))))))
 
-                  (alltodo ""
+                  (tags-todo "bug/TODO"
+                             ((org-agenda-overriding-header "Issues getting stale (> 2)")
+                              (org-agenda-prefix-format "%i %s")
+                              (org-agenda-skip-function '(santosh/since-last-update 2))))))
+
+                ("t" "Pending todos"
+                 ((alltodo ""
                            ((org-agenda-overriding-header "Pending items")
                             (org-agenda-prefix-format " %i [%e] ")
                             (org-agenda-sorting-strategy
@@ -842,8 +874,7 @@
                                     (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
                                     (org-agenda-skip-subtree-if 'regexp ":someday:")
                                     (org-agenda-skip-if nil '(scheduled deadline timestamp))
-                                    (org-agenda-skip-entry-if 'todo '("STARTED"
-                                                                      "NEXT" "WAITING" "MOVED")))))))))
+                                    (org-agenda-skip-entry-if 'todo '("PROG" "NEXT")))))))))
 
                 ("r" "Tasks to be refiled" tags "refile"
                  ((org-agenda-files '("~/notes/org/TODO" "~/notes/org/work"))))

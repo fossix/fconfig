@@ -65,12 +65,6 @@
 
  org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM"
  keep-clock-running nil
- org-todo-keywords
- '((sequence "TODO(t)" "MAYBE(m)" "NEXT(n)" "STARTED(s!)" "WAITING(w@/!)""|"
-             "DONE(d!)")
-   (sequence "ASSIGNED(a)" "INPROGRESS(p!)" "MOVED(o@/!)" "NEEDINFO(n@/!)" "|"
-             "CLOSED(c@/!)" )
-   (sequence "|" "CANCELLED(l@/!)"))
 
  ;; Some calendar holiday tweaks
  holiday-general-holidays nil
@@ -131,16 +125,11 @@
 
 (add-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
 
-(defun agenda-finalize-misc ()
-  (goto-char (point-min)))
-
-(add-hook 'org-agenda-finalize-hook 'agenda-finalize-misc)
-
 (eval-after-load 'org-src
   '(define-key org-src-mode-map
                (kbd "C-x C-s") #'org-edit-src-exit))
 
-  ;; Some hooks
+;; Some hooks
 
 (defun org-summary-todo (n-done n-not-done)
   "Switch entry to DONE when all subentries are done, to TODO otherwise."
@@ -184,14 +173,13 @@
       (and is-a-task has-subtask))))
 
 (defun clock-in-to-next (kw)
-  "Switch a task from TODO to STARTED when clocking in.
-   Skips capture tasks, projects, and subprojects.
-   Switch projects and subprojects from NEXT back to TODO"
+  "Switch a task from NEXT to in progress (PROG) when clocking in.
+   Skips capture tasks, projects, and subprojects."
   (when (not (and (boundp 'org-capture-mode) org-capture-mode))
     (cond
-     ((and  (member (org-get-todo-state) (list "TODO" "WAITING"))
-            (not (is-project-p)))
-      "STARTED"))))
+     ((and (string= (org-get-todo-state) "NEXT")
+           (not (is-project-p)))
+      "PROG"))))
 
 (setq org-clock-in-switch-to-state 'clock-in-to-next)
 
@@ -200,18 +188,17 @@
 
 (defun org-clock-in-if-starting ()
   "Clock in when the task is marked STARTED."
-  (when (and (string= org-state "STARTED")
+  (when (and (string= org-state "PROG")
              (not (string= org-last-state org-state)))
     (org-clock-in)))
 
 (defun org-clock-out-if-waiting ()
   "Clock out when the task is marked WAITING."
-  (when (and (string= org-state "WAITING")
-             (not (string= org-last-state org-state)))
+  (when (and (string= org-last-state "PROG")
+             (string= org-state "TODO"))
     (org-clock-out)))
 
-                                        ; (add-hook 'org-after-todo-state-change-hook 'org-clock-in-if-starting)
-
+(add-hook 'org-after-todo-state-change-hook 'org-clock-in-if-starting)
 (add-hook 'org-after-todo-state-change-hook 'org-clock-out-if-waiting)
 
 (defun find-project-task ()
@@ -317,19 +304,6 @@ A prefix arg forces clock in of the default task."
     (funcall func)))
 
 (advice-add 'org-add-note :around #'org-add-note-outside-drawer)
-
-;;   ;; colors, lots of colors
-;; (setf org-todo-keyword-faces nil)
-;; (setf org-todo-keyword-faces
-;;       '(("TODO" . (:foreground "LightSkyBlue" :weight bold))
-;;         ("MAYBE" . (:foreground "DarkSlateGray" :weight bold))
-;;         ("STARTED" . (:foreground "royalblue" :weight bold))
-;;         ("DONE" . (:foreground "MediumSeaGreen" :weight bold))
-;;         ("WAITING" . (:foreground "darkgray" :weight bold))))
-
-;; (setq org-priority-faces '((?A . (:foreground "#ee4e4e" :bold t :weight bold))
-;;                            (?B . (:foreground "#9f7f7f"))
-;;                            (?C . (:foreground "#717171"))))
 
 ;; Remove empty LOGBOOK drawers on clock out
 (defun remove-empty-drawer-on-clock-out ()
