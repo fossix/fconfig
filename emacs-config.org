@@ -795,18 +795,18 @@
 
         (defun santosh/since-last-update (days)
           "Checks if headline update is older than DAYS.
-                If no timestamps, then return nil."
+        If no timestamps, then return nil."
           (interactive)
-          (let ((next-headline (save-excursion (or (outline-next-heading) (point-max)))))
-            (let ((timestamp (santosh/org-logbook-last-state-update)))
-              (if (>= (org-time-stamp-to-now timestamp) (- days))
-                  next-headline
+          (let ((next-headline (save-excursion (or (org-end-of-subtree t) (poin-max)))))
+            (let ((timestamp (ignore-errors (santosh/org-logbook-last-state-update next-headline))))
+              (if timestamp (if (>= (org-time-stamp-to-now timestamp) (- days))
+                                next-headline)
                 nil))))
 
-        (defun santosh/org-logbook-last-state-update ()
+        (defun santosh/org-logbook-last-state-update (bound)
           (interactive)
           (save-match-data ; is usually a good idea
-            (if (re-search-forward ":LOGBOOK:.*\n.*\\(\\[.*\\]\\)")
+            (if (re-search-forward ":LOGBOOK:.*\n.*\\(\\[.*\\]\\)" bound)
                 (match-string 1))))
 
         ;; Easy basic searches. Get a quick view of next actions, etc
