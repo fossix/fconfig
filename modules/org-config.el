@@ -80,7 +80,7 @@
    "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
    "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
 
- org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
+ org-format-latex-options (plist-put org-format-latex-options :scale 0.5))
 
 (set-face-attribute 'org-headline-done nil :strike-through t)
 
