@@ -727,7 +727,7 @@
         #+begin_src elisp
           (setq org-log-done 'note)
           (setq org-todo-keywords
-                '((sequence "TODO(t@!/)" "NEXT(n!/@)" "PROG(p!/@!)" "|" "DONE(d)")))
+                '((sequence "TODO(t)" "NEXT(n!/@)" "PROG(p!/@)" "|" "DONE(d)")))
         #+end_src
 ***** Custom agenda
       We will have 5 blocks under the "Agenda and TODOs headline. The first
@@ -973,48 +973,47 @@
             (unless (eq org-journal-file-type 'daily)
               (org-narrow-to-subtree))
             (goto-char (point-max)))
-
+          (setq org-capture-templates nil)
           (setq org-capture-templates
-                (append
-                 '(
-                   ;; All task/todo captures
-                   ("t" "Personal Todo" entry
-                    (file+headline "todo.org" "Dump")
-                    "* TODO %^{Do-what?} %^g\n  %i%?")
+                '(
+                  ;; All task/todo captures
+                  ("t" "Personal Todo" entry
+                   (file+headline "todo.org" "Dump")
+                   "* TODO %^{Do-what?} %^g\n  %i%?")
 
-                   ("m" "Personal Meeting" entry
-                    (file+headline "todo.org" "Meetings/Appointments/Calls")
-                    "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?")
+                  ("m" "Personal Meeting" entry
+                   (file+headline "todo.org" "Meetings/Appointments/Calls")
+                   "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?")
 
-                   ("M" "Work meeting" entry
-                    (file+headline "work.org" "Meetings")
-                    "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
+                  ("M" "Work meeting" entry
+                   (file+headline "work.org" "Meetings")
+                   "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
 
-                   ("T" "Work Todo" entry
-                    (file+headline "work.org" "Misc")
-                    "* TODO %^{Do-what?} %^g\n    %?%i")
+                  ("T" "Work Todo" entry
+                   (file+headline "work.org" "Misc")
+                   "* TODO %^{Do-what?} %^g\n    %?%i")
 
-                   ;; Entry for random quote for the day file
-                   ("u" "Quotes" entry
-                    (file+headline (concat notes-dir "/quotes") "Quotes")
-                    "* %^{Quote} -- %^{Author}")
+                  ;; Entry for random quote for the day file
+                  ("u" "Quotes" entry
+                   (file+headline (concat notes-dir "/quotes") "Quotes")
+                   "* %^{Quote} -- %^{Author}")
 
-                   ;; All journal and time tracking captures
-                   ("j" "Journal log" plain (function org-journal-find-location)
-                    "*** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
-                    :jump-to-captured t :immediate-finish t)
+                  ;; All journal and time tracking captures
+                  ("j" "Journal log" plain (function org-journal-find-location)
+                   "*** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
+                   :jump-to-captured t :immediate-finish t)
 
-                   ("c" "Work call" plain (function org-journal-find-location)
-                    "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
-                    :clock-in t :clock-resume t)
+                  ("c" "Work call" plain (function org-journal-find-location)
+                   "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
+                   :clock-in t :clock-resume t)
 
-                   ("p" "Personal call" plain (function org-journal-find-location)
-                    "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:\n%i%?"
-                    :clock-in t :clock-resume t)
+                  ("p" "Personal call" plain (function org-journal-find-location)
+                   "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:\n%i%?"
+                   :clock-in t :clock-resume t)
 
-                   ("d" "Default template" plain (function org-journal-find-location)
-                    "*** %(format-time-string org-journal-time-format)%^{Title} :browser:%^g\n\n    Source: %:annotation\n\n%i"
-                    :empty-lines 1))))
+                  ("d" "Default template" plain (function org-journal-find-location)
+                   "*** %(format-time-string org-journal-time-format)%^{Title} :browser:%^g\n\n    Source: %:annotation\n\n%i"
+                   :empty-lines 1)))
 
           ;; system wide org-capture
           ;; https://www.reddit.com/r/emacs/comments/74gkeq/system_wide_org_capture/
@@ -1136,7 +1135,6 @@
 
       #+begin_src elisp
 	(use-package ol-notmuch)
-	(setq org-capture-templates nil)
 	(setq org-capture-templates
 	      (append
 	       '(("M" "Mail")
