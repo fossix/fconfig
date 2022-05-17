@@ -168,24 +168,31 @@ the CLI and emacs interface."))
     (widget-insert "        ")))
 
 
-(defun fconfig/notmuch-hello-insert-searches ()
+(defun fconfig/notmuch-hello-insert-others ()
   "Insert the saved-searches section."
-  (widget-insert (propertize "New     Total      Key  List\n" 'face 'my-notmuch-hello-header-face))
+  (widget-insert (propertize "New     Total         List\n" 'face 'my-notmuch-hello-header-face))
   (mapc (lambda (elem)
           (when elem
             (let* ((q_tot (plist-get elem :query))
                    (q_new (concat q_tot " AND tag:unread"))
                    (n_tot (fconfig/notmuch-count-query q_tot))
                    (n_new (fconfig/notmuch-count-query q_new)))
-              (fconfig/notmuch-hello-query-insert n_new q_new elem)
-              (fconfig/notmuch-hello-query-insert n_tot q_tot elem)
-              (widget-insert "   ")
-              (widget-insert (plist-get elem :key))
-              (widget-insert "    ")
-              (widget-insert (plist-get elem :name))
-              (widget-insert "\n"))))
+              (if (string-empty-p q_tot)
+                  (widget-insert (plist-get elem :name))
+                (progn
+                  (fconfig/notmuch-hello-query-insert n_new q_new elem)
+                  (fconfig/notmuch-hello-query-insert n_tot q_tot elem)
+                  (widget-insert "   ")
+                  (widget-insert (propertize (format "%2s" (plist-get elem :key)) 'face 'my-notmuch-hello-key-face))
+                  (widget-insert " ")
+                  (widget-insert (format "%s" (plist-get elem :name)))
+                  (widget-insert "\n"))))))
+        santosh/mail-others))
 
-        notmuch-saved-searches))
+(defun fconfig/notmuch-hello-insert-important ()
+  "Insert the saved-searches section."
+  (widget-insert (propertize "Frequent & Important\n" 'face 'my-notmuch-hello-header-important-face))
+  (notmuch-hello-insert-buttons (notmuch-hello-query-counts santosh/mail-important)))
 
 (defun fconfig/notmuch-hello-insert-recent-searches ()
   "Insert recent searches."
@@ -227,9 +234,25 @@ the CLI and emacs interface."))
     nil))
 
 (defface my-notmuch-hello-header-face
-  '((t :foreground "white"
-       :background "#0088FC"
+  '((t :foreground "DeepSkyBlue"
+       :background "#393939"
+       :extend t
        :weight bold))
+  "Font for the header in `my-notmuch-hello-insert-searches`."
+  :group 'notmuch-faces)
+
+(defface my-notmuch-hello-header-important-face
+  '((t :foreground "IndianRed"
+       :background "#393939"
+       :extend t
+       :weight bold))
+  "Font for the header in `my-notmuch-hello-insert-searches`."
+  :group 'notmuch-faces)
+
+(defface my-notmuch-hello-key-face
+  '((t :foreground "#494949"
+       :extend t
+       :weight normal))
   "Font for the header in `my-notmuch-hello-insert-searches`."
   :group 'notmuch-faces)
 

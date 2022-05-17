@@ -1067,7 +1067,7 @@
 	:ensure t
 	:config
 	(setq notmuch-show-logo nil
-	      notmuch-column-control 1.0
+	      notmuch-column-control t
 	      notmuch-mua-compose-in 'new-frame)
 
 	;; Load all the defuns which will be used later
@@ -1088,18 +1088,16 @@
         :commands (notmuch notmuch-hello)
         :config
 
-        (setq notmuch-hello-thousands-separator "," ;; Add a thousand separator
-              notmuch-column-control 1.0)           ;; don't display columns
+        (setq notmuch-hello-thousands-separator ",") ;; Add a thousand separator
         (general-def notmuch-hello-mode-map "h" 'consult-notmuch)
 
         (add-hook 'notmuch-hello-refresh-hook
                   (lambda ()
                     (whitespace-mode -1)))
-        ;; We add items later in reverse order with (add-to-list ...):
+
         (setq notmuch-hello-sections '())
-        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-recent-searches)
-        (add-to-list 'notmuch-hello-sections 'notmuch-hello-insert-search)
-        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-searches))
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-others)
+        (add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-important))
     #+end_src
 
     Let's autoload =mail-hist= and and =sendmail=
@@ -1113,17 +1111,18 @@
     to send. I lost the source where I copied the script from.
 
     #+begin_src elisp
-      (setq sendmail-program "~/bin/msmtpQ"
-	    message-sendmail-f-is-evil nil
-	    message-interactive t
-	    message-send-mail-function 'message-send-mail-with-sendmail
-	    notmuch-fcc-dirs nil
-	    mail-envelope-from 'header
-	    message-sendmail-envelope-from 'header
-	    message-signature nil
-	    message-kill-buffer-on-exit t
-	    message-mail-alias-type 'ecomplete
-	    message-auto-save-directory nil)
+      (setq sendmail-program "msmtpQ"
+            message-sendmail-f-is-evil t
+            message-interactive t
+            message-send-mail-function 'message-send-mail-with-sendmail
+            notmuch-fcc-dirs nil
+            message-sendmail-extra-arguments '("--read-envelope-from")
+            mail-envelope-from 'header
+            message-sendmail-envelope-from 'header
+            message-signature nil
+            message-kill-buffer-on-exit t
+            message-mail-alias-type 'ecomplete
+            message-auto-save-directory nil)
     #+end_src
 
 ***** Email Workflow

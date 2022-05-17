@@ -18,7 +18,6 @@
   (highlight-parentheses-mode)
   (configure-prettify-symbols-alist)
   (smartparens-mode)
-  (bind-key "<tab>" 'indent-for-tab-command)
   (when (featurep 'yasnippet)
     (yas-minor-mode)))
 
