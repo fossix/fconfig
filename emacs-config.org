@@ -1503,6 +1503,55 @@
 	(ansi-color-apply-on-region (point-min) (point-max)))
     #+end_src
 
+*** Dashboard
+    #+begin_src elisp
+      (use-package page-break-lines
+        :defer t
+        :diminish page-break-lines-mode)
+
+      (use-package dashboard
+        :ensure t
+        :config
+        (dashboard-setup-startup-hook)
+        (dashboard-modify-heading-icons '((recents . "file-text")
+                                          (bookmarks . "book")))
+        (setq
+         dashboard-set-init-info nil
+         dashboard-startup-banner 'official ;'"/home/santosh/Pictures/emacs_startup.png"
+         initial-buffer-choice #'(lambda () (get-buffer "*dashboard*"))
+         dashboard-set-navigator t
+         dashboard-items '((agenda . 5)
+                           (projects . 5)
+                           (recents   . 7)
+                           (bookmarks . 5))
+         dashboard-banner-logo-title (concat
+                                      ";; Happy hacking, " user-login-name " - Emacs ♥ you!\n\n")
+
+         dashboard-navigator-buttons
+              `(;; line1
+                (
+                 ;; Open kernel source directory
+                 (,(all-the-icons-faicon "linux" :height 1.0 :v-adjust 0.0)
+                  "Kernel Source"
+                  "Linux kernel source"
+                  (lambda (&rest _) (dired "~/dev/repos/kernels/linux")))
+                 ;; flagged messages flagged search
+                 ("★ Starred Mails" nil "Show flags" (lambda (&rest _) (notmuch-search "tag:flagged")) error))
+                (;; line 2
+                 (,(all-the-icons-faicon "home" :height 1.0 :v-adjust 0.0)
+                  "Homepage"
+                  "Browse homepage"
+                  (lambda (&rest _) (browse-url "http://fossix.org")))
+                 (,(all-the-icons-faicon "linkedin" :height 1.0 :v-adjust 0.0)
+                  "Linkedin"
+                  ""
+                  (lambda (&rest _) (browse-url "http://linkedin.com")))
+                 (,(all-the-icons-faicon "reddit" :height 1.0 :v-adjust 0.0)
+                  "Reddit"
+                  ""
+                  (lambda (&rest _) (browse-url "https://www.reddit.com")))))))
+    #+end_src
+
 *** Help
     #+begin_src elisp
       (global-set-key (kbd "C-h f") #'helpful-callable)
@@ -1628,7 +1677,6 @@
         (fconfig! packages)
         (fconfig! org-config)
         (fconfig! solar)
-        (fconfig! dashboard)
         (fconfig! progmode)
         (fconfig! mm)
         ;; (fconfig! finance)
