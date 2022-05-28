@@ -178,6 +178,10 @@
       #+begin_src elisp
         (winner-mode)
       #+end_src
+***** Fonts
+      #+begin_src elisp
+        (set-fontset-font t 'devanagari "Noto Serif Devanagiri")
+      #+end_src
 *** Completions
     #+begin_src elisp
       (use-package vertico
@@ -1507,7 +1511,14 @@
     #+begin_src elisp
       (use-package page-break-lines
         :defer t
-        :diminish page-break-lines-mode)
+        :diminish page-break-lines-mode
+        :hook (dashboard-after-initialize . page-break-lines-mode))
+
+      (setq gita-verses
+            '(
+              "अन्तवन्त इमे देहा नित्यस्योक्ता: शरीरिण:। अनाशिनोऽप्रमेयस्य तस्माद्युध्यस्व भारत ।।२ - १८।।"
+              "प्रजहाति यदा कामान्सर्वान्पार्थ मनोगतान्। आत्मन्येवात्मना तुष्ट: स्थितप्रज्ञस्तदोच्यते ।।२ - ५५।।"
+              ))
 
       (use-package dashboard
         :ensure t
@@ -1515,40 +1526,52 @@
         (dashboard-setup-startup-hook)
         (dashboard-modify-heading-icons '((recents . "file-text")
                                           (bookmarks . "book")))
+
         (setq
          dashboard-set-init-info nil
-         dashboard-startup-banner 'official ;'"/home/santosh/Pictures/emacs_startup.png"
+         dashboard-page-separator "\n\f\n"
+         dashboard-startup-banner "~/Downloads/flute-and-feather.png"
          initial-buffer-choice #'(lambda () (get-buffer "*dashboard*"))
          dashboard-set-navigator t
-         dashboard-items '((agenda . 5)
-                           (projects . 5)
-                           (recents   . 7)
-                           (bookmarks . 5))
-         dashboard-banner-logo-title (concat
-                                      ";; Happy hacking, " user-login-name " - Emacs ♥ you!\n\n")
-
+         dashboard-items '((projects . 10)
+                           (recents . 5)
+                           (bookmarks . 5)
+                           (registers . 5))
+         dashboard-banner-logo-title "Happy hacking ♥!"
+         dashboard-footer-icon (all-the-icons-octicon "book"
+                                                      :height 1.00
+                                                      :v-adjust 0.05)
+         dashboard-footer-messages gita-verses
+         dashboard-projects-switch-function 'projectile-switch-project-by-name
          dashboard-navigator-buttons
               `(;; line1
                 (
                  ;; Open kernel source directory
-                 (,(all-the-icons-faicon "linux" :height 1.0 :v-adjust 0.0)
-                  "Kernel Source"
-                  "Linux kernel source"
-                  (lambda (&rest _) (dired "~/dev/repos/kernels/linux")))
-                 ;; flagged messages flagged search
-                 ("★ Starred Mails" nil "Show flags" (lambda (&rest _) (notmuch-search "tag:flagged")) error))
+                 (,(all-the-icons-faicon "calendar" :height 1.0 :v-adjust 0.0)
+                  nil "Today's agenda and todo"
+                  (lambda (&rest _) (if (get-buffer "*Org Agenda*")
+                                   (switch-to-buffer-other-window "*Org Agenda*")
+                                 (org-agenda "a" "A"))))
+                 ;; Mails
+                 (,(all-the-icons-octicon "mail" :height 1.0 :v-adjust 0.0)
+                  ,(fconfig/notmuch-count-query "tag:unread and tag:inbox and tag:me") "Unread Mails"
+                  (lambda (&rest _) (notmuch-search "tag:unread and tag:inbox and tag:me")))
+                 (,(all-the-icons-octicon "star" :height 1.0 :v-adjust 0.0)
+                  ,(fconfig/notmuch-count-query "tag:flagged") "Starred Mails"
+                  (lambda (&rest _) (notmuch-search "tag:flagged"))))
+
                 (;; line 2
                  (,(all-the-icons-faicon "home" :height 1.0 :v-adjust 0.0)
-                  "Homepage"
+                  nil
                   "Browse homepage"
                   (lambda (&rest _) (browse-url "http://fossix.org")))
                  (,(all-the-icons-faicon "linkedin" :height 1.0 :v-adjust 0.0)
-                  "Linkedin"
-                  ""
+                  nil
+                  "Visit LinkedIn"
                   (lambda (&rest _) (browse-url "http://linkedin.com")))
                  (,(all-the-icons-faicon "reddit" :height 1.0 :v-adjust 0.0)
-                  "Reddit"
-                  ""
+                  nil
+                  "Go to Reddit"
                   (lambda (&rest _) (browse-url "https://www.reddit.com")))))))
     #+end_src
 
