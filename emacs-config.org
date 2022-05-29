@@ -1575,6 +1575,25 @@
                   (lambda (&rest _) (browse-url "https://www.reddit.com")))))))
     #+end_src
 
+*** Media
+***** Bongo
+      #+begin_src elisp
+        (use-package bongo
+          :ensure t)
+
+        (org-link-set-parameters "audio"
+                                 :follow #'org-play-media-file)
+
+        (defun org-play-media-file (path _)
+          (with-bongo-buffer
+            (bongo-insert-file (expand-file-name path))
+            (backward-char)
+            (bongo-play)))
+      #+end_src
+
+      #+RESULTS:
+      : org-play-media-file
+
 *** Help
     #+begin_src elisp
       (global-set-key (kbd "C-h f") #'helpful-callable)
