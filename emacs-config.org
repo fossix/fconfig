@@ -1530,7 +1530,7 @@
         (setq
          dashboard-set-init-info nil
          dashboard-page-separator "\n\f\n"
-         dashboard-startup-banner "~/Downloads/flute-and-feather.png"
+         dashboard-startup-banner "~/Pictures/flute-and-feather.png"
          initial-buffer-choice #'(lambda () (get-buffer "*dashboard*"))
          dashboard-set-navigator t
          dashboard-items '((projects . 10)
@@ -1573,6 +1573,12 @@
                   nil
                   "Go to Reddit"
                   (lambda (&rest _) (browse-url "https://www.reddit.com")))))))
+
+      (defun santosh/dashboard-open ()
+        (interactive)
+        (dashboard-insert-startupify-lists)
+        (switch-to-buffer "*dashboard*")
+        (dashboard-mode))
     #+end_src
 
 *** Media
@@ -1654,6 +1660,7 @@
 
       ;; type-break
       (general-def "M-S-<f10>" 'type-break-statistics)
+      (general-def "C-<f11>" 'santosh/dashboard-open)
 
       ;; notmuch
       (general-def "C-<f3>" 'notmuch)
