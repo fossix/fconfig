@@ -1062,6 +1062,15 @@
           "r" 'org-refile
           "m" 'org-timer-set-timer
           "p" 'org-present)
+
+***** Useful functions
+      Sometimes its useful to get a count of the sub-headings under a tree, like
+      getting the number of bugs I am working on.
+      #+begin_src elisp
+        (defun count-subheadings ()
+          (interactive)
+          (message (format "Number of sub-headings are: %d." (1-  (length (org-map-entries nil nil 'tree))))))
+
       #+end_src
 *** Mail
     Notmuch mail setup
