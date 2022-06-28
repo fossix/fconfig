@@ -46,7 +46,7 @@
     #+begin_src elisp
       (require 'fconfig)
 
-      (fconfig/theme! #'solarized-wombat-dark)
+      (fconfig/theme! #'doom-one)
 
       ;; this is ugly
       (setq notes-dir (expand-file-name "~/notes/"))
@@ -300,6 +300,89 @@
     #+begin_src elisp
       (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
     #+end_src
+
+***** Fundamental org-mode settings
+      #+begin_src elisp
+        (setq
+         org-hide-leading-stars t
+         org-clock-persist 'history
+         org-agenda-skip-deadline-if-done t
+         org-agenda-skip-scheduled-if-done t
+         org-agenda-skip-timestamp-if-done t
+         org-clock-idle-time 15
+         org-deadline-warning-days 7
+         org-agenda-skip-scheduled-if-deadline-is-shown t
+         org-return-follows-link t
+         org-enforce-todo-dependencies t
+         org-agenda-dim-blocked-tasks t
+         org-habit-preceding-days 7
+         org-habit-following-days 1
+         org-habit-show-done-always-green t
+         org-habit-show-habits-only-for-today nil
+         org-habit-graph-column 75
+         org-agenda-start-on-weekday 1
+         org-agenda-todo-ignore-deadlines t
+         org-agenda-include-diary t
+         org-insert-mode-line-in-empty-file t
+         org-use-speed-commands t
+         org-clock-out-remove-zero-time-clocks t
+         org-clock-out-when-done t
+         org-clock-persist-query-resume nil
+         org-clock-auto-clock-resolution (quote when-no-clock-is-running)
+         org-clock-report-include-clocking-task t
+         org-clock-history-length 20
+         org-drawers (quote ("PROPERTIES" "LOGBOOK"))
+         org-clock-into-drawer t
+         org-log-into-drawer t
+         org-log-state-notes-insert-after-drawers t
+         org-export-with-sub-superscripts "{}"
+         org-catch-invisible-edits t
+         org-outline-path-complete-in-steps nil
+         org-refile-use-outline-path t
+         org-log-note-clock-out nil
+         org-password-file "~/.passwds/credentials.gpg"
+         org-agenda-show-future-repeats 'next
+         org-agenda-sorting-strategy '((agenda habit-down time-up priority-down
+                                               effort-up category-up)
+                                       (todo priority-down)
+                                       (tags priority-down))
+
+         ;; a 8 hour, 5 day work week
+         org-duration-units
+         `(("min" . 1)
+           ("h" . 60)
+           ("d" . ,(* 60 8))
+           ("w" . ,(* 60 8 5))
+           ("m" . ,(* 60 8 5 4))
+           ("y" . ,(* 60 8 5 4 10)))
+
+         ;; Any single task cannot be spanning for weeks, otherwise it becomes a habit
+         ;; task. So keeping the maximum effort for a task to 1 week, for the worst
+         ;; case. Ordinarily a task (subtask mostly), shouldn't be spanning more than
+         ;; a day. So the maximum subtask effort is set to 7 hours.
+         org-global-properties (quote
+                                (("Effort_ALL" . "0:15 0:20 0:30 0:40 1:00 1:40 2:00 4:00 7:00 1d 2d 3d 4d 1w")))
+
+         org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM"
+         keep-clock-running nil
+
+         ;; Some calendar holiday tweaks
+         holiday-general-holidays nil
+         holiday-christian-holidays nil
+         holiday-islamic-holidays nil
+         holiday-hebrew-holidays nil
+         holiday-bahai-holidays nil
+         holiday-oriental-holidays nil
+         holiday-solar-holidays nil
+
+         org-latex-pdf-process
+         '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+           "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+           "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
+
+         org-format-latex-options (plist-put org-format-latex-options :scale 0.5)
+         org-clock-mode-line-total 'today)
+      #+end_src
 ***** Setup org modules
       The two most important org packages that we need are org-agenda
       and org-capture, set those up fist.
@@ -606,7 +689,7 @@
           :defer t
           :commands (santosh/org-roam-publish-to-hugo)
           :init
-          (setq org-hugo-base-dir (expand-file-name "~/dev/repos/forrest"))
+          (setq org-hugo-base-dir (expand-file-name "~/dev/repos/forest"))
           :config
           (defun santosh/note-modified? (orgfile)
             "Test if the orgfile is newer than the generated markdown file.
@@ -989,7 +1072,7 @@
                    (file+headline "todo.org" "Meetings/Appointments/Calls")
                    "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?")
 
-                  ("M" "Work meeting" entry
+                  ("w" "Work meeting" entry
                    (file+headline "work.org" "Meetings")
                    "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
 
@@ -1004,19 +1087,19 @@
 
                   ;; All journal and time tracking captures
                   ("j" "Journal log" plain (function org-journal-find-location)
-                   "*** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
+                   "** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
                    :jump-to-captured t :immediate-finish t)
 
                   ("c" "Work call" plain (function org-journal-find-location)
-                   "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
+                   "** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
                    :clock-in t :clock-resume t)
 
                   ("p" "Personal call" plain (function org-journal-find-location)
-                   "*** %(format-time-string org-journal-time-format)%^{Title} :time:call:\n%i%?"
+                   "** %(format-time-string org-journal-time-format)%^{Title} :time:call:\n%i%?"
                    :clock-in t :clock-resume t)
 
                   ("d" "Default template" plain (function org-journal-find-location)
-                   "*** %(format-time-string org-journal-time-format)%^{Title} :browser:%^g\n\n    Source: %:annotation\n\n%i"
+                   "** %(format-time-string org-journal-time-format)%^{Title} :browser:%^g\n\n    Source: %:annotation\n\n%i"
                    :empty-lines 1)))
 
           ;; system wide org-capture
@@ -1124,7 +1207,7 @@
     to send. I lost the source where I copied the script from.
 
     #+begin_src elisp
-      (setq sendmail-program "msmtpQ"
+      (setq sendmail-program "msmtp"
             message-sendmail-f-is-evil t
             message-interactive t
             message-send-mail-function 'message-send-mail-with-sendmail
@@ -1193,23 +1276,24 @@
 
       Bindings in the show mode map
       #+begin_src elisp
-	(general-def notmuch-show-mode-map "!" 'fconfig/notmuch-toggle-flagged)
-	(general-def notmuch-show-mode-map "#" 'fconfig/notmuch-toggle-unread)
-	(general-def notmuch-show-mode-map "<down>" 'next-line)
-	(general-def notmuch-show-mode-map "<left>" 'backward-char)
-	(general-def notmuch-show-mode-map "<right>" 'forward-char)
-	(general-def notmuch-show-mode-map "<up>" 'previous-line)
-	(general-def notmuch-show-mode-map "D" 'fconfig/notmuch-delete-thread)
-	(general-def notmuch-show-mode-map "\C-c\C-o" 'browse-url-at-point)
-	(general-def notmuch-show-mode-map "b" 'fconfig/notmuch-bounce-message)
-	(general-def notmuch-show-mode-map "d" 'fconfig/notmuch-delete-message)
-	(general-def notmuch-show-mode-map "," 'ss/mail-follow-up)
-	(general-def notmuch-show-mode-map "]" 'ss/mail-read-later)
-	(general-def notmuch-show-mode-map "X"
-	  '(lambda ()
-	     (interactive)
-	     (fconfig/notmuch-export-patch (notmuch-show-get-message-id)
-					   (notmuch-show-get-prop :headers))))
+        (general-def notmuch-show-mode-map "!" 'fconfig/notmuch-toggle-flagged)
+        (general-def notmuch-show-mode-map "#" 'fconfig/notmuch-toggle-unread)
+        (general-def notmuch-show-mode-map "<down>" 'next-line)
+        (general-def notmuch-show-mode-map "<left>" 'backward-char)
+        (general-def notmuch-show-mode-map "<right>" 'forward-char)
+        (general-def notmuch-show-mode-map "<up>" 'previous-line)
+        (general-def notmuch-show-mode-map "D" 'fconfig/notmuch-delete-thread)
+        (general-def notmuch-show-mode-map "\C-c\C-o" 'browse-url-at-point)
+        (general-def notmuch-show-mode-map "b" 'notmuch-show-browse-urls)
+        (general-def notmuch-show-mode-map "B" 'fconfig/notmuch-bounce-message)
+        (general-def notmuch-show-mode-map "d" 'fconfig/notmuch-delete-message)
+        (general-def notmuch-show-mode-map "," 'ss/mail-follow-up)
+        (general-def notmuch-show-mode-map "]" 'ss/mail-read-later)
+        (general-def notmuch-show-mode-map "X"
+          '(lambda ()
+             (interactive)
+             (fconfig/notmuch-export-patch (notmuch-show-get-message-id)
+                                           (notmuch-show-get-prop :headers))))
       #+end_src
 
       Bindings in the tree mode (threaded view)
@@ -1626,13 +1710,13 @@
       ;;; switch between light and dark themes
       (general-def "C-c l t l" '(lambda()
                                   (interactive)
-                                  (disable-theme 'solarized-wombat-dark)
-                                  (load-theme 'solarized-selenized-white t)))
+                                  (disable-theme 'doom-one)
+                                  (load-theme 'doom-opera-light t)))
 
       (general-def "C-c l t d" '(lambda()
                                   (interactive)
-                                  (disable-theme 'solarized-selenized-white)
-                                  (load-theme 'solarized-wombat-dark t)))
+                                  (disable-theme 'doom-opera-light)
+                                  (load-theme 'doom-one t)))
       ;; searching and jumping
       (general-create-definer fconfig-search-bind
         :prefix "M-g"

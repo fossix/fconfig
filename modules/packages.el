@@ -60,7 +60,15 @@
   :init
   (progn
     (autoload 'ledger-mode "ledger-mode" nil t)
-    (setq ledger-schedule-file (concat notes-dir "/santosh/finance/ledger-schedule"))))
+    (setq ledger-schedule-file (concat notes-dir "/santosh/finance/ledger-schedule")))
+  :config
+  (use-package company-ledger
+    :ensure company
+    :after (company)
+    :init
+    (add-to-list 'company-backends 'company-ledger)
+    :config
+    (setq company-ledger-date-regexp "^[0-9]\\{2\\}/[0-9]\\{2\\}/[0-9]\\{4\\}")))
 
 (use-package gas-mode
   :mode "\\.S'")
