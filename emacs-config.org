@@ -1020,7 +1020,7 @@
       #+end_src
 
       Setup category icons
-      #+begin_src elisp "results none
+      #+begin_src elisp :results none
         (use-package all-the-icons
           :ensure t)
 
@@ -1145,7 +1145,7 @@
           "r" 'org-refile
           "m" 'org-timer-set-timer
           "p" 'org-present)
-
+      #+end_src
 ***** Useful functions
       Sometimes its useful to get a count of the sub-headings under a tree, like
       getting the number of bugs I am working on.
