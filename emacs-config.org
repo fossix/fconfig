@@ -380,7 +380,7 @@
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
 
-         org-format-latex-options (plist-put org-format-latex-options :scale 0.5)
+         org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
          org-clock-mode-line-total 'today)
       #+end_src
 ***** Setup org modules
@@ -679,9 +679,6 @@
               "l" 'org-transclusion-live-sync-start
               "s" 'org-store-link))
         #+end_src
-
-        #+RESULTS:
-        : t
 
 ***** Publishing notes
       #+begin_src elisp
@@ -1053,6 +1050,8 @@
           (add-hook 'org-capture-mode-hook
                     (lambda ()
                       (setq-local org-tag-alist (org-global-tags-completion-table))))
+          (add-hook 'org-capture-mode-hook (lambda () (org-align-tags t)))
+
           (defun org-journal-find-location ()
             ;; Open today's journal, but specify a non-nil prefix argument in order to
             ;; inhibit inserting the heading; org-capture will insert the heading.
@@ -1089,6 +1088,10 @@
                   ("j" "Journal log" plain (function org-journal-find-location)
                    "** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
                    :jump-to-captured t :immediate-finish t)
+
+                  ("b" "Take a break!" plain (function org-journal-find-location)
+                   "** %(format-time-string org-journal-time-format)%^{Title} :log:time:\n%i%?"
+                   :clock-in t :clock-resume t)
 
                   ("c" "Work call" plain (function org-journal-find-location)
                    "** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
@@ -1128,6 +1131,7 @@
             (switch-to-buffer (get-buffer-create "*scratch*"))
             (org-capture)))
       #+end_src
+
 ***** Keybindings
       #+begin_src elisp
         (fconfig-org-config-bind
@@ -1689,9 +1693,6 @@
             (backward-char)
             (bongo-play)))
       #+end_src
-
-      #+RESULTS:
-      : org-play-media-file
 
 *** Help
     #+begin_src elisp
