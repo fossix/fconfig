@@ -947,8 +947,9 @@
                                   (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
                          (org-agenda-prefix-format " %i % s")))
 
-                  (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\"&TODO<>\"PROG\""
+                  (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\""
                              ((org-agenda-overriding-header "")
+                              (org-agenda-compact-blocks t)
                               (org-agenda-skip-function
                                (progn
                                  '(or
