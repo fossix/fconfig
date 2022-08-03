@@ -692,10 +692,20 @@
             "Test if the orgfile is newer than the generated markdown file.
         The markdown file is generated from the org-hugo-base-dir
         variable."
-            (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base orgfile) ".md"))))
+            (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name orgfile org-roam-directory)) (file-name-base orgfile) ".md"))))
               (or (not (file-exists-p mdfile))
                   (not (time-less-p (nth 5 (file-attributes orgfile))
                                   (nth 5 (file-attributes mdfile)))))))
+
+          (defun santosh/mv-journal-md-to-subdir ()
+            "ox-hugo doesn't create sub-directories, so move the journal files
+        into a subdirectory in org-hugo-base-dir"
+            (let ((journal-files (org-journal--list-files)))
+              (dolist (file journal-files)
+                (let ((exportedmd (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base file) ".md")))
+                      (mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name file org-roam-directory)) (file-name-base file) ".md"))))
+                  (if  (file-exists-p exportedmd)
+                    (rename-file exportedmd mdfile t))))))
 
           (defun santosh/org-roam-publish-to-hugo (arg)
             "Publish the org-roam files into hugo markdown using ox-hugo exporter.
@@ -708,7 +718,8 @@
               (dolist (file notes-files)
                 (if (or (santosh/note-modified? file) arg)
                     (with-current-buffer (find-file-noselect file)
-                      (org-hugo-export-wim-to-md)))))))
+                      (org-hugo-export-wim-to-md)))))
+            (santosh/mv-journal-md-to-subdir)))
       #+end_src
 
 ***** Agenda
