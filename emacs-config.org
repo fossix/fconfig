@@ -1403,6 +1403,11 @@
       Add a keybinding for recompile
       #+begin_src elisp
         (general-def "C-c RET" 'recompile)
+
+        ;;; Add gtags to xref backend
+        (use-package gxref
+          :config
+          (add-to-list 'xref-backend-functions 'gxref-xref-backend))
       #+end_src
 *** Shell
     Setup completion in eshell
