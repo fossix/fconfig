@@ -6,6 +6,7 @@
   :config
   (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets" t)
   (use-package yasnippet-snippets
+    :ensure t
     :config (yasnippet-snippets-initialize)))
 
 ;; ace jump
@@ -103,6 +104,7 @@
   :diminish flyspell-mode)
 
 (use-package ace-isearch
+  :ensure t
   :diminish
   :defer 3
   :init (global-ace-isearch-mode 1))
@@ -230,6 +232,8 @@
 
 (use-package writegood-mode
   :defer t)
+
+(use-package smartparens :ensure t)
 
 ;;; diminish minor modes from mode-line-mode-menu
 (diminish 'abbrev-mode)

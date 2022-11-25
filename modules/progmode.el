@@ -65,6 +65,7 @@
                   (font-lock-mode 1)))))
 
 (use-package go-mode
+  :ensure t
   :hook ((before-save . gofmt-before-save)
          (go-mode . go-eldoc-setup))
   :mode ("\\.go\\'" . go-mode)
@@ -72,20 +73,23 @@
   (setenv "GOPATH" (expand-file-name "~/dev/gws"))
   (add-to-list 'exec-path (expand-file-name "~/gws/bin"))
   (set (make-local-variable 'compile-command) "go build -v")
-  (use-package go-eldoc))
+  (use-package go-eldoc :ensure t))
 
 (use-package rustic
+  :ensure t
   :mode ("\\.rs\\'" . rustic-mode)
   :config
   (setq rustic-format-on-save t))
 
 ;; c-eldoc
 (use-package c-eldoc
+  :ensure t
   :defer 5
   :hook (c-mode . c-turn-on-eldoc-mode)
   :diminish
   :config (setq c-eldoc-includes "-I./ -I../ -I/usr/include"))
 
 (use-package slime-autoloads
+  :ensure t
   :defer 5
   :config (setq inferior-lisp-program "/usr/bin/clisp"))
