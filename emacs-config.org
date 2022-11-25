@@ -32,12 +32,15 @@
       (general-unbind "C-x r")                ; unbind bookmark and register
 
       (general-create-definer fconfig-C-c-bind
-	:prefix "C-c"
-	:name "Global shortcuts with C-c prefix")
+        :prefix "C-c"
+        :name "Global shortcuts with C-c prefix")
 
       (general-create-definer fconfig-C-x-bind
-	:prefix "C-x"
-	:name "Global shortcuts with C-x prefix")
+        :prefix "C-x"
+        :name "Global shortcuts with C-x prefix")
+
+      ;;; inhibit cl warning
+      (setq byte-compile-warnings '(cl-functions))
     #+end_src
 
     Load the config manager =fconfig=, so it will be easier to load utility
@@ -45,8 +48,6 @@
 
     #+begin_src elisp
       (require 'fconfig)
-
-      (fconfig/theme! #'doom-one)
 
       ;; this is ugly
       (setq notes-dir (expand-file-name "~/notes/"))
@@ -380,7 +381,7 @@
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
 
-         org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
+         org-format-latex-options (plist-put org-format-latex-options :scale 1.0)
          org-clock-mode-line-total 'today)
       #+end_src
 ***** Setup org modules
@@ -424,7 +425,7 @@
            (plantuml . t)
            (calc . t)))
 
-        (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml-1.2022.4.jar")
+        (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml.jar")
               org-ditaa-jar-path (expand-file-name "~/bin/ditaa-0.11.0-standalone.jar")
               ;; Don't ask when I evaluate code
               org-confirm-babel-evaluate nil)
@@ -467,6 +468,63 @@
       #+begin_src elisp
         (use-package ox-reveal)
       #+end_src
+
+******* For using beamer
+        #+begin_src elisp
+          ; allow for export=>beamer by placing
+
+          ;; #+LaTeX_CLASS: beamer in org files
+          (unless (boundp 'org-export-latex-classes)
+            (setq org-export-latex-classes nil))
+          (add-to-list 'org-export-latex-classes
+            ;; beamer class, for presentations
+            '("beamer"
+               "\\documentclass[11pt]{beamer}\n
+                \\mode<{{{beamermode}}}>\n
+                \\usetheme{{{{beamertheme}}}}\n
+                \\usecolortheme{{{{beamercolortheme}}}}\n
+                \\beamertemplateballitem\n
+                \\setbeameroption{show notes}
+                \\usepackage[utf8]{inputenc}\n
+                \\usepackage[T1]{fontenc}\n
+                \\usepackage{hyperref}\n
+                \\usepackage{color}
+                \\usepackage{listings}
+                \\lstset{numbers=none,language=[ISO]C++,tabsize=4,
+            frame=single,
+            basicstyle=\\small,
+            showspaces=false,showstringspaces=false,
+            showtabs=false,
+            keywordstyle=\\color{blue}\\bfseries,
+            commentstyle=\\color{red},
+            }\n
+                \\usepackage{verbatim}\n
+                \\institute{{{{beamerinstitute}}}}\n
+                 \\subject{{{{beamersubject}}}}\n"
+
+               ("\\section{%s}" . "\\section*{%s}")
+
+               ("\\begin{frame}[fragile]\\frametitle{%s}"
+                 "\\end{frame}"
+                 "\\begin{frame}[fragile]\\frametitle{%s}"
+                 "\\end{frame}")))
+
+            ;; letter class, for formal letters
+
+            (add-to-list 'org-export-latex-classes
+
+            '("letter"
+               "\\documentclass[11pt]{letter}\n
+                \\usepackage[utf8]{inputenc}\n
+                \\usepackage[T1]{fontenc}\n
+                \\usepackage{color}"
+
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+        #+end_src
 
 ***** Note taking
 ******* org-roam
@@ -525,7 +583,6 @@
           (general-def org-mode-map "C-M-i" 'completion-at-point)
 
           (use-package org-roam-ui
-            :load-path "~/.emacs.d/site-lisp/org-roam-ui"
             :after org-roam
             :config
             (setq org-roam-ui-sync-theme t
@@ -585,10 +642,12 @@
                   org-journal-file-format "%Y%m%d.org")
             :config
             (defun santosh/insert-journal-header (time)
-              (concat "#+title: " (format-time-string "Week %W (%d %B %Y)" time)
-                      "\n:PROPERTIES:"
-                      "\n:ID: "   (org-id-new)
-                      "\n:END:"))
+              (concat ":PROPERTIES:\n"
+                      ":ID:\n "   (org-id-new)
+                      ":END:\n"
+                      "#+title: " (format-time-string "Week %W (%d %B %Y)" time)
+                      "\n"
+                      ))
 
             (setq org-journal-dir "~/notes/org/roam/journal/"
                   org-journal-file-type 'weekly
@@ -678,6 +737,17 @@
               "o" 'org-transclusion-open-source
               "l" 'org-transclusion-live-sync-start
               "s" 'org-store-link))
+        #+end_src
+
+******* Utilities
+        While taking notes, avoid splitting the frames, which can be distracting
+        sometimes.
+
+        #+begin_src elisp
+          (defun santosh/notes-mode ()
+            (interactive)
+            (org-roam-buffer-toggle)
+            (set-frame-parameter nil 'unsplittable t))
         #+end_src
 
 ***** Publishing notes
@@ -892,7 +962,7 @@
           "Checks if headline update is older than DAYS.
         If no timestamps, then return nil."
           (interactive)
-          (let ((next-headline (save-excursion (or (org-end-of-subtree t) (poin-max)))))
+          (let ((next-headline (save-excursion (or (org-end-of-subtree t) (point-max)))))
             (let ((timestamp (ignore-errors (santosh/org-logbook-last-state-update next-headline))))
               (if timestamp (if (>= (org-time-stamp-to-now timestamp) (- days))
                                 next-headline)
@@ -958,7 +1028,10 @@
                   (tags-todo "bug/TODO"
                              ((org-agenda-overriding-header "Issues getting stale (> 2)")
                               (org-agenda-prefix-format "%i %s")
-                              (org-agenda-skip-function '(santosh/since-last-update 2))))))
+                              (org-agenda-skip-function (progn '(or
+                                                                 (santosh/since-last-update 2)
+                                                                 (org-agenda-skip-entry-if 'scheduled))
+                                                                 ))))))
 
                 ("p" "Pending todos"
                  ((alltodo ""
@@ -1018,8 +1091,19 @@
                      '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
                           (org-agenda-skip-entry-if 'scheduled 'deadline 'todo
                                                     '("DONE" "CANCELLED" "CLOSED"))
-                          (bh/skip-habits))))
+                          (org-agenda-skip-subtree-if 'regexp ":habit:"))))
                   (org-agenda-files org-agenda-files)))
+
+                ("n" tags-todo "-Work-bug-Personal-bill"
+                 ((org-agenda-sorting-strategy
+                           '(priority-down todo-state-down effort-up category-keep))
+                  (org-agenda-skip-function
+                   (progn
+                     '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
+                          (org-agenda-skip-entry-if 'scheduled 'deadline
+                                                    '("DONE" "NEXT" "PROG"))
+                          (org-agenda-skip-subtree-if 'regexp ":habit:"))))
+                 ))
 
                 ("X" agenda ""
                  ((org-agenda-prefix-format " [ ] ")
@@ -1145,6 +1229,12 @@
       #+end_src
 
 ***** Keybindings
+      #+begin_src elisp
+        (use-package which-key-posframe
+          :ensure t
+          :init (which-key-posframe-mode 1))
+      #+end_src
+
       #+begin_src elisp
         (fconfig-org-config-bind
           "I" 'punch-in
@@ -1716,8 +1806,57 @@
       (global-set-key (kbd "C-h f") #'helpful-callable)
       (global-set-key (kbd "C-h v") #'helpful-variable)
       (global-set-key (kbd "C-h k") #'helpful-key)
-
     #+end_src
+*** Quick websearch
+    #+begin_src elisp
+      (use-package engine-mode
+        :ensure t
+        :config
+        (defengine github
+          "https://github.com/search?ref=simplesearch&q=%s"
+          :keybinding "i")
+
+        (defengine google
+          "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+          :keybinding "g")
+
+        (defengine duckduckgo
+          "https://duckduckgo.com/?q=%s"
+          :keybinding "d")
+
+        (defengine amazon
+          "https://www.amazon.in/s?k=%s"
+          :keybinding "a")
+
+        (defengine youtube
+          "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+          :keybinding "y")
+
+        (defengine golang
+          "https://pkg.go.dev/search?q=%s"
+          :keybinding "l")
+
+        (defengine rust
+          "https://docs.rs/releases/search?query=%s"
+          :keybinding "r")
+
+        (defengine stack-overflow
+          "https://stackoverflow.com/search?q=%s"
+          :keybinding "s")
+
+        (defengine rfcs
+          "http://pretty-rfc.herokuapp.com/search?q=%s"
+          :keybinding "c")
+
+        (defengine nvbug
+          "https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%s"
+          :keybinding "n")
+
+        (defengine gitlab
+          "https://gitlab.com/search?search=%s"
+          :keybinding "b"))
+    #+end_src
+
 *** General Keybindings
     Enable use of arrows in read-mode
 
