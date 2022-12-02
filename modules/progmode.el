@@ -89,7 +89,7 @@
   :diminish
   :config (setq c-eldoc-includes "-I./ -I../ -I/usr/include"))
 
-(use-package slime-autoloads
+(use-package slime
   :ensure t
   :defer 5
   :config (setq inferior-lisp-program "/usr/bin/clisp"))

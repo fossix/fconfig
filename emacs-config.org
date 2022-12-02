@@ -51,8 +51,6 @@
 
       (use-package doom-themes :ensure t)
 
-      (fconfig/theme! #'doom-one)
-
       ;; this is ugly
       (setq notes-dir (expand-file-name "~/notes/"))
 
@@ -411,25 +409,26 @@
 
       Some of the languages that I use with ~org-babel~.
       #+begin_src elisp
-	(use-package ob-go :ensure t)
-	(use-package ob-rust :ensure t)
+        (use-package ob-go :ensure t)
+        (use-package ob-rust :ensure t)
+        (use-package gnuplot :ensure t)
 
-	(org-babel-do-load-languages
-	 'org-babel-load-languages
-	 '((emacs-lisp . t)
-	   (python . t)
-	   (go . t)
-	   (dot . t)
-	   (ditaa . t)
-	   (latex . t)
-	   (ledger .t)
-	   (shell . t)
-	   (rust . t)
-	   (scheme . t)
-	   (gnuplot . t)
-	   (sql . t)
-	   (plantuml . t)
-	   (calc . t)))
+        (org-babel-do-load-languages
+         'org-babel-load-languages
+         '((emacs-lisp . t)
+           (python . t)
+           (go . t)
+           (dot . t)
+           (ditaa . t)
+           (latex . t)
+           (ledger .t)
+           (shell . t)
+           (rust . t)
+           (scheme . t)
+           (gnuplot . t)
+           (sql . t)
+           (plantuml . t)
+           (calc . t)))
 
         (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml.jar")
               org-ditaa-jar-path (expand-file-name "~/bin/ditaa-0.11.0-standalone.jar")
@@ -761,44 +760,45 @@
 
 ***** Publishing notes
       #+begin_src elisp
-	(use-package ox-hugo
-	  :defer t
-	  :commands (santosh/org-roam-publish-to-hugo)
-	  :init
-	  (setq org-hugo-base-dir (expand-file-name "~/dev/repos/forest"))
-	  :config
-	  (defun santosh/note-modified? (orgfile)
-	    "Test if the orgfile is newer than the generated markdown file.
-	The markdown file is generated from the org-hugo-base-dir
-	variable."
-	    (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name orgfile org-roam-directory)) (file-name-base orgfile) ".md"))))
-	      (or (not (file-exists-p mdfile))
-		  (not (time-less-p (nth 5 (file-attributes orgfile))
-				  (nth 5 (file-attributes mdfile)))))))
+        (use-package ox-hugo
+          :ensure t
+          :defer t
+          :commands (santosh/org-roam-publish-to-hugo)
+          :init
+          (setq org-hugo-base-dir (expand-file-name "~/dev/repos/forest"))
+          :config
+          (defun santosh/note-modified? (orgfile)
+            "Test if the orgfile is newer than the generated markdown file.
+        The markdown file is generated from the org-hugo-base-dir
+        variable."
+            (let ((mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name orgfile org-roam-directory)) (file-name-base orgfile) ".md"))))
+              (or (not (file-exists-p mdfile))
+                  (not (time-less-p (nth 5 (file-attributes orgfile))
+                                  (nth 5 (file-attributes mdfile)))))))
 
-	  (defun santosh/mv-journal-md-to-subdir ()
-	    "ox-hugo doesn't create sub-directories, so move the journal files
-	into a subdirectory in org-hugo-base-dir"
-	    (let ((journal-files (org-journal--list-files)))
-	      (dolist (file journal-files)
-		(let ((exportedmd (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base file) ".md")))
-		      (mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name file org-roam-directory)) (file-name-base file) ".md"))))
-		  (if  (file-exists-p exportedmd)
-		    (rename-file exportedmd mdfile t))))))
+          (defun santosh/mv-journal-md-to-subdir ()
+            "ox-hugo doesn't create sub-directories, so move the journal files
+        into a subdirectory in org-hugo-base-dir"
+            (let ((journal-files (org-journal--list-files)))
+              (dolist (file journal-files)
+                (let ((exportedmd (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base file) ".md")))
+                      (mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name file org-roam-directory)) (file-name-base file) ".md"))))
+                  (if  (file-exists-p exportedmd)
+                    (rename-file exportedmd mdfile t))))))
 
-	  (defun santosh/org-roam-publish-to-hugo (arg)
-	    "Publish the org-roam files into hugo markdown using ox-hugo exporter.
-	The function exports only modified files by default; call the
-	function with a prefix key to force re-generation of all org-roam
-	files, regardless of the file modification time."
+          (defun santosh/org-roam-publish-to-hugo (arg)
+            "Publish the org-roam files into hugo markdown using ox-hugo exporter.
+        The function exports only modified files by default; call the
+        function with a prefix key to force re-generation of all org-roam
+        files, regardless of the file modification time."
 
-	    (interactive "P")
-	    (let ((notes-files (org-roam-list-files)))
-	      (dolist (file notes-files)
-		(if (or (santosh/note-modified? file) arg)
-		    (with-current-buffer (find-file-noselect file)
-		      (org-hugo-export-wim-to-md)))))
-	    (santosh/mv-journal-md-to-subdir)))
+            (interactive "P")
+            (let ((notes-files (org-roam-list-files)))
+              (dolist (file notes-files)
+                (if (or (santosh/note-modified? file) arg)
+                    (with-current-buffer (find-file-noselect file)
+                      (org-hugo-export-wim-to-md)))))
+            (santosh/mv-journal-md-to-subdir)))
       #+end_src
 
 ***** Agenda
