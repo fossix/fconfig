@@ -1,4 +1,5 @@
 #+STARTUP: overview
+#+OPTIONS: ^:{}
 #+header-args: :noweb yes
 
 * Emacs Config
@@ -693,12 +694,6 @@
                                                               '(:immediate-finish t)))))
                 (apply #'org-roam-node-insert args))))
 
-          (defun santosh/org-roam-node-find ()
-            "Don't prompt for a roam template, use the first entry from the template list"
-            (interactive)
-            (let ((org-roam-capture-templates (list (append (car org-roam-capture-templates)))))
-              (org-roam-node-find)))
-
           (add-to-list 'display-buffer-alist
                        '("\\*org-roam\\*"
                          (display-buffer-in-side-window)
@@ -742,18 +737,8 @@
                 '(
                   ("d" "default" plain "%?"
                    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n\n"))
-
-                  ;; Some random things that I would like to keep
-                  ("r" "random" plain "%?"
-                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :random:\n")
+                                      "#+title: ${title}\n\n")
                    :jump-to-captured)
-
-                  ;; Personal thoughts and ideas, not to be exported
-                  ("p" "personal" plain "%?"
-                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :personal:noexport:\n"))
 
                   ("b" "book quote" plain "- %^{Summary} [page: %^{Page number}]\n  #+begin_quote\n  %^{Quote}\n  #+end_quote\n\n%?"
                    :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
@@ -765,12 +750,58 @@
                                       "#+title: ${title}\n#+filetags: :book:\n\n")
                    :empty-lines 1)))
 
+          (setq org-roam-dailies-capture-templates
+                (let ((head
+                       (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n"
+                               "* Tasks [/]\n\n* Dump\n\n* Thoughts/Ideas\n\n* Journal\n")))
+                  `(("d" "default" plain "%?"
+                     :target (file+head "%<%Y-%m-%d>.org" ,head))
+                    ("t" "Task" item
+                     "  [ ] %A %?"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
+                    ("j" "Journal" entry
+                     "* %U %^{Journal Entry}"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
+                     :immediate-finish t)
+                    ("c" "Call" entry
+                     "* %U %^{Title} :call:%^g\n"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
+                     :clock-in t :clock-resume t)
+                    ("w" "Work todo" entry
+                     "*** TODO %^{Do-what?} :work:\n"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Dump")))
+                    ("p" "Personal todo" entry
+                     "*** TODO %^{Do-what?}\n"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Dump")))
+                    ("i" "Thoughts/Ideas" entry "* %^{Summary}\n%?"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Thoughts/Ideas"))
+                     :jump-to-captured))))
+
+          (defun santosh/org-roam-node-find ()
+            "Don't prompt for a roam template, use the first entry from the template list"
+            (interactive)
+            (let ((org-roam-capture-templates (list (append (car org-roam-capture-templates)))))
+              (org-roam-node-find)))
+
+          (defun santosh/org-roam-dailies-goto-today ()
+            "Don't prompt for a roam template, use the first entry from the template list"
+            (interactive)
+            (let ((org-roam-dailies-capture-templates (list (append (car org-roam-dailies-capture-templates)))))
+              (org-roam-dailies-goto-today)))
+
+          (defun santosh/org-roam-dailies-goto-date ()
+            "Don't prompt for a roam template, use the first entry from the template list"
+            (interactive)
+            (let ((org-roam-dailies-capture-templates (list (append (car org-roam-dailies-capture-templates)))))
+              (org-roam-dailies-goto-date)))
+
           (fconfig-notes-bind
             "l" 'org-roam-buffer-toggle
             "f" 'santosh/org-roam-node-find
-            "d" 'org-roam-dailies-capture-today
-            "t" 'org-roam-dailies-goto-today
-            "D" 'org-roam-dailies-goto-date
+            "T" 'org-roam-dailies-capture-today
+            "t" 'santosh/org-roam-dailies-goto-today
+            "D" 'org-roam-dailies-capture-date
+            "d" 'santosh/org-roam-dailies-goto-date
             "c" 'org-roam-capture
             "g" 'org-roam-graph
             "u" 'org-roam-ui-mode
@@ -1283,23 +1314,7 @@
 		  ;; Entry for random quote for the day file
 		  ("u" "Quotes" entry
 		   (file+headline (concat notes-dir "/quotes") "Quotes")
-		   "* %^{Quote} -- %^{Author}")
-
-		  ("b" "Take a break!" plain (function org-journal-find-location)
-		   "** %(format-time-string org-journal-time-format)%^{Title} :log:time:\n%i%?"
-		   :clock-in t :clock-resume t)
-
-		  ("c" "Work call" plain (function org-journal-find-location)
-		   "** %(format-time-string org-journal-time-format)%^{Title} :time:call:work:\n%i%?"
-		   :clock-in t :clock-resume t)
-
-		  ("p" "Personal call" plain (function org-journal-find-location)
-		   "** %(format-time-string org-journal-time-format)%^{Title} :time:call:\n%i%?"
-		   :clock-in t :clock-resume t)
-
-		  ("d" "Default template" plain (function org-journal-find-location)
-		   "** %(format-time-string org-journal-time-format)%^{Title} :browser:%^g\n\n    Source: %:annotation\n\n%i"
-		   :empty-lines 1)))
+		   "* %^{Quote} -- %^{Author}")))
 
 	  ;; system wide org-capture
 	  ;; https://www.reddit.com/r/emacs/comments/74gkeq/system_wide_org_capture/
