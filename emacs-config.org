@@ -534,6 +534,30 @@
               org-confirm-babel-evaluate nil)
       #+end_src
 
+      Show colors in the results block
+      #+begin_src elisp
+        (defun ek/babel-ansi ()
+          (when-let ((beg (org-babel-where-is-src-block-result nil nil)))
+            (save-excursion
+              (goto-char beg)
+              (when (looking-at org-babel-result-regexp)
+                (let ((end (org-babel-result-end))
+                      (ansi-color-context-region nil))
+                  (ansi-color-apply-on-region beg end))))))
+
+        (add-hook 'org-babel-after-execute-hook 'ek/babel-ansi)
+      #+end_src
+
+***** Export Settings
+      Add a horizantal line before the footer when exporting to HTML
+
+      #+begin_src elisp
+        (setq org-html-postamble
+              '((
+                 "en" "<hr/><p class=\"author\">Author: %a (%e)</p>\n<p class=\"date\">Date: %d</p>\n<p class=\"creator\">%c</p>\n<p class=\"validation\">%v</p>"))
+              )
+
+      #+end_src
 ***** Presentation using org-mode
       The slides for a presentation are usually generated from org file, through
       beamer and $\LaTeX$. Instead of doing that, =org-present= combined with
