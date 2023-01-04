@@ -654,9 +654,9 @@
         #+end_src
 
 ***** Note taking
+      Everything related to note taking, currently ~org-roam~.
 ******* org-roam
 	#+begin_src elisp
-          ;; Everything related to note taking, currently org-roam
           (general-create-definer fconfig-notes-bind
             :prefix "C-c n"
             :name "Notes actions"
@@ -666,18 +666,21 @@
             :ensure t
             :after org-roam)
 
+          (use-package emacsql-sqlite3
+            :ensure t)
+
           (use-package org-roam
             :ensure t
+            :after emacsql-sqlite3
             :init
             (setq org-roam-v2-ack t
                   org-roam-directory "~/notes/org/roam"
                   org-roam-completion-everywhere t
-                  org-roam-dailies-directory "journal")
+                  org-roam-dailies-directory "journal/"
+                  org-roam-database-connector 'sqlite3
+                  org-roam-node-display-template "${title:*} ${tags:20}")
             (org-roam-db-autosync-mode)
 
-            :custom
-            (setq org-roam-node-display-template
-                  "${title:*} ${tags:20}")
             :config
             (add-hook 'org-roam-mode-hook #'turn-on-visual-line-mode)
             (use-package org-roam-protocol)
@@ -707,25 +710,11 @@
                          (window-parameters . ((no-other-window . t)
                                                (no-delete-other-windows . t)))))
 
-
           (add-hook 'org-roam-mode-hook
                     (lambda ()
                       (setq-local display-buffer--same-window-action
                                   '(display-buffer-use-some-window
                                     (main)))))
-
-          (fconfig-notes-bind
-            "l" 'org-roam-buffer-toggle
-            "f" 'santosh/org-roam-node-find
-            "d" 'org-roam-dailies-goto-date
-            "c" 'org-roam-capture
-            "g" 'org-roam-graph
-            "u" 'org-roam-ui-mode
-            "i" 'org-roam-node-insert
-            "I" 'org-roam-node-insert-immediate
-            "o i" 'org-id-get-create
-            ";" 'org-roam-tag-add
-            "/" 'org-roam-tag-remove)
 
           (general-def org-mode-map "C-M-i" 'completion-at-point)
 
@@ -775,55 +764,21 @@
                    :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                                       "#+title: ${title}\n#+filetags: :book:\n\n")
                    :empty-lines 1)))
-	#+end_src
 
-******* Journal
-	I use a journal to keep a log of activities I did on a particular day,
-	and also as a first place to dump my thoughts and ideas.
-
-        #+begin_src elisp
-          (use-package org-journal
-            :ensure t
-            :init
-            ;; Change default prefix key; needs to be set before loading org-journal
-            (setq org-journal-prefix-key "C-c j"
-                  org-journal-file-format "%Y%m%d.org")
-            :config
-            (defun santosh/insert-journal-header (time)
-              (concat ":PROPERTIES:\n"
-                      ":ID:\n "   (org-id-new)
-                      ":END:\n"
-                      "#+title: " (format-time-string "Week %W (%d %B %Y)" time)
-                      "\n"
-                      ))
-
-	    (setq org-journal-dir "~/notes/org/roam/journal/"
-		  org-journal-file-type 'weekly
-		  org-journal-date-format "%A, %d %B %Y"
-		  org-journal-enable-agenda-integration t
-		  org-journal-file-header (function santosh/insert-journal-header)
-		  org-journal-skip-carryover-drawers (list "LOGBOOK")))
-
-	  (general-create-definer fconfig-journal-bind
-	    :prefix "C-c j"
-	    :name "Journal actions"
-	    "" '(:ignore t :which-key "Journal options"))
-
-	  (general-unbind
-	      "C-c C-s"
-	      "C-c C-f"
-	      "C-c C-b"
-	      "C-c C-j")
-
-	  (fconfig-journal-bind
-	    "o" 'org-journal-open-current-journal-file
-	    "j" 'org-journal-new-entry
-	    "f" 'org-journal-open-next-entry
-	    "b" 'org-journal-open-previous-entry
-	    "d" 'org-journal-new-date-entry
-	    "s" 'org-journal-search
-	    "e" 'org-journal-new-scheduled-entry
-	    "v" 'org-journal-schedule-view)
+          (fconfig-notes-bind
+            "l" 'org-roam-buffer-toggle
+            "f" 'santosh/org-roam-node-find
+            "d" 'org-roam-dailies-capture-today
+            "t" 'org-roam-dailies-goto-today
+            "D" 'org-roam-dailies-goto-date
+            "c" 'org-roam-capture
+            "g" 'org-roam-graph
+            "u" 'org-roam-ui-mode
+            "i" 'org-roam-node-insert
+            "I" 'org-roam-node-insert-immediate
+            "o i" 'org-id-get-create
+            ";" 'org-roam-tag-add
+            "/" 'org-roam-tag-remove)
 	#+end_src
 
 ******* deft
@@ -1330,11 +1285,6 @@
 		   (file+headline (concat notes-dir "/quotes") "Quotes")
 		   "* %^{Quote} -- %^{Author}")
 
-		  ;; All journal and time tracking captures
-		  ("j" "Journal log" plain (function org-journal-find-location)
-		   "** %(format-time-string org-journal-time-format)%^{Title} :log:\n%i%?"
-		   :jump-to-captured t :immediate-finish t)
-
 		  ("b" "Take a break!" plain (function org-journal-find-location)
 		   "** %(format-time-string org-journal-time-format)%^{Title} :log:time:\n%i%?"
 		   :clock-in t :clock-resume t)
@@ -1601,45 +1551,45 @@
       #+end_src
 ***** LSP
       #+begin_src elisp
-	(setq read-process-output-max fconfig/1MB)
+        (setq read-process-output-max fconfig/1MB)
 
-	(use-package lsp-mode
-	  :diminish
-	  :commands (lsp lsp-deferred)
-	  :hook ((c-mode rust-mode go-mode) . lsp-deferred)
-	  :bind (:map prog-mode-map
-		      ("M-g r" . lsp-rename))
-	  :config
-	  (setq lsp-file-watch-threshold nil
-		lsp-idle-delay 0.5)
+        (use-package lsp-mode
+          :diminish
+          :commands (lsp lsp-deferred)
+          :hook ((c-mode rust-mode go-mode) . lsp-deferred)
+          :bind (:map prog-mode-map
+                      ("M-g r" . lsp-rename))
+          :config
+          (setq lsp-file-watch-threshold nil
+                lsp-idle-delay 0.5)
 
-	  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+          (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
-	(use-package consult-lsp
-	  :ensure t
-	  :after lsp-mode)
+        (use-package consult-lsp
+          :ensure t
+          :after lsp-mode)
 
-	(use-package lsp-ui
-	  :hook (lsp-mode . lsp-ui-mode)
-	  :after lsp-mode)
+        (use-package lsp-ui
+          :hook (lsp-mode . lsp-ui-mode)
+          :after lsp-mode)
 
-	(use-package lsp-ui-doc
-	  :after lsp-ui
-	  :config
-	  (setq lsp-ui-doc-include-signature t
-		lsp-ui-doc-delay 1.5
-		lsp-ui-sideline-delay 1.5))
+        (use-package lsp-ui-doc
+          :after lsp-ui
+          :config
+          (setq lsp-ui-doc-include-signature t
+                lsp-ui-doc-delay 1.5
+                lsp-ui-sideline-delay 1.5))
 
-	(use-package company-capf
-	  :requires company
-	  :after lsp-mode
-	  :config
-	  (push 'company-capf company-backends)
-	  (setq company-minimum-prefix-length 1
-	      company-idle-delay 0.0)
-	  )
+        (use-package company-capf
+          :requires company
+          :after lsp-mode
+          :config
+          (push 'company-capf company-backends)
+          (setq company-minimum-prefix-length 1
+                company-idle-delay 0.0)
+          (global-company-mode))
 
-	(general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
+        (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
       #+end_src
 ***** Misc
       Add a keybinding for recompile
