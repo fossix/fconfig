@@ -219,6 +219,104 @@
 	(savehist-mode))
     #+end_src
 
+*** Frame
+*** Window
+    Jump to different windows quickly using ~ace-window~
+
+    #+begin_src elisp
+      (use-package ace-window
+        :defer 3
+        :init (ace-window-display-mode)
+        :config
+        (setq aw-scope 'frame)
+        (setq aw-ignore-current t)
+        (setq ace-window-posframe-mode t))
+    #+end_src
+*** Shell
+    Setup completion in eshell
+
+    #+begin_src elisp
+      ;; (use-package bash-completion
+      ;;   :init (bash-completion-setup)
+      ;;   (add-hook 'shell-dynamic-complete-functions
+      ;;             'bash-completion-dynamic-complete))
+    #+end_src
+*** Buffer
+    To move through buffers, I used to use the ~cycle-buffer~ package. But I
+    rarely use the ~cycle-buffer-permissive~ and ~cycle-buffer-backward-permissive~
+    functions. So now moved to the builtin functions for cycling.
+    #+begin_src elisp
+      (general-def "<f11>" 'bs-cycle-previous)
+      (general-def "<f12>" 'bs-cycle-next)
+    #+end_src
+
+    Show a line at the 80 character column, helps while coding.
+
+    #+begin_src elisp
+      (use-package fill-column-indicator
+        :ensure t
+        :commands fci-mode)
+    #+end_src
+
+    Whitespace mode setup, show when there are trailing whitespaces in a line
+    and also when there is space in empty lines.
+
+    #+begin_src elisp
+      ;;; Whitespace mode setup
+      (use-package whitespace
+	:diminish whitespace-mode
+	:commands whitespace-mode
+	:init
+	(progn
+	  (setq whitespace-style '(face lines-tail trailing empty space-before-tab))))
+    #+end_src
+
+    Avoid window resizing and reuse windows when possible.
+
+    #+begin_src elisp
+      (setq display-buffer-base-action
+            '((display-buffer-reuse-window
+               display-buffer-reuse-mode-window
+               display-buffer-same-window
+               display-buffer-in-previous-window)
+      ))
+
+      (setq display-buffer-alist '())
+      ;;; https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html
+      (add-to-list 'display-buffer-alist
+                   '("\\*Help\\*"
+                     (display-buffer-reuse-window display-buffer-pop-up-frame)
+                     (reusable-frames . visible)))
+
+      (add-to-list 'display-buffer-alist
+                   '(".*"
+                     (display-buffer-reuse-window display-buffer-pop-up-window)
+                     '((mode . (org-mode helpful-mode help-mode c-mode rust-mode go-mode)))
+                     (reusable-frames . visible)))
+
+      (setq even-window-sizes nil)
+    #+end_src
+
+    A general key binding definer for buffer operations
+
+    #+begin_src elisp
+      ;; key bindings
+      (general-create-definer fconfig-buffer-bind
+	:name "Buffer related bindings"
+	:prefix "C-c b"
+	"" '(:ignore t :which-key "Buffer related"))
+
+      (fconfig-buffer-bind
+	"g" 'writegood-mode
+	"w" 'whitespace-mode
+	"l" 'recenter-top-bottom
+	"p" 'reposition-window
+	"s" 'flyspell-buffer
+	"b" 'bury-buffer
+	"r" 'revert-buffer
+	"f" 'fci-mode)
+    #+end_src
+
 *** Org-mode
     Don't want to see markers for /italics/ and *bold* and _underline_, and let's have
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
@@ -1511,15 +1609,6 @@
           :config
           (add-to-list 'xref-backend-functions 'gxref-xref-backend))
       #+end_src
-*** Shell
-    Setup completion in eshell
-
-    #+begin_src elisp
-      ;; (use-package bash-completion
-      ;;   :init (bash-completion-setup)
-      ;;   (add-hook 'shell-dynamic-complete-functions
-      ;;             'bash-completion-dynamic-complete))
-    #+end_src
 *** Version Control
     Magit
     #+begin_src elisp
@@ -1586,88 +1675,6 @@
 	  "M-B" 'magit-rebase
 	  "M-r" 'magit-reset-worktree)
       #+end_src
-
-*** Frame
-*** Buffer
-    To move through buffers, I used to use the ~cycle-buffer~ package. But I
-    rarely use the ~cycle-buffer-permissive~ and ~cycle-buffer-backward-permissive~
-    functions. So now moved to the builtin functions for cycling.
-    #+begin_src elisp
-      (general-def "<f11>" 'bs-cycle-previous)
-      (general-def "<f12>" 'bs-cycle-next)
-    #+end_src
-
-    Show a line at the 80 character column, helps while coding.
-
-    #+begin_src elisp
-      (use-package fill-column-indicator
-        :ensure t
-        :commands fci-mode)
-    #+end_src
-
-    Whitespace mode setup, show when there are trailing whitespaces in a line
-    and also when there is space in empty lines.
-
-    #+begin_src elisp
-      ;;; Whitespace mode setup
-      (use-package whitespace
-	:diminish whitespace-mode
-	:commands whitespace-mode
-	:init
-	(progn
-	  (setq whitespace-style '(face lines-tail trailing empty space-before-tab))))
-    #+end_src
-
-    Avoid window resizing and reuse windows when possible.
-
-    #+begin_src elisp
-      (setq display-buffer-base-action
-	    '((display-buffer-reuse-window
-	       display-buffer-reuse-mode-window
-	       display-buffer-same-window
-	       display-buffer-in-previous-window)
-      ))
-
-      ;;; https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html
-      (setq display-buffer-alist
-	    '(("\\*Help\\*"
-	       (display-buffer-reuse-window display-buffer-pop-up-frame)
-	       (reusable-frames . visible))
-	      ("\\*org-roam\\*" display-buffer-in-side-window
-	       (side . right)
-	       (slot . 0)
-	       (window-width . 0.30)
-	       (window-parameters .
-				  ((no-other-window . t)
-				   (no-delete-other-windows . t))))
-
-	      (".*"
-	       (display-buffer-reuse-window display-buffer-pop-up-window)
-	       '((mode . (org-mode helpful-mode help-mode c-mode rust-mode go-mode)))
-	       (reusable-frames . visible))))
-
-      (setq even-window-sizes nil)
-    #+end_src
-
-    A general key binding definer for buffer operations
-
-    #+begin_src elisp
-      ;; key bindings
-      (general-create-definer fconfig-buffer-bind
-	:name "Buffer related bindings"
-	:prefix "C-c b"
-	"" '(:ignore t :which-key "Buffer related"))
-
-      (fconfig-buffer-bind
-	"g" 'writegood-mode
-	"w" 'whitespace-mode
-	"l" 'recenter-top-bottom
-	"p" 'reposition-window
-	"s" 'flyspell-buffer
-	"b" 'bury-buffer
-	"r" 'revert-buffer
-	"f" 'fci-mode)
-    #+end_src
 
 *** Blogging
 

@@ -93,11 +93,6 @@
     (setq undo-tree-visualizer-timestamps t)
     (setq undo-tree-visualizer-diff t)))
 
-(use-package ace-window
-  :defer 3
-  :init (ace-window-display-mode)
-  :config (setq aw-scope 'frame))
-
 (use-package ispell :defer 5)
 
 (use-package flyspell
