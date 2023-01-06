@@ -734,21 +734,20 @@
           (setq org-roam-preview-function #'santosh/preview-fetcher)
 
           (setq org-roam-capture-templates
-                '(
-                  ("d" "default" plain "%?"
-                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n\n")
+                '(("d" "Default" plain "%?" :target
+                   (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n\n")
                    :jump-to-captured)
-
-                  ("b" "book quote" plain "- %^{Summary} [page: %^{Page number}]\n  #+begin_quote\n  %^{Quote}\n  #+end_quote\n\n%?"
-                   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :book:\n\n")
-                   :empty-lines 1
-                   )
-                  ("n" "book notes" item "- %?\n\n"
-                   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                      "#+title: ${title}\n#+filetags: :book:\n\n")
-                   :empty-lines 1)))
+                  ("o" "Book" plain "- %?\n\n" :if-new
+                   (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :book:\n\n")
+                   :jump-to-captured)
+                  ("p" "Work Project" plain "%?"
+                   :target (file+head "work/%<%Y%m%d%H%M%S>-${slug}.org"
+                                      "#+title: ${title}\n#+filetags: :work:\n\n")
+                   :unnarrowed t
+                   :jump-to-captured)
+                  ("b" "Bug" entry "* TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] ${title}]]"
+                   :target (node "NVIDIA Bugs")
+                   :jump-to-captured)))
 
           (setq org-roam-dailies-capture-templates
                 (let ((head
@@ -811,42 +810,160 @@
             ";" 'org-roam-tag-add
             "/" 'org-roam-tag-remove)
 	#+end_src
+********* Org-roam and agenda
+          Taken from [[https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html][Task Management with org-roam]] series
+          #+begin_src elisp
+            (use-package vulpea
+              :ensure t
+              ;; hook into org-roam-db-autosync-mode you wish to enable
+              ;; persistence of meta values (see respective section in README to
+              ;; find out what meta means)
+              :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
+            (org-roam-db-sync 'force)
 
+            (defun vulpea-project-p ()
+              "Return non-nil if current buffer has any todo entry.
+
+            TODO entries marked as done are ignored, meaning the this
+            function returns nil if current buffer contains only completed
+            tasks."
+              (seq-find                                 ; (3)
+               (lambda (type)
+                 (eq type 'todo))
+               (org-element-map                         ; (2)
+                   (org-element-parse-buffer 'headline) ; (1)
+                   'headline
+                 (lambda (h)
+                   (org-element-property :todo-type h)))))
+
+            (defun vulpea-project-update-tag ()
+                "Update PROJECT tag in the current buffer."
+                (when (and (not (active-minibuffer-window))
+                           (vulpea-buffer-p))
+                  (save-excursion
+                    (goto-char (point-min))
+                    (let* ((tags (vulpea-buffer-tags-get))
+                           (original-tags tags))
+                      (if (vulpea-project-p)
+                          (setq tags (cons "project" tags))
+                        (setq tags (remove "project" tags)))
+
+                      ;; cleanup duplicates
+                      (setq tags (seq-uniq tags))
+
+                      ;; update tags if changed
+                      (when (or (seq-difference tags original-tags)
+                                (seq-difference original-tags tags))
+                        (apply #'vulpea-buffer-tags-set tags))))))
+
+            (defun vulpea-buffer-p ()
+              "Return non-nil if the currently visited buffer is a note."
+              (and buffer-file-name
+                   (string-prefix-p
+                    (expand-file-name (file-name-as-directory org-roam-directory))
+                    (file-name-directory buffer-file-name))))
+
+            (defun vulpea-project-files ()
+                "Return a list of note files containing 'project' tag." ;
+                (seq-uniq
+                 (seq-map
+                  #'car
+                  (org-roam-db-query
+                   [:select [nodes:file]
+                    :from tags
+                    :left-join nodes
+                    :on (= tags:node-id nodes:id)
+                    :where (like tag (quote "%\"project\"%"))]))))
+
+            (defun vulpea-agenda-files-update (&rest _)
+              "Update the value of `org-agenda-files'."
+              (setq org-agenda-files (seq-uniq (append org-agenda-files (vulpea-project-files)))))
+
+            (add-hook 'find-file-hook #'vulpea-project-update-tag)
+            (add-hook 'before-save-hook #'vulpea-project-update-tag)
+
+            (advice-add 'org-agenda :before #'vulpea-agenda-files-update)
+            (advice-add 'org-todo-list :before #'vulpea-agenda-files-update)
+
+            (defun vulpea-agenda-category (&optional len)
+              "Get category of item at point for agenda.
+
+            Category is defined by one of the following items:
+
+            - CATEGORY property
+            - TITLE keyword
+            - TITLE property
+            - filename without directory and extension
+
+            When LEN is a number, resulting string is padded right with
+            spaces and then truncated with ... on the right if result is
+            longer than LEN.
+
+            Usage example:
+
+              (setq org-agenda-prefix-format
+                    '((agenda . \" %(vulpea-agenda-category) %?-12t %12s\")))
+
+            Refer to `org-agenda-prefix-format' for more information."
+              (let* ((file-name (when buffer-file-name
+                                  (file-name-sans-extension
+                                   (file-name-nondirectory buffer-file-name))))
+                     (title (vulpea-buffer-prop-get "title"))
+                     (category (org-get-category))
+                     (result
+                      (or (if (and
+                               title
+                               (string-equal category file-name))
+                              title
+                            category)
+                          "")))
+                (if (numberp len)
+                    (s-truncate len (s-pad-right len " " result))
+                  result)))
+
+            (setq org-agenda-prefix-format
+                  '((agenda . " %i %(vulpea-agenda-category 12)%?-12t% s")
+                    (todo . " %i %(vulpea-agenda-category 12) ")
+                    (tags . " %i %(vulpea-agenda-category 12) ")
+                    (search . " %i %(vulpea-agenda-category 12) ")))
+
+          #+end_src
 ******* deft
 	#+begin_src elisp
-	  ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
-	  (defun cm/deft-parse-title (file contents)
-	    "Parse the given FILE and CONTENTS and determine the title.
-	    If `deft-use-filename-as-title' is nil, the title is taken to
-	    be the first non-empty line of the FILE.  Else the base name of the FILE is
-	    used as title."
-	    (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
-	      (if begin
-		  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
-		(deft-base-filename file))))
+          ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
+          (defun cm/deft-parse-title (file contents)
+            "Parse the given FILE and CONTENTS and determine the title.
+            If `deft-use-filename-as-title' is nil, the title is taken to
+            be the first non-empty line of the FILE.  Else the base name of the FILE is
+            used as title."
+            (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
+              (if begin
+                  (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
+                (deft-base-filename file))))
 
-	  (use-package deft
-	    :bind ("<f8>" . deft)
-	    :commands (deft)
-	    :config (progn
-		      (setq deft-directory "~/.deft"
-				  deft-recursive t
-				  deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
-				  deft-default-extension "org"
-				  deft-strip-summary-regexp
-		(concat "\\("
-			"[\n\t]" ;; blank
-			"\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
-			"\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
-			"\\)"))
-		      (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
-		      ))
+          (use-package deft
+            :ensure t
+            :bind ("<f8>" . deft)
+            :commands (deft)
+            :config (progn
+                      (setq deft-directory "~/.deft"
+                                  deft-recursive t
+                                  deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                                  deft-default-extension "org"
+                                  deft-strip-summary-regexp
+                (concat "\\("
+                        "[\n\t]" ;; blank
+                        "\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
+                        "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                        "\\)"))
+                      (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
+                      ))
 
-	  (general-def [f8] 'deft)
-	  (general-def :keymaps 'deft-mode-map
-	    "C-r" 'deft-refresh
-	    "C-n" 'next-line
-	    "C-D" 'deft-delete-file)
+          (general-def [f8] 'deft)
+          (general-def :keymaps 'deft-mode-map
+            "C-r" 'deft-refresh
+            "C-n" 'next-line
+            "C-D" 'deft-delete-file)
 	#+end_src
 
 ******* org-transclusion
@@ -932,94 +1049,94 @@
 
       Add agenda files
       #+begin_src elisp :results none
-	(use-package org-agenda
-	  :bind (:map org-agenda-mode-map ([C-f9] . org-agenda-goto-today))
-	  :commands org-agenda
-	  :hook (org-agenda-mode . hl-line-mode)
+        (use-package org-agenda
+          :bind (:map org-agenda-mode-map ([C-f9] . org-agenda-goto-today))
+          :commands org-agenda
+          :hook (org-agenda-mode . hl-line-mode)
 
-	  :init
-	  (setq org-refile-targets
-		'((nil :maxlevel . 5)
-		  (org-agenda-files :maxlevel . 5)))
+          :init
+          (setq org-refile-targets
+                '((nil :maxlevel . 5)
+                  (org-agenda-files :maxlevel . 5)))
 
-	  :config
-	  (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
-	  (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
+          :config
+          ;; (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
+          ;; (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
 
-	  (appt-activate t)
+          (appt-activate t)
 
-	  ;; org appointments
-	  ;; Get appointments for today
-	  (defun ss/org-agenda-to-appt ()
-	    (interactive)
-	    (setq appt-time-msg-list nil)
-	    (let ((org-deadline-warning-days 0))
-	      (org-agenda-to-appt)))
+          ;; org appointments
+          ;; Get appointments for today
+          (defun ss/org-agenda-to-appt ()
+            (interactive)
+            (setq appt-time-msg-list nil)
+            (let ((org-deadline-warning-days 0))
+              (org-agenda-to-appt)))
 
-	  (defun ss/appt-disp-window (min-to-app new-time msg)
-	    (save-window-excursion (notifications-notify
-				    :title "Appointment"
-				    :body msg)))
+          (defun ss/appt-disp-window (min-to-app new-time msg)
+            (save-window-excursion (notifications-notify
+                                    :title "Appointment"
+                                    :body msg)))
 
-	  (setq appt-message-warning-time '30
-		appt-display-interval '5
-		appt-display-format 'window
-		appt-disp-window-function 'ss/appt-disp-window)
+          (setq appt-message-warning-time '30
+                appt-display-interval '5
+                appt-display-format 'window
+                appt-disp-window-function 'ss/appt-disp-window)
 
-	  (defadvice org-agenda-redo (after org-agenda-redo-add-appts)
-	    "Pressing `r' on the agenda will also add appointments."
-	    (progn
-	      (setq appt-time-msg-list nil)
-	      (org-agenda-to-appt)))
+          (defadvice org-agenda-redo (after org-agenda-redo-add-appts)
+            "Pressing `r' on the agenda will also add appointments."
+            (progn
+              (setq appt-time-msg-list nil)
+              (org-agenda-to-appt)))
 
-	  (ad-activate 'org-agenda-redo)
+          (ad-activate 'org-agenda-redo)
 
-	  (add-hook 'org-finalize-agenda-hook 'ss/org-agenda-to-appt)
-	  (add-hook 'org-finalize-agenda-hook 'ss/notify-on-clocked-time)
+          (add-hook 'org-finalize-agenda-hook 'ss/org-agenda-to-appt)
+          (add-hook 'org-finalize-agenda-hook 'ss/notify-on-clocked-time)
 
-	  (run-at-time "24:01" nil 'ss/org-agenda-to-appt))
+          (run-at-time "24:01" nil 'ss/org-agenda-to-appt))
 
-	(setq org-agenda-time-grid '((daily today remove-match)
-				     (800 1000 1200 1400 1600 1800 2000)
-				     "......" "----------------"))
+        (setq org-agenda-time-grid '((daily today remove-match)
+                                     (800 1000 1200 1400 1600 1800 2000)
+                                     "......" "----------------"))
 
-	  ;; functions to remind me to stop working for the day
+          ;; functions to remind me to stop working for the day
 
-	(defun ss/org-clock-total-sum-today ()
-	  "Get the total clocked time today across all agenda files in minutes."
-	  (let ((files (org-agenda-files))
-		(total 0))
-	    (org-agenda-prepare-buffers files)
-	    (dolist (file files)
-	      (with-current-buffer (find-buffer-visiting file)
-		(setq total (+ total (org-clock-sum-today)))))
-	    total))
+        (defun ss/org-clock-total-sum-today ()
+          "Get the total clocked time today across all agenda files in minutes."
+          (let ((files (org-agenda-files))
+                (total 0))
+            (org-agenda-prepare-buffers files)
+            (dolist (file files)
+              (with-current-buffer (find-buffer-visiting file)
+                (setq total (+ total (org-clock-sum-today)))))
+            total))
 
-	(defvar ss/clocked-notify-limit
-	  "The duration in hours, after which org-timeout should send notification")
+        (defvar ss/clocked-notify-limit
+          "The duration in hours, after which org-timeout should send notification")
 
-	(defalias 'clocked-notify-ok-callback-fn nil
-	  "The callback function to be called when notification ok is clicked")
+        (defalias 'clocked-notify-ok-callback-fn nil
+          "The callback function to be called when notification ok is clicked")
 
-	(defalias 'clocked-notify-cancel-callback-fn nil
-	  "The callback function to be called when notification cancel is clicked")
+        (defalias 'clocked-notify-cancel-callback-fn nil
+          "The callback function to be called when notification cancel is clicked")
 
-	(setq ss/clocked-notify-limit 8)
+        (setq ss/clocked-notify-limit 8)
 
-	(defun ss/clocked-time-notify ()
-	  (if (>= (/ (ss/org-clock-total-sum-today) 60) ss/clocked-notify-limit)
-	      (notifications-notify
-	       :title "Time to leave"
-	       :body "Clocked time exceeded."
-	       :timeout -1)))
-	  ;; :actions '("Confirm" "OK" "Refuse" "Cancel")
-	  ;; :on-action 'clocked-notify-ok-callback-fn
-	  ;; :on-close 'clocked-notify-cancel-callback-fn)))
+        (defun ss/clocked-time-notify ()
+          (if (>= (/ (ss/org-clock-total-sum-today) 60) ss/clocked-notify-limit)
+              (notifications-notify
+               :title "Time to leave"
+               :body "Clocked time exceeded."
+               :timeout -1)))
+          ;; :actions '("Confirm" "OK" "Refuse" "Cancel")
+          ;; :on-action 'clocked-notify-ok-callback-fn
+          ;; :on-close 'clocked-notify-cancel-callback-fn)))
 
 
-	(defun ss/notify-on-clocked-time ()
-	  "Notify if total clocked time exceeds `clocked-notify-limit`"
-	  (run-with-timer 0 1800 'ss/clocked-time-notify))
+        (defun ss/notify-on-clocked-time ()
+          "Notify if total clocked time exceeds `clocked-notify-limit`"
+          (run-with-timer 0 1800 'ss/clocked-time-notify))
       #+end_src
 
 
