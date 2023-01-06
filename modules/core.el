@@ -23,18 +23,6 @@
  bookmark-save-flag 1
  history-delete-duplicates t)
 
-;;; diary related
-(setq
- calendar-view-diary-initially-flag t
- calendar-mark-diary-entries-flag t
- diary-number-of-entries 7
- holiday-christian-holidays nil
- holiday-bahai-holidays nil
- holiday-hebrew-holidays nil
- holiday-islamic-holidays nil
- holiday-general-holidays nil
- holiday-solar-holidays nil)
-
 (add-hook 'diary-display-hook 'fancy-diary-display)
 (add-hook 'list-diary-entries-hook 'sort-diary-entries t)
 (add-hook 'today-visible-calendar-hook 'calendar-mark-today)
