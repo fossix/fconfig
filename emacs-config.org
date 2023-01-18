@@ -755,29 +755,19 @@
           (setq org-roam-dailies-capture-templates
                 (let ((head
                        (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n"
-                               "* Tasks [/]\n\n* Dump\n\n* Thoughts/Ideas\n\n* Journal\n")))
+                               "* Tasks [/]\n\n* Journal\n")))
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
-                    ("t" "Task" item
-                     "  [ ] %A %?"
+                    ("t" "Task" entry
+                     "* TODO %^{Task} %?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
-                    ("j" "Journal" entry
-                     "* %U %^{Journal Entry}"
+                    ("j" "Journal" entry "* %U %^{Summary}"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :immediate-finish t)
                     ("c" "Call" entry
                      "* %U %^{Title} :call:%^g\n"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
-                     :clock-in t :clock-resume t)
-                    ("w" "Work todo" entry
-                     "*** TODO %^{Do-what?} :work:\n"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Dump")))
-                    ("p" "Personal todo" entry
-                     "*** TODO %^{Do-what?}\n"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Dump")))
-                    ("i" "Thoughts/Ideas" entry "* %^{Summary}\n%?"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Thoughts/Ideas"))
-                     :jump-to-captured))))
+                     :clock-in t :clock-resume t))))
 
           (defun santosh/org-roam-node-find ()
             "Don't prompt for a roam template, use the first entry from the template list"
@@ -822,7 +812,8 @@
               ;; persistence of meta values (see respective section in README to
               ;; find out what meta means)
               :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
-            (org-roam-db-sync 'force)
+
+            (use-package vulpea-buffer)
 
             (defun vulpea-project-p ()
               "Return non-nil if current buffer has any todo entry.
@@ -1148,7 +1139,7 @@
 	#+begin_src elisp
 	  (setq org-log-done 'note)
 	  (setq org-todo-keywords
-		'((sequence "TODO(t)" "NEXT(n!/@)" "PROG(p!/@)" "|" "DONE(d)")))
+		'((sequence "TODO(t)" "PROG(p!/@)" "|" "DONE(d)" "DEFERRED(f)")))
 	#+end_src
 ***** Custom agenda
       We will have 5 blocks under the "Agenda and TODOs headline. The first
@@ -1251,23 +1242,23 @@
 			    '(time-up todo-state-up priority-down))
 			   (org-agenda-skip-function 'org-agenda-skip-if-blocked)))
 
-		  (todo "NEXT|PROG"
+		  (tags-todo "project|learning/PROG"
 			((org-agenda-sorting-strategy
 			  '(priority-down effort-down todo-state-down))
 			 (org-agenda-skip-function
 				     (progn
 				       '(or (org-agenda-skip-if-blocked))))
 			 (org-agenda-prefix-format " %i % s")
-			 (org-agenda-overriding-header "Next and Ongoing tasks")))
+			 (org-agenda-overriding-header "Ongoing Projects")))
 
-		  (tags "PRIORITY={A}/-NEXT-PROG-DONE"
+		  (tags "PRIORITY={A}/-PROG-DONE"
 			(
 			 (org-agenda-overriding-header "High Priority & Deadline (Pending)")
 			 (org-agenda-sorting-strategy
 			  '(priority-down effort-down todo-state-down))
 			 ;; If priority inheritance work's the following could be
 			 ;; uncommented, so only the next actionable child shows up.
-			 ;; (org-agenda-dim-blocked-tasks 'invisible)
+			 (org-agenda-dim-blocked-tasks 'invisible)
 			 (org-agenda-skip-function
 			  (progn '(or
 				  (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
@@ -1301,10 +1292,10 @@
 				    (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
 				    (org-agenda-skip-subtree-if 'regexp ":someday:")
 				    (org-agenda-skip-if nil '(scheduled deadline timestamp))
-				    (org-agenda-skip-entry-if 'todo '("PROG" "NEXT")))))))))
+				    (org-agenda-skip-entry-if 'todo '("PROG" "NEXT" "DEFERRED")))))))))
 
-		("r" "Tasks to be refiled" tags "refile"
-		 ((org-agenda-files '("~/notes/org/TODO" "~/notes/org/work"))))
+		("i" "Tasks to be refiled" tags "refile"
+		 ((org-agenda-files '("~/notes/org/inbox"))))
 
 		("W" "Work week review"
 		 ((agenda ""
@@ -1415,21 +1406,13 @@
 	  (setq org-capture-templates
 		'(
 		  ;; All task/todo captures
-		  ("t" "Personal Todo" entry
-		   (file+headline "todo.org" "Dump")
-		   "* TODO %^{Do-what?} %^g\n  %i%?")
-
-		  ("m" "Personal Meeting" entry
-		   (file+headline "todo.org" "Meetings/Appointments/Calls")
-		   "* TODO %^{Meeting-Name} :meeting:%^g\n  %i%?")
+		  ("c" "Capture" entry
+		   (file "inbox.org")
+		   "* %^{Do-what?} %^g\n  %i%?")
 
 		  ("w" "Work meeting" entry
 		   (file+headline "work.org" "Meetings")
 		   "* TODO %^{Meeting-Name} %^g\n  %^T\n  %i%?")
-
-		  ("T" "Work Todo" entry
-		   (file+headline "work.org" "Misc")
-		   "* TODO %^{Do-what?} %^g\n    %?%i")
 
 		  ;; Entry for random quote for the day file
 		  ("u" "Quotes" entry
