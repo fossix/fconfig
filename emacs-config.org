@@ -758,8 +758,8 @@
                                "* Tasks [/]\n\n* Journal\n")))
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
-                    ("t" "Task" entry
-                     "* TODO %^{Task} %?"
+                    ("t" "Task" item
+                     "  - [ ] %^{Task} %?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
                     ("j" "Journal" entry "* %U %^{Summary}"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
@@ -871,7 +871,10 @@
 
             (defun vulpea-agenda-files-update (&rest _)
               "Update the value of `org-agenda-files'."
-              (setq org-agenda-files (seq-uniq (append org-agenda-files (vulpea-project-files)))))
+              (setq org-agenda-files (seq-uniq (append
+                                                (list (concat org-directory "/todo.org")
+                                                      (concat org-directory "/work.org"))
+                                                (vulpea-project-files)))))
 
             (add-hook 'find-file-hook #'vulpea-project-update-tag)
             (add-hook 'before-save-hook #'vulpea-project-update-tag)
@@ -1054,9 +1057,6 @@
                   (org-agenda-files :maxlevel . 5)))
 
           :config
-          (add-to-list 'org-agenda-files (concat org-directory "/todo.org"))
-          (add-to-list 'org-agenda-files (concat org-directory "/work.org"))
-
           (appt-activate t)
 
           ;; org appointments
