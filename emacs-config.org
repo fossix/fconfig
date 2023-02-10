@@ -1133,13 +1133,19 @@
           (run-with-timer 0 1800 'ss/clocked-time-notify))
       #+end_src
 
-
 ******* Planning
-	Four todo states, *TODO*, *NEXT*, *PROG*, *DONE*.
+	Five todo states, *TODO*, *NEXT*, *PROG*, *DONE*, *CANCELLED*. Additionally for bug
+	management two states, *HOLD* and *DEFERRED*.
+
 	#+begin_src elisp
-	  (setq org-log-done 'note)
-	  (setq org-todo-keywords
-		'((sequence "TODO(t)" "PROG(p!/@)" "|" "DONE(d)" "DEFERRED(f)")))
+          (setq org-log-done 'note)
+          (setq org-todo-keywords
+                '((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
+                  (sequence "HOLD(h)" "DEFERRED(f)" "|" "CANCELLED(c)")))
+
+          (setq org-todo-keyword-faces
+                '(("PROG" . (:foreground "deepskyblue" :weight bold))
+                  ("HOLD" . (:foreground "LightGoldenrod4" :weight bold))))
 	#+end_src
 ***** Custom agenda
       We will have 5 blocks under the "Agenda and TODOs headline. The first
@@ -1474,11 +1480,24 @@
       Sometimes its useful to get a count of the sub-headings under a tree, like
       getting the number of bugs I am working on.
       #+begin_src elisp
-	(defun count-subheadings ()
-	  (interactive)
-	  (message (format "Number of sub-headings are: %d." (1-  (length (org-map-entries nil nil 'tree))))))
+        (defun count-subheadings ()
+          (interactive)
+          (message (format "Number of sub-headings are: %d."
+                           (1-  (length (org-map-entries nil nil 'tree))))))
 
+        (defun count-tasks ()
+          (interactive)
+          (message
+           (format "Number of tasks in file: %d"
+                   (length
+                    (org-map-entries t "/+TODO|PROG|HOLD|DONE|CANCELLED" 'file)))))
+
+        (defun count-headings ()
+          (interactive)
+          (message (format "Number of headings in file: %d"
+                           (length (org-map-entries t nil nil)))))
       #+end_src
+
 *** Mail
     Notmuch mail setup
 
