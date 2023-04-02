@@ -26,26 +26,6 @@
     (insert "--")
     (org-insert-time-stamp (current-time) t t)))
 
-  ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
-
-(setq org-agenda-tag-line-face
-      '(("meeting" . (:foreground "DeepSkyBlue" :weight bold))
-        ("bug" . (:foreground "IndianRed"))))
-
-(defun org-agenda-fontify-tagged-line ()
-  "Use `org-agenda-face-for-tagged-lines' to fontify lines with certain tags."
-  (goto-char (point-min))
-  (let (tags)
-    (while (progn (forward-line 1) (not (eobp)))
-      (if (setq tags (get-text-property (point) 'tags))
-          (mapc
-           (lambda (pair)
-             (if (member (car pair) tags)
-                 (add-text-properties (point-at-bol) (point-at-eol) `(face ,(cdr pair)))))
-           org-agenda-tag-line-face)))))
-
-(add-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
-
 (eval-after-load 'org-src
   '(define-key org-src-mode-map
                (kbd "C-x C-s") #'org-edit-src-exit))
