@@ -764,8 +764,8 @@
                     ("j" "Journal" entry "* %U %^{Summary}"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :immediate-finish t)
-                    ("c" "Call" entry
-                     "* %U %^{Title} :call:%^g\n"
+                    ("c" "Clock Time" entry
+                     "* %U %^{Title} %^g\n"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :clock-in t :clock-resume t))))
 
@@ -1273,14 +1273,14 @@
                             '(time-up todo-state-up priority-down))
                            (org-agenda-skip-function 'org-agenda-skip-if-blocked)))
 
-                  (tags-todo "project|learning/PROG"
+                  (tags-todo "/PROG"
                              ((org-agenda-sorting-strategy
                                '(priority-down effort-down todo-state-down))
                               (org-agenda-skip-function
                                (progn
                                  '(or (org-agenda-skip-if-blocked))))
-                              (org-agenda-prefix-format " %i % s")
-                              (org-agenda-overriding-header "Ongoing Projects")))
+                              (org-agenda-prefix-format " %i %s")
+                              (org-agenda-overriding-header "Ongoing Tasks & Projects")))
 
                   (tags "PRIORITY={A}/-PROG-DONE"
                         (
@@ -1297,7 +1297,6 @@
 
                   (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\""
                              ((org-agenda-overriding-header "")
-                              (org-agenda-compact-blocks t)
                               (org-agenda-skip-function
                                (progn
                                  '(or
@@ -1402,16 +1401,6 @@
                   (org-agenda-remove-tags t))
                  ("~//tmp/agenda.html"))))
       #+end_src
-
-      #+RESULTS:
-      | A | Agenda and TODOs    | ((agenda  ((org-agenda-overriding-header Today's Agenda) (org-agenda-span 'day) (org-agenda-prefix-format  %i %?-12t% s) (org-agenda-scheduled-leaders '( %2dx )) (org-agenda-use-time-grid t) (org-deadline-warning-days 7) (org-agenda-show-log t) (org-agenda-skip-scheduled-if-deadline-is-shown 'not-today) (org-agenda-skip-deadline-prewarning-if-scheduled 3) (org-agenda-skip-scheduled-delay-if-deadline t) (org-agenda-skip-timestamp-if-deadline-is-shown nil) (org-agenda-sorting-strategy '(time-up todo-state-up priority-down)) (org-agenda-skip-function 'org-agenda-skip-if-blocked))) (tags-todo project | learning/PROG ((org-agenda-sorting-strategy '(priority-down effort-down todo-state-down)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked)))) (org-agenda-prefix-format  %i % s) (org-agenda-overriding-header Ongoing Projects))) (tags PRIORITY={A}/-PROG-DONE ((org-agenda-overriding-header High Priority & Deadline (Pending)) (org-agenda-sorting-strategy '(priority-down effort-down todo-state-down)) (org-agenda-dim-blocked-tasks 'invisible) (org-agenda-skip-function (progn '(or (org-agenda-skip-if nil '(scheduled deadline timestamp))))) (org-agenda-prefix-format  %i %s))) (tags-todo -bill&+DEADLINE>"<today>"+DEADLINE<"<+30d>" ((org-agenda-overriding-header ) (org-agenda-compact-blocks t) (org-agenda-skip-function (progn '(or (org-agenda-skip-entry-if 'notdeadline)))))) (tags-todo bug/TODO ((org-agenda-overriding-header Issues getting stale (> 2)) (org-agenda-prefix-format %i %s) (org-agenda-skip-function (progn '(or (santosh/since-last-update 2) (org-agenda-skip-entry-if 'scheduled)))))) (tags-todo /TODO ((org-agenda-overriding-header Pending daily tasks) (org-agenda-sorting-strategy '(priority-down effort-up todo-state-down)) (org-agenda-prefix-format  %i (%(file-name-sans-extension (file-name-nondirectory (buffer-file-name)))) [%e] ) (org-agenda-files (cl-remove-if-not (lambda (file) (and (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory)) (member file (vulpea-project-files)))) (vulpea-project-files)))))) |                                           |
-      | p | All pending todos   | ((alltodo  ((org-agenda-overriding-header Pending items) (org-agenda-prefix-format  %i [%e] ) (org-agenda-sorting-strategy '(priority-down effort-up todo-state-down category-keep)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked) (org-agenda-skip-entry-if 'regexp \[#A\]) (org-agenda-skip-subtree-if 'regexp :someday:) (org-agenda-skip-if nil '(scheduled deadline timestamp)) (org-agenda-skip-entry-if 'todo '(PROG NEXT DEFERRED)))))))) |                                                                                                                         |                                           |
-      | i | Tasks to be refiled | tags                                                                                                                    | refile                                                                                                                  | ((org-agenda-files '(~/notes/org/inbox))) |
-      | W | Work week review    | ((agenda  ((org-agenda-start-on-weekday 1) (org-agenda-show-log t) (org-agenda-time-grid nil) (org-agenda-start-with-log-mode t) (org-agenda-include-diary nil) (org-agenda-log-mode-items '(state clock)) (org-agenda-files '(~/notes/org/work.org)) (org-agenda-start-with-clockreport-mode t) (org-agenda-span 'week) (org-agenda-start-day -7) (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3)) (org-agenda-overriding-header Work week in Review)))) |                                                                                                                         |                                           |
-      | T | Todo week review    | ((agenda  ((org-agenda-start-on-weekday 1) (org-agenda-show-log t) (org-agenda-time-grid nil) (org-agenda-start-with-log-mode t) (org-agenda-include-diary nil) (org-agenda-log-mode-items '(state clock)) (org-agenda-files '(~/notes/org/todo.org)) (org-agenda-start-with-clockreport-mode t) (org-agenda-span 'week) (org-agenda-start-day -7) (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3)) (org-agenda-t) (org-agenda-overriding-header Week in Review)))) |                                                                                                                         |                                           |
-      | e | tags                | EFFORT>"0"                                                                                                              | ((org-agenda-overriding-header All tasks with effort estimate set) (org-agenda-prefix-format [%e] ) (org-agenda-sorting-strategy '(priority-down todo-state-down effort-up category-keep)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked) (day-agenda-skip) (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '(DONE CANCELLED CLOSED)) (org-agenda-skip-subtree-if 'regexp :habit:)))) (org-agenda-files org-agenda-files)) |                                           |
-      | n | tags-todo           | -Work-bug-Personal-bill                                                                                                 | ((org-agenda-sorting-strategy '(priority-down todo-state-down effort-up category-keep)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked) (day-agenda-skip) (org-agenda-skip-entry-if 'scheduled 'deadline '(DONE NEXT PROG)) (org-agenda-skip-subtree-if 'regexp :habit:))))) |                                           |
-      | X | agenda              |                                                                                                                         | ((org-agenda-prefix-format  [ ] ) (org-agenda-with-colors t) (org-agenda-remove-tags t))                                | (~//tmp/agenda.html)                      |
 
       Setup category icons
       #+begin_src elisp :results none
@@ -1545,6 +1534,17 @@
           (interactive)
           (message (format "Number of headings in file: %d"
                            (length (org-map-entries t nil nil)))))
+
+        (defun count-top-level-headlines ()
+          "Count the number of top-level headlines in the current org-mode buffer."
+          (interactive)
+          (let ((count 0))
+            (save-excursion
+              (goto-char (point-min))
+              (while (re-search-forward "^\\* " nil t)
+                (when (= (org-outline-level) 1)
+                  (setq count (1+ count)))))
+            (message "Number of top-level headlines: %d" count)))
       #+end_src
 
 *** Mail
@@ -1924,7 +1924,7 @@
 
            (dashboard-shorten-paths
             (list (org-roam-node-file (cdr (seq-random-elt (org-roam-node-read--completions)))))
-            'dashboard-node-alist
+            'dashboard-note-alist
             'note)
            list-size
            'note
