@@ -1092,9 +1092,11 @@
 
         (setq org-agenda-time-grid '((daily today remove-match)
                                      (800 1000 1200 1400 1600 1800 2000)
-                                     "......" "----------------"))
+                                     "......" "----------------")
+              org-agenda-sort-noeffort-is-high nil)
 
-          ;; functions to remind me to stop working for the day
+
+        ;; functions to remind me to stop working for the day
 
         (defun ss/org-clock-total-sum-today ()
           "Get the total clocked time today across all agenda files in minutes."
@@ -1310,8 +1312,11 @@
                                                                  (org-agenda-skip-entry-if 'scheduled))
                                                                ))))
 
-                  (tags-todo "/TODO"
+                  (tags-todo "/TODO|STARTED|NEXT"
                               ((org-agenda-overriding-header "Pending daily tasks")
+                               (org-agenda-skip-function
+                                (progn '(or
+                                         (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
                                (org-agenda-sorting-strategy
                                 '(priority-down effort-up todo-state-down))
                                (org-agenda-prefix-format " %i (%(file-name-sans-extension (file-name-nondirectory (buffer-file-name)))) [%e] ")
