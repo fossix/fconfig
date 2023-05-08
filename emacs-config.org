@@ -754,7 +754,7 @@
 
           (setq org-roam-dailies-capture-templates
                 (let ((head
-                       (concat "#+title: %<%Y-%m-%d (%A)>\n#+category: tasks\n#+startup: showall\n"
+                       (concat "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n"
                                "* Tasks\n\n* Journal\n")))
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
@@ -1136,7 +1136,7 @@
       #+end_src
 
 ******* Planning
-	Five todo states, *TODO*, *NEXT*, *PROG*, *DONE*, *CANCELLED*. Additionally for bug
+	Five todo states, *TODO*, *PROG*, *DONE*, *CANCELLED*. Additionally for bug
 	management two states, *HOLD* and *DEFERRED*.
 
 	#+begin_src elisp
@@ -1312,7 +1312,7 @@
                                                                  (org-agenda-skip-entry-if 'scheduled))
                                                                ))))
 
-                  (tags-todo "/TODO|STARTED|NEXT"
+                  (tags-todo "/TODO"
                               ((org-agenda-overriding-header "Pending daily tasks")
                                (org-agenda-skip-function
                                 (progn '(or
@@ -1338,73 +1338,36 @@
                              (progn
                                '(or (org-agenda-skip-if-blocked)
                                     (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
-                                    (org-agenda-skip-subtree-if 'regexp ":someday:")
-                                    (org-agenda-skip-if nil '(scheduled deadline timestamp))
-                                    (org-agenda-skip-entry-if 'todo '("PROG" "NEXT" "DEFERRED")))))))))
+                                    ; (org-agenda-skip-if nil '(scheduled deadline timestamp))
+                                    (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "PROG" "DEFERRED")))))))))
 
                 ("i" "Tasks to be refiled" tags "refile"
                  ((org-agenda-files '("~/notes/org/inbox"))))
 
-                ("W" "Work week review"
+                ("W" "Week review"
                  ((agenda ""
                           ((org-agenda-start-on-weekday 1)
                            (org-agenda-show-log t)
                            (org-agenda-time-grid nil)
                            (org-agenda-start-with-log-mode t)
                            (org-agenda-include-diary nil)
-                           (org-agenda-log-mode-items '(state clock))
-                           (org-agenda-files '("~/notes/org/work.org"))
+                           (org-agenda-log-mode-items '(state clock closed))
+                           (org-agenda-files (append (vulpea-project-files) '("~/notes/org/work.org" "~/notes/org/todo.org")))
+                          (org-agenda-skip-function
+                           (progn
+                             '(or (org-agenda-skip-entry-if 'scheduled 'deadline)
+                                  (org-agenda-skip-subtree-if 'regexp ":habit:"))))
                            (org-agenda-start-with-clockreport-mode t)
                            (org-agenda-span 'week)
                            (org-agenda-start-day "-7")
                            (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3))
                            (org-agenda-overriding-header "Work week in Review")))))
 
-                ("T" "Todo week review"
-                 ((agenda ""
-                          ((org-agenda-start-on-weekday 1)
-                           (org-agenda-show-log t)
-                           (org-agenda-time-grid nil)
-                           (org-agenda-start-with-log-mode t)
-                           (org-agenda-include-diary nil)
-                           (org-agenda-log-mode-items '(state clock))
-                           (org-agenda-files '("~/notes/org/todo.org"))
-                           (org-agenda-start-with-clockreport-mode t)
-                           (org-agenda-span 'week)
-                           (org-agenda-start-day "-7")
-                           (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3))
-                           (org-agenda-t)
-                           (org-agenda-overriding-header "Week in Review")))))
-
-                ("e" tags "EFFORT>\"0\""
-                 ((org-agenda-overriding-header "All tasks with effort estimate set")
-                  (org-agenda-prefix-format "[%e] ")
-                  (org-agenda-sorting-strategy
-                   '(priority-down todo-state-down effort-up category-keep))
-                  (org-agenda-skip-function
-                   (progn
-                     '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
-                          (org-agenda-skip-entry-if 'scheduled 'deadline 'todo
-                                                    '("DONE" "CANCELLED" "CLOSED"))
-                          (org-agenda-skip-subtree-if 'regexp ":habit:"))))
-                  (org-agenda-files org-agenda-files)))
-
-                ("n" tags-todo "-Work-bug-Personal-bill"
-                 ((org-agenda-sorting-strategy
-                   '(priority-down todo-state-down effort-up category-keep))
-                  (org-agenda-skip-function
-                   (progn
-                     '(or (org-agenda-skip-if-blocked) (day-agenda-skip)
-                          (org-agenda-skip-entry-if 'scheduled 'deadline
-                                                    '("DONE" "NEXT" "PROG"))
-                          (org-agenda-skip-subtree-if 'regexp ":habit:"))))
-                  ))
-
                 ("X" agenda ""
                  ((org-agenda-prefix-format " [ ] ")
-                  (org-agenda-with-colors t)
-                  (org-agenda-remove-tags t))
-                 ("~//tmp/agenda.html"))))
+                  (org-agenda-with-colors nil)
+                  (org-agenda-remove-tags t)
+                 ("~//tmp/agenda.html")))))
       #+end_src
 
       Setup category icons
