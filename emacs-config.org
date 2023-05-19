@@ -723,7 +723,7 @@
             (setq org-roam-ui-sync-theme t
                   org-roam-ui-follow t
                   org-roam-ui-update-on-save t
-                  org-roam-ui-open-on-start t))
+                  org-roam-ui-open-on-start nil))
 
           ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
           (defun santosh/preview-fetcher ()
@@ -1143,11 +1143,12 @@
           (setq org-log-done 'note)
           (setq org-todo-keywords
                 '((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
-                  (sequence "HOLD(h)" "DEFERRED(f)" "|" "CANCELLED(c)")))
+                  (sequence "HOLD(h)" "DEFERRED(f)" "DELEGATED" "|" "CANCELLED(c)")))
 
           (setq org-todo-keyword-faces
                 '(("PROG" . (:foreground "deepskyblue" :weight bold))
-                  ("HOLD" . (:foreground "LightGoldenrod4" :weight bold))))
+                  ("HOLD" . (:foreground "LightGoldenrod4" :weight bold))
+                  ("DELEGATED" . (:foreground "IndianRed" :weight bold))))
 	#+end_src
 
 
