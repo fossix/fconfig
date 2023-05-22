@@ -1209,6 +1209,29 @@
                                  (or (outline-next-heading) (point-max)))))
             (if (org-entry-blocked-p) next-headline)))
 
+        (defun org-agenda-tasks-skip-if-future ()
+          "Skip tasks in future files."
+          (let* ((today (format-time-string "%Y-%m-%d")) ; Today's date string
+                 (filename (buffer-file-name))
+                 (date-string (and filename (string-match "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}" filename)
+                                   (match-string 0 filename))))
+            (when (and date-string (string> date-string today))
+              (message "Skipping task in future file: %s" filename)
+              (org-agenda-skip-entry-if 'todo '("TODO" "DONE")))))
+
+        ;;; show number of days a task from the org-roam daily has been pending
+        (defun org-agenda-tasks-display-delay ()
+          "Display delay in days based on the date string in the file name."
+          (let* ((today (format-time-string "%Y-%m-%d")) ; Today's date string
+                 (filename (buffer-file-name))
+                 (date-string (and filename (string-match "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}" filename)
+                                   (match-string 0 filename)))
+                 (delay (and date-string (org-time-stamp-to-now date-string))))
+            (cond
+             ((and delay (not (zerop delay)))
+              (concat "(" (format "%dd" (-  delay))")"))
+             (t "(--)"))))
+
         ;; From here: http://doc.norang.ca/org-mode.html
 
         (defun bh/skip-habits ()
@@ -1317,10 +1340,12 @@
                               ((org-agenda-overriding-header "Pending daily tasks")
                                (org-agenda-skip-function
                                 (progn '(or
+                                         (org-agenda-skip-if-blocked)
+                                         (org-agenda-tasks-skip-if-future)
                                          (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
                                (org-agenda-sorting-strategy
                                 '(priority-down effort-up todo-state-down))
-                               (org-agenda-prefix-format " %i (%(file-name-sans-extension (file-name-nondirectory (buffer-file-name)))) [%e] ")
+                               (org-agenda-prefix-format "%i %(org-agenda-tasks-display-delay) [%e] ")
                                (org-agenda-files
                                 (cl-remove-if-not
                                  (lambda (file)
