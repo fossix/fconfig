@@ -57,8 +57,24 @@
 
       (fconfig/init)
       (fconfig! utils)
-
     #+end_src
+***** Install straight
+      #+begin_src elisp
+        ;; Install straight.el
+        (defvar bootstrap-version)
+        (let ((bootstrap-file
+               (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+              (bootstrap-version 6))
+          (unless (file-exists-p bootstrap-file)
+            (with-current-buffer
+                (url-retrieve-synchronously
+                 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+                 'silent 'inhibit-cookies)
+              (goto-char (point-max))
+              (eval-print-last-sexp)))
+          (load bootstrap-file nil 'nomessage))
+
+      #+end_src
 *** Fundamentals
 ***** Setup packages and utility functions
       #+begin_src elisp
@@ -736,6 +752,19 @@
 
           (setq org-roam-preview-function #'santosh/preview-fetcher)
 
+          (defun org-capture-get-new-bug-auto-analysis ()
+            "Run an external program asynchronously to add additional content to the captured entry."
+            (async-shell-command "nvbug show path/to/external/program"))
+
+          (defun my-org-capture-additional-content ()
+            "Capture additional content after the external program has finished."
+            ;; Process the captured additional content here
+            (let ((additional-content (with-current-buffer "*Async Shell Command*"
+                                        (buffer-string))))
+              (when (stringp additional-content)
+                (goto-char (org-capture-get :end))
+                (insert additional-content))))
+
           (setq org-roam-capture-templates
                 '(("d" "Default" plain "%?" :target
                    (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n\n")
@@ -1020,7 +1049,7 @@
           (defun santosh/mv-journal-md-to-subdir ()
             "ox-hugo doesn't create sub-directories, so move the journal files
         into a subdirectory in org-hugo-base-dir"
-            (let ((journal-files (org-journal--list-files)))
+            (let ((journal-files (org-roam-dailies--list-files)))
               (dolist (file journal-files)
                 (let ((exportedmd (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-base file) ".md")))
                       (mdfile (concat (file-name-as-directory org-hugo-base-dir) (concat "content/posts/" (file-name-directory (file-relative-name file org-roam-directory)) (file-name-base file) ".md"))))
@@ -1323,6 +1352,7 @@
 
                   (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\""
                              ((org-agenda-overriding-header "")
+                              (org-agenda-compact-blocks t)
                               (org-agenda-skip-function
                                (progn
                                  '(or
@@ -1722,7 +1752,7 @@
         (use-package lsp-mode
           :diminish
           :commands (lsp lsp-deferred)
-          :hook ((c-mode rust-mode go-mode) . lsp-deferred)
+          :hook ((c-mode rust-mode go-mode python-mode) . lsp-deferred)
           :bind (:map prog-mode-map
                       ("M-g r" . lsp-rename))
           :config
@@ -1900,8 +1930,8 @@
 
       (setq gita-verses
             '(
-              "अन्तवन्त इमे देहा नित्यस्योक्ता: शरीरिण:। अनाशिनोऽप्रमेयस्य तस्माद्युध्यस्व भारत ।।२ - १८।।"
-              "प्रजहाति यदा कामान्सर्वान्पार्थ मनोगतान्। आत्मन्येवात्मना तुष्ट: स्थितप्रज्ञस्तदोच्यते ।।२ - ५५।।"
+              "अन्तवन्त इमे देहा नित्यस्योक्ता: शरीरिण:।\nअनाशिनोऽप्रमेयस्य तस्माद्युध्यस्व भारत ।।२ - १८।।"
+              "प्रजहाति यदा कामान्सर्वान्पार्थ मनोगतान्।\nआत्मन्येवात्मना तुष्ट: स्थितप्रज्ञस्तदोच्यते ।।२ - ५५।।"
               ))
 
       (use-package dashboard
@@ -1940,7 +1970,7 @@
                            (bookmarks . 5)
                            (registers . 5)
                            (note . 1))
-         dashboard-banner-logo-title "Happy hacking ♥!"
+         dashboard-banner-logo-title (format "Welcome %s! Happy hacking ♥!" (user-login-name))
          dashboard-footer-icon (all-the-icons-octicon "book"
                                                       :height 1.00
                                                       :v-adjust 0.05)
@@ -1957,31 +1987,25 @@
                             (org-agenda "a" "A"))))
             ;; Mails
             (,(all-the-icons-octicon "mail" :height 1.0 :v-adjust 0.0)
-             ,(fconfig/notmuch-count-query "tag:unread and tag:inbox and tag:me") "Unread Mails"
-             (lambda (&rest _) (notmuch-search "tag:unread and tag:inbox and tag:me")))
+             nil "Unread Mails"
+             (lambda (&rest _) (notmuch)))
             (,(all-the-icons-octicon "star" :height 1.0 :v-adjust 0.0)
              ,(fconfig/notmuch-count-query "tag:flagged") "Starred Mails"
-             (lambda (&rest _) (notmuch-search "tag:flagged"))))
+             (lambda (&rest _) (notmuch-search "tag:flagged")))))))
 
-           (;; line 2
-            (,(all-the-icons-faicon "home" :height 1.0 :v-adjust 0.0)
-             nil
-             "Browse homepage"
-             (lambda (&rest _) (browse-url "http://fossix.org")))
-            (,(all-the-icons-faicon "linkedin" :height 1.0 :v-adjust 0.0)
-             nil
-             "Visit LinkedIn"
-             (lambda (&rest _) (browse-url "http://linkedin.com")))
-            (,(all-the-icons-faicon "reddit" :height 1.0 :v-adjust 0.0)
-             nil
-             "Go to Reddit"
-             (lambda (&rest _) (browse-url "https://www.reddit.com")))))))
+      ;; (defun santosh/dashboard-open ()
+      ;;   (interactive)
+      ;;   (dashboard-insert-startupify-lists)
+      ;;   (switch-to-buffer "*dashboard*")
+      ;;   (dashboard-mode))
 
       (defun santosh/dashboard-open ()
+        "Jump to the dashboard buffer, if doesn't exists create one."
         (interactive)
+        (switch-to-buffer dashboard-buffer-name)
+        (dashboard-mode)
         (dashboard-insert-startupify-lists)
-        (switch-to-buffer "*dashboard*")
-        (dashboard-mode))
+        (dashboard-refresh-buffer))
     #+end_src
 
 *** Media
@@ -2056,7 +2080,20 @@
           "https://gitlab.com/search?search=%s"
           :keybinding "b"))
     #+end_src
+*** Assistant
+    #+begin_src elisp
+      (use-package c3po
+        :straight (:host github :repo "d1egoaz/c3po.el")
+        :config
+        (setq c3po-api-key "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"))
 
+      ;; (use-package org-ai
+      ;;   :ensure
+      ;;   :commands (org-ai-mode org-ai-global-mode)
+      ;;   :init
+      ;;   (add-hook 'org-mode-hook #'org-ai-mode)
+      ;;   (org-ai-global-mode))
+    #+end_src
 *** General Keybindings
     Enable use of arrows in read-mode
 
@@ -2165,53 +2202,53 @@
     #+begin_src elisp
       (general-def "C-c h h" 'hs-toggle-hiding)
 
-    #+end_src
+    #+end_src*
 *** Temporary
-    The following is a paste of a exiting config file, from which I will slowly
-    move everything to org files.
+     The following is a paste of a exiting config file, from which I will slowly
+     move everything to org files.
 
-    #+begin_src elisp
-      (let ((file-name-handler-alist nil))
-	(fconfig! core)
-	(fconfig! packages)
-	(fconfig! org-config)
-	(fconfig! solar)
-	(fconfig! progmode)
-	(fconfig! mm)
-	;; (fconfig! finance)
-	;; (fconfig! speak)
-	;; (fconfig! devanagari)
-      )
+     #+begin_src elisp
+       (let ((file-name-handler-alist nil))
+	 (fconfig! core)
+	 (fconfig! packages)
+	 (fconfig! org-config)
+	 (fconfig! solar)
+	 (fconfig! progmode)
+	 (fconfig! mm)
+	 ;; (fconfig! finance)
+	 ;; (fconfig! speak)
+	 ;; (fconfig! devanagari)
+       )
 
-      (defun santosh/org-agenda-open ()
-	(interactive)
-	(if (get-buffer "*Org Agenda*")
-	    (progn
-	      (switch-to-buffer-other-frame "*Org Agenda*")
-	      (org-agenda-redo))
-	  (progn
-	    (let (
-		  (org-agenda-window-setup 'only-window)
-		  (org-frame (make-frame
-			      '((no-other-frame . t)
-				(unsplittable . t)
-				(height . 30)
-				(buffer-list . '("*Org Agenda*"))
-				(minibuffer . nil)
-				(undecorated . t)))))
-	      (set-frame-font "monospace-9" t nil)
-	      (org-agenda nil "A")
-	      (org-agenda-goto-today)
-	      (set-window-dedicated-p (selected-window) t)
-	      (delete-other-windows)))))
+       (defun santosh/org-agenda-open ()
+	 (interactive)
+	 (if (get-buffer "*Org Agenda*")
+	     (progn
+	       (switch-to-buffer-other-frame "*Org Agenda*")
+	       (org-agenda-redo))
+	   (progn
+	     (let (
+		   (org-agenda-window-setup 'only-window)
+		   (org-frame (make-frame
+			       '((no-other-frame . t)
+				 (unsplittable . t)
+				 (height . 30)
+				 (buffer-list . '("*Org Agenda*"))
+				 (minibuffer . nil)
+				 (undecorated . t)))))
+	       (set-frame-font "monospace-9" t nil)
+	       (org-agenda nil "A")
+	       (org-agenda-goto-today)
+	       (set-window-dedicated-p (selected-window) t)
+	       (delete-other-windows)))))
 
-      (global-map! "C-c o RET" 'santosh/org-agenda-open)
+       (global-map! "C-c o RET" 'santosh/org-agenda-open)
 
-      (if (not (server-running-p))
-	  (server-start))
+       (if (not (server-running-p))
+	   (server-start))
 
-      (fconfig/finish)
-    #+end_src
+       (fconfig/finish)
+     #+end_src
 
 *** Load personal setup
     Load personal setup file, which can have personal information like email
