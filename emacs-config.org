@@ -339,29 +339,31 @@
     only odd heading levels, with UT8 characters, makes for a slightly cleaner look.
     #+begin_src elisp
       (use-package org
-	:mode ("\\.org$" . org-mode)
-	:commands (org
-		   org-capture
-		   org-mode
-		   org-store-link
-		   update-org-hours
-		   my-term-agenda
-		   dired-notes)
-	:init
-	(add-to-list 'org-modules 'org-habit 'drill)
-	(setq
-	 org-directory (expand-file-name "org" notes-dir)
-	 org-default-notes-file (expand-file-name "notes" org-directory)))
+        :mode ("\\.org$" . org-mode)
+        :commands (org
+                   org-capture
+                   org-mode
+                   org-store-link
+                   update-org-hours
+                   my-term-agenda
+                   dired-notes)
+        :init
+
+        (add-to-list 'org-modules 'org-habit 'drill)
+        (setq
+         org-directory (expand-file-name "org" notes-dir)
+         org-default-notes-file (expand-file-name "notes" org-directory)
+         org-clock-sound t))
 
       (general-create-definer fconfig-org-config-bind
-	:prefix "C-c o"
-	:name "Org mode bindings"
-	"" '(:ignore t :which-key "Org-mode bindings"))
+        :prefix "C-c o"
+        :name "Org mode bindings"
+        "" '(:ignore t :which-key "Org-mode bindings"))
 
       (setq org-hide-emphasis-markers t
-	    org-odd-levels-only t
-	    org-pretty-entities t
-	    org-adapt-indentation t)
+            org-odd-levels-only t
+            org-pretty-entities t
+            org-adapt-indentation t)
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.
