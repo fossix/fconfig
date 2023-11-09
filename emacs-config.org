@@ -693,13 +693,12 @@
 
           (use-package org-roam
             :ensure t
-            :after emacsql-sqlite-module
             :init
             (setq org-roam-v2-ack t
                   org-roam-directory "~/notes/org/roam"
                   org-roam-completion-everywhere t
                   org-roam-dailies-directory "journal/"
-                  org-roam-database-connector 'sqlite-builtin
+                  org-roam-database-connector 'sqlite3
                   org-roam-node-display-template "${title:*} ${tags:20}")
             (org-roam-db-autosync-mode)
 
@@ -1369,7 +1368,7 @@
                                                                ))))
 
                   (tags-todo "/TODO"
-                              ((org-agenda-overriding-header "Pending daily tasks")
+                              ((org-agenda-overriding-header "Pending tasks")
                                (org-agenda-skip-function
                                 (progn '(or
                                          (org-agenda-skip-if-blocked)
