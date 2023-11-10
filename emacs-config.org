@@ -243,6 +243,7 @@
     #+begin_src elisp
       (use-package ace-window
         :defer 3
+        :ensure t
         :init (ace-window-display-mode)
         :config
         (setq aw-scope 'frame)
@@ -688,7 +689,7 @@
             :ensure t
             :after org-roam)
 
-          (use-package emacsql-sqlite-module
+          (use-package emacsql-sqlite
             :ensure t)
 
           (use-package org-roam
@@ -698,7 +699,6 @@
                   org-roam-directory "~/notes/org/roam"
                   org-roam-completion-everywhere t
                   org-roam-dailies-directory "journal/"
-                  org-roam-database-connector 'sqlite3
                   org-roam-node-display-template "${title:*} ${tags:20}")
             (org-roam-db-autosync-mode)
 
@@ -1799,6 +1799,20 @@
           :config
           (add-to-list 'xref-backend-functions 'gxref-xref-backend))
       #+end_src
+***** Project
+      #+begin_src elisp
+        (use-package projectile
+          :diminish
+          :defer 5
+          :init
+          (projectile-mode +1)
+          (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+          (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+
+        (use-package consult-projectile
+          :ensure t)
+
+      #+end_src
 *** Version Control
     Magit
     #+begin_src elisp
@@ -2204,6 +2218,11 @@
       (general-def "C-c h h" 'hs-toggle-hiding)
 
     #+end_src*
+*** Misc
+    #+begin_src elisp
+      (use-package speed-type
+        :ensure t)
+    #+end_src
 *** Temporary
      The following is a paste of a exiting config file, from which I will slowly
      move everything to org files.

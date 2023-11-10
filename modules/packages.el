@@ -147,17 +147,6 @@
 (use-package all-the-icons
   :ensure t)
 
-(use-package projectile
-  :diminish
-  :defer 5
-  :init
-  (projectile-mode +1)
-  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-
-(use-package consult-projectile
-  :ensure t)
-
 (use-package shell
   :defer t
   :bind (:map shell-mode-map ("<tab>" . completion-at-point))
