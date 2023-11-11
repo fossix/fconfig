@@ -504,7 +504,7 @@
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
 
-         org-format-latex-options (plist-put org-format-latex-options :scale 1.0)
+         org-format-latex-options (plist-put org-format-latex-options :scale 2.5)
          org-clock-mode-line-total 'today)
       #+end_src
 ***** Setup org modules
@@ -783,14 +783,16 @@
                    :jump-to-captured)))
 
           (setq org-roam-dailies-capture-templates
-                (let ((head
-                       (concat "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n"
-                               "* Tasks\n\n* Journal\n")))
+                (let ((head "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n"))
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
                     ("t" "Task" entry
                      "*** TODO %^{Task}%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
+                    ("b" "Bug" entry
+                     "*** TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] ${Bug}]]  :bug:%i\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
+                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
+                     :jump-to-captured)
                     ("j" "Journal" entry "* %U %^{Summary}"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :immediate-finish t)
@@ -1332,9 +1334,9 @@
                   (tags-todo "/PROG"
                              ((org-agenda-sorting-strategy
                                '(priority-down effort-down todo-state-down))
-                              (org-agenda-skip-function
-                               (progn
-                                 '(or (org-agenda-skip-if-blocked))))
+                              ;; (org-agenda-skip-function
+                              ;;  (progn
+                              ;;    '(or (org-agenda-skip-if-blocked))))
                               (org-agenda-prefix-format " %i %s")
                               (org-agenda-overriding-header "Ongoing Tasks & Projects")))
 
@@ -1397,6 +1399,11 @@
                                     (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
                                     ; (org-agenda-skip-if nil '(scheduled deadline timestamp))
                                     (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "PROG" "DEFERRED")))))))))
+
+                ("h" "Bugs on hold"
+                 ((tags-todo "bug/HOLD"
+                             ((org-agenda-overriding-header "Bugs on hold")
+                              (org-agenda-prefix-format "%i %s")))))
 
                 ("i" "Tasks to be refiled" tags "refile"
                  ((org-agenda-files '("~/notes/org/inbox"))))
