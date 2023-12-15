@@ -777,9 +777,6 @@
                    :target (file+head "work/%<%Y%m%d%H%M%S>-${slug}.org"
                                       "#+title: ${title}\n#+filetags: :work:\n\n")
                    :unnarrowed t
-                   :jump-to-captured)
-                  ("b" "Bug" entry "* TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] ${title}]]"
-                   :target (node "NVIDIA Bugs")
                    :jump-to-captured)))
 
           (setq org-roam-dailies-capture-templates
@@ -790,7 +787,7 @@
                      "*** TODO %^{Task}%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
                     ("b" "Bug" entry
-                     "*** TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] ${Bug}]]  :bug:%i\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
+                     "*** TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] %^{Bug Title}]]  :bug:%i\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
                      :jump-to-captured)
                     ("j" "Journal" entry "* %U %^{Summary}"
@@ -890,7 +887,7 @@
                     (file-name-directory buffer-file-name))))
 
             (defun vulpea-project-files ()
-                "Return a list of note files containing 'project' tag." ;
+                "Return a list of note files containing 'tasks' tag." ;
                 (seq-uniq
                  (seq-map
                   #'car
@@ -1369,7 +1366,7 @@
                                                                  (org-agenda-skip-entry-if 'scheduled))
                                                                ))))
 
-                  (tags-todo "/TODO"
+                  (tags-todo "-someday-bug-learning/TODO"
                               ((org-agenda-overriding-header "Pending tasks")
                                (org-agenda-skip-function
                                 (progn '(or
@@ -1383,7 +1380,9 @@
                                 (cl-remove-if-not
                                  (lambda (file)
                                    (and
-                                    (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory))
+                                    (or
+                                     (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory))
+                                     (file-in-directory-p file (f-join org-roam-directory "work")))
                                     (member file (vulpea-project-files))))
                                  (vulpea-project-files)))))))
 
@@ -1774,6 +1773,7 @@
           :after lsp-mode)
 
         (use-package lsp-ui
+          :ensure t
           :hook (lsp-mode . lsp-ui-mode)
           :after lsp-mode)
 
