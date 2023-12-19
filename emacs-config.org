@@ -902,7 +902,9 @@
               "Update the value of `org-agenda-files'."
               (setq org-agenda-files (seq-uniq (append
                                                 (list (concat org-directory "/todo.org")
-                                                      (concat org-directory "/work.org"))
+                                                      (concat org-directory "/work.org")
+                                                      "~/work/events.org"
+                                                      "~/Documents/personal.org")
                                                 (vulpea-project-files)))))
 
             (add-hook 'find-file-hook #'vulpea-project-update-tag)
@@ -1071,6 +1073,16 @@
             (santosh/mv-journal-md-to-subdir)))
       #+end_src
 
+***** Calendar Sync
+      Sync personal calendar into org-mode
+      #+begin_src elisp
+        (use-package org-caldav
+          :init
+          (setq org-caldav-url "https://nc.fossix.org/remote.php/dav/calendars/santosh")
+          (setq org-caldav-calendars
+                '((:calendar-id "personal" :files ()
+                   :inbox "~/Documents/personal.org"))))
+      #+end_src
 ***** Agenda
 
       Add agenda files
