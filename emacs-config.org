@@ -742,7 +742,7 @@
                   org-roam-ui-update-on-save t
                   org-roam-ui-open-on-start nil))
 
-          ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
+                    ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
           (defun santosh/preview-fetcher ()
             (let* ((elem (org-element-context))
                    (parent (org-element-property :parent elem)))
@@ -798,12 +798,6 @@
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :clock-in t :clock-resume t))))
 
-          (defun santosh/org-roam-node-find ()
-            "Don't prompt for a roam template, use the first entry from the template list"
-            (interactive)
-            (let ((org-roam-capture-templates (list (append (car org-roam-capture-templates)))))
-              (org-roam-node-find)))
-
           (defun santosh/org-roam-dailies-goto-today ()
             "Don't prompt for a roam template, use the first entry from the template list"
             (interactive)
@@ -817,8 +811,7 @@
               (org-roam-dailies-goto-date)))
 
           (fconfig-notes-bind
-            "l" 'org-roam-buffer-toggle
-            "f" 'santosh/org-roam-node-find
+            "b" 'org-roam-buffer-toggle
             "T" 'org-roam-dailies-capture-today
             "t" 'santosh/org-roam-dailies-goto-today
             "D" 'org-roam-dailies-capture-date
@@ -830,7 +823,11 @@
             "I" 'org-roam-node-insert-immediate
             "o i" 'org-id-get-create
             ";" 'org-roam-tag-add
-            "/" 'org-roam-tag-remove)
+            "/" 'org-roam-tag-remove
+            "s" 'consult-org-roam-search
+            "f" 'consult-org-roam-file-find
+            "o b" 'consult-org-roam-backlinks
+            "o f" 'consult-org-roam-forward-links)
 	#+end_src
 ********* Org-roam and agenda
           Taken from [[https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html][Task Management with org-roam]] series
@@ -956,7 +953,9 @@
                     (search . " %i %(vulpea-agenda-category 12) ")))
 
           #+end_src
-******* deft
+
+******* Search notes
+        Using deft
 	#+begin_src elisp
           ;;; From https://github.com/jrblevin/deft/issues/75#issuecomment-905031872
           (defun cm/deft-parse-title (file contents)
@@ -994,6 +993,31 @@
             "C-D" 'deft-delete-file)
 	#+end_src
 
+        Using consult-org-roam
+        #+begin_src elisp
+          (use-package consult-org-roam
+             :ensure t
+             :after org-roam
+             :init
+             (require 'consult-org-roam)
+             ;; Activate the minor mode
+             (consult-org-roam-mode 1)
+             :custom
+             ;; Use `ripgrep' for searching with `consult-org-roam-search'
+             (consult-org-roam-grep-func #'consult-ripgrep)
+             ;; Configure a custom narrow key for `consult-buffer'
+             (consult-org-roam-buffer-narrow-key ?r)
+             ;; Display org-roam buffers right after non-org-roam buffers
+             ;; in consult-buffer (and not down at the bottom)
+             (consult-org-roam-buffer-after-buffers t)
+             :config
+             ;; Eventually suppress previewing for certain functions
+             (consult-customize
+              consult-org-roam-forward-links
+              :preview-key "M-.")
+             :bind
+             ;; Define some convenient keybindings as an addition)
+        #+end_src
 ******* org-transclusion
 	To seamlessly view and add notes and files into a org-buffer without
 	copying them.
@@ -1030,6 +1054,7 @@
             (set-frame-parameter nil 'unsplittable t))
         #+end_src
 
+******* Searching
 ***** Publishing notes
       #+begin_src elisp
         (use-package ox-hugo
@@ -1198,8 +1223,7 @@
           ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
 
           (setq org-agenda-tag-line-face
-                '(("tasks" . (:foreground "LightGoldenrod1"))
-                  ("bug" . (:foreground "IndianRed"))
+                '(("bug" . (:foreground "IndianRed"))
                   ("meeting" . (:foreground "DeepSkyBlue" :weight bold))))
 
           (defun org-agenda-fontify-tagged-line ()
@@ -1589,7 +1613,30 @@
                   (setq count (1+ count)))))
             (message "Number of top-level headlines: %d" count)))
       #+end_src
+*** Biblography
+    #+begin_src elisp
+      (use-package citar
+        :no-require
+        :custom
+        (org-cite-global-bibliography '("~/notes/bib/references.bib"))
+        (org-cite-insert-processor 'citar)
+        (org-cite-follow-processor 'citar)
+        (org-cite-activate-processor 'citar)
+        (citar-bibliography org-cite-global-bibliography))
+    #+end_src
+*** Calendar View
+    #+begin_src elisp
+      (require 'calfw-cal)
+      (require 'calfw-org)
 
+      (defun my-open-calendar ()
+        (interactive)
+        (cfw:open-calendar-buffer
+         :contents-sources
+         (list
+          (cfw:org-create-source "Green")
+          (cfw:cal-create-source "Orange"))))
+    #+end_src
 *** Mail
     Notmuch mail setup
 

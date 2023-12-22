@@ -64,6 +64,7 @@
     (setq ledger-schedule-file (concat notes-dir "/santosh/finance/ledger-schedule")))
   :config
   (use-package company-ledger
+    :ensure t
     :ensure company
     :after (company)
     :init
