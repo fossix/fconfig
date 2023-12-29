@@ -900,8 +900,8 @@
               (setq org-agenda-files (seq-uniq (append
                                                 (list (concat org-directory "/todo.org")
                                                       (concat org-directory "/work.org")
-                                                      "~/work/events.org"
-                                                      "~/Documents/personal.org")
+                                                      (concat org-directory "/calendars/work.org")
+                                                      (concat org-directory "/calendars/personal.org"))
                                                 (vulpea-project-files)))))
 
             (add-hook 'find-file-hook #'vulpea-project-update-tag)
@@ -1104,7 +1104,7 @@
           (setq org-caldav-url "https://nc.fossix.org/remote.php/dav/calendars/santosh")
           (setq org-caldav-calendars
                 '((:calendar-id "personal" :files ()
-                   :inbox "~/Documents/personal.org"))))
+                   :inbox "~/notes/org/calendars/personal.org"))))
       #+end_src
 ***** Agenda
 
