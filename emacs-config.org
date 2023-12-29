@@ -2288,6 +2288,192 @@
       (use-package speed-type
         :ensure t)
     #+end_src
+*** Solar
+    From here: https://www.reddit.com/r/orgmode/comments/a1z26t/sunrise_sunset_as_separate_entries_on_agenda_view/
+    #+begin_src elisp
+      ;; Sunrise (edits by Eph Zero)
+      ;; Brady Trainor
+      ;; http://stackoverflow.com/questions/22889036/custom-diary-sunrise-function-not-working-autoload-diary-emacs
+      (require 'solar)
+      (require 'cl-lib)
+
+      (defun solar-sunrise-string (date &optional nolocation)
+        "String of *local* time of sunrise and daylight on Gregorian DATE."
+        (let ((l (solar-sunrise-sunset date)))
+          (format
+           "%s"
+           (if (car l)
+               (concat "Sunrise " (apply 'solar-time-string (car l)))
+             "no sunrise")
+           (nth 2 l))))
+
+      ;; To be called from diary-list-sexp-entries, where DATE is bound.
+      ;;;###diary-autoload
+      (defun diary-sunrise ()
+        "Local time of sunrise as a diary entry.
+        Accurate to a few seconds."
+        (or (and calendar-latitude calendar-longitude calendar-time-zone)
+            (solar-setup))
+        (solar-sunrise-string date))
+
+      ;; Sunset
+      ;; Brady Trainor
+      ;; http://stackoverflow.com/questions/22889036/custom-diary-sunrise-function-not-working-autoload-diary-emacs
+
+      (defun solar-sunset-string (date &optional nolocation)
+        "String of *local* time of sunset and daylight on Gregorian DATE."
+        (let ((l (solar-sunrise-sunset date)))
+          (format
+           "%s (%s hours daylight)"
+           (if (cadr l)
+               (concat "Sunset " (apply 'solar-time-string (cadr l)))
+             "no sunset")
+           (nth 2 l))))
+
+      ;; To be called from diary-list-sexp-entries, where DATE is bound.
+      ;;;###diary-autoload
+      (defun diary-sunset ()
+        "Local time of sunset as a diary entry.
+        Accurate to a few seconds."
+        (or (and calendar-latitude calendar-longitude calendar-time-zone)
+            (solar-setup))
+        (solar-sunset-string date))
+    #+end_src
+*** Finance
+    A lot to be done here.
+    #+begin_src elisp
+      (defun future-value (amount rate years)
+        (* amount (expt (+ 1 (/ (float rate) 100)) years)))
+
+      (defun calculate-compounded-value (amount rate tenure-start tenure-end)
+        "Calculate the total compounded value of AMOUNT compounded at a
+      RATE for TENURE-START to TENURE-END years. This can be used to
+      calculate future value of an investment or to get how much you
+      need when you retire, considering inflation.
+
+      If you want to calculate how much your monthly invest of 10000
+      will be after 10 years with a interest rate of 8 percent
+
+          (calculate-compounded-value (* 12 10000) 8 0 10)
+
+      TENURE-START is 0 before we are calculating from this year.
+
+      Again if a retirement fund needed is to be calculated, the RATE
+      will be the inflation rate, and tenure start will be \"number of
+      years from today you want to retire\", and tenure end is number
+      years from today that one is expected to live. So a monthly need
+      of 20000 for 20 years after retiring around 25 years from now,
+      with inflation of 4%
+
+          (calculate-compounded-value (* 12 20000) 4 25 20)
+      "
+
+        (let ((total 0)
+              (x 0))
+          (while (< x (- tenure-end tenure-start))
+            (setq total (+ total (future-value amount rate (+ tenure-start x))))
+            (incf x))
+          total))
+    #+end_src
+*** Speak
+    A simple function to convert text to speech using OpenAI API.
+
+    #+begin_src elisp
+      (defun get-openai-api-token ()
+        "Retrieve the OpenAI API token from the .authinfo file."
+        (let ((credential (car (auth-source-search :host "api.openai.com" :require '(:secret)))))
+          (if credential
+              (let ((token (plist-get credential :secret)))
+                (if (functionp token)
+                    (funcall token) ; If the token is stored as a function, call it to retrieve the value
+                  token))           ; Otherwise, return the token directly
+            (error "No OpenAI API token found in .authinfo"))))
+
+      (defun openai-tts (start end)
+        "Send the selected text to OpenAI's TTS API, save the speech as an MP3 file and play."
+        (interactive "r")
+        (lexical-let ((text (buffer-substring-no-properties start end))
+                      (api-key (get-openai-api-token))
+                      (api-url "https://api.openai.com/v1/audio/speech")
+                      (output-file (make-temp-file "emacs-openai-tts-" nil ".mp3")))
+
+          ;; Prepare the API request
+          (let ((url-request-method "POST")
+                (url-request-extra-headers `(("Content-Type" . "application/json")
+                                             ("Authorization" . ,(concat "Bearer " api-key))))
+                (url-request-data (json-encode `(("model" . "tts-1")
+                                                 ("input" . ,text)
+                                                 ("voice" . "alloy")))))
+
+            ;; Send the request
+            (url-retrieve api-url (lambda (status)
+                                    ;; Handle the response
+                                    ;; Check for errors in `status`
+                                    (when (equal :error (car status))
+                                      (let ((error-message (plist-get (cdr status) :error)))
+                                        (error "Error in API request: %s" error-message))
+                                      )
+
+                                    ;; Save the response to a file
+                                    (goto-char url-http-end-of-headers)
+                                    (write-region (point) (point-max) output-file)
+                                    (message "Speech saved to: %s" output-file)
+                                    ;; Play the audio file
+                                    ;; This assumes you have a command-line utility like `mpg123` to play MP3 files
+                                    (start-process "openai-tts-audio" nil "mpg123" output-file))
+                          nil t))))
+    #+end_src
+*** Read mode
+    #+begin_src elisp
+      (require 'view)
+      (require 'hide-mode-line)
+
+      (make-variable-buffer-local
+       (defvar rm/read-frame nil))
+
+      (make-variable-buffer-local
+       (defvar rm/line-spacing 0.50))
+
+      (make-variable-buffer-local
+       (defvar rm/old-line-spacing))
+
+      (defun ss/center-window (frame)
+        (let ((margin-size (/ (- (frame-width frame) 100) 2)))
+          (set-window-margins (frame-root-window frame) 38)))
+
+      (defun enable-read-mode ()
+        (interactive)
+        (setq rm/read-frame (make-frame))
+        (set-frame-parameter rm/read-frame 'fullscreen  'fullboth)
+        (view-mode-enable)
+        (variable-pitch-mode 1)
+        (setq-local rm/old-line-spacing line-spacing)
+        (setq-local line-spacing rm/line-spacing)
+        (ss/center-window rm/read-frame)
+        (turn-on-hide-mode-line-mode))
+
+      (defun disable-read-mode ()
+        (turn-off-hide-mode-line-mode)
+        (setq-local line-spacing rm/old-line-spacing)
+        (variable-pitch-mode -1)
+        (view-mode-disable)
+        (delete-frame rm/read-frame))
+
+      (define-minor-mode read-mode
+        "Minor mode to enhance reading experience"
+
+        :init-value nil
+        :lighter " reading"
+        :keymap (let ((read-map (make-sparse-keymap)))
+                  read-map)
+
+        :after-hook (define-key read-mode-map (kbd "q")
+                      (lambda () (interactive) (read-mode -1)))
+
+        (if read-mode
+            (enable-read-mode)
+          (disable-read-mode)))
+    #+end_src
 *** Temporary
      The following is a paste of a exiting config file, from which I will slowly
      move everything to org files.
@@ -2297,12 +2483,7 @@
 	 (fconfig! core)
 	 (fconfig! packages)
 	 (fconfig! org-config)
-	 (fconfig! solar)
 	 (fconfig! progmode)
-	 (fconfig! mm)
-	 ;; (fconfig! finance)
-	 ;; (fconfig! speak)
-	 ;; (fconfig! devanagari)
        )
 
        (defun santosh/org-agenda-open ()
