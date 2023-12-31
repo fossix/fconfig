@@ -2116,12 +2116,14 @@
       (use-package engine-mode
         :ensure t
         :config
+        (engine-mode t)
         (defengine github
           "https://github.com/search?ref=simplesearch&q=%s"
           :keybinding "i")
 
         (defengine google
           "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+          :browser 'eww-browse-url
           :keybinding "g")
 
         (defengine duckduckgo
@@ -2339,141 +2341,171 @@
             (solar-setup))
         (solar-sunset-string date))
     #+end_src
-*** Finance
-    A lot to be done here.
+*** Utilities
     #+begin_src elisp
-      (defun future-value (amount rate years)
-        (* amount (expt (+ 1 (/ (float rate) 100)) years)))
-
-      (defun calculate-compounded-value (amount rate tenure-start tenure-end)
-        "Calculate the total compounded value of AMOUNT compounded at a
-      RATE for TENURE-START to TENURE-END years. This can be used to
-      calculate future value of an investment or to get how much you
-      need when you retire, considering inflation.
-
-      If you want to calculate how much your monthly invest of 10000
-      will be after 10 years with a interest rate of 8 percent
-
-          (calculate-compounded-value (* 12 10000) 8 0 10)
-
-      TENURE-START is 0 before we are calculating from this year.
-
-      Again if a retirement fund needed is to be calculated, the RATE
-      will be the inflation rate, and tenure start will be \"number of
-      years from today you want to retire\", and tenure end is number
-      years from today that one is expected to live. So a monthly need
-      of 20000 for 20 years after retiring around 25 years from now,
-      with inflation of 4%
-
-          (calculate-compounded-value (* 12 20000) 4 25 20)
-      "
-
-        (let ((total 0)
-              (x 0))
-          (while (< x (- tenure-end tenure-start))
-            (setq total (+ total (future-value amount rate (+ tenure-start x))))
-            (incf x))
-          total))
+      (general-create-definer fconfig-utils-bind
+        :prefix "C-c u"
+        :name "Utilities"
+        "" '(:ignore t :which-key "Utilities"))
     #+end_src
-*** Speak
-    A simple function to convert text to speech using OpenAI API.
+***** Finance
+      A lot to be done here.
+      #+begin_src elisp
+        (defun future-value (amount rate years)
+          (* amount (expt (+ 1 (/ (float rate) 100)) years)))
 
-    #+begin_src elisp
-      (defun get-openai-api-token ()
-        "Retrieve the OpenAI API token from the .authinfo file."
-        (let ((credential (car (auth-source-search :host "api.openai.com" :require '(:secret)))))
-          (if credential
-              (let ((token (plist-get credential :secret)))
-                (if (functionp token)
-                    (funcall token) ; If the token is stored as a function, call it to retrieve the value
-                  token))           ; Otherwise, return the token directly
-            (error "No OpenAI API token found in .authinfo"))))
+        (defun calculate-compounded-value (amount rate tenure-start tenure-end)
+          "Calculate the total compounded value of AMOUNT compounded at a
+        RATE for TENURE-START to TENURE-END years. This can be used to
+        calculate future value of an investment or to get how much you
+        need when you retire, considering inflation.
 
-      (defun openai-tts (start end)
-        "Send the selected text to OpenAI's TTS API, save the speech as an MP3 file and play."
-        (interactive "r")
-        (lexical-let ((text (buffer-substring-no-properties start end))
-                      (api-key (get-openai-api-token))
-                      (api-url "https://api.openai.com/v1/audio/speech")
-                      (output-file (make-temp-file "emacs-openai-tts-" nil ".mp3")))
+        If you want to calculate how much your monthly invest of 10000
+        will be after 10 years with a interest rate of 8 percent
 
-          ;; Prepare the API request
-          (let ((url-request-method "POST")
-                (url-request-extra-headers `(("Content-Type" . "application/json")
-                                             ("Authorization" . ,(concat "Bearer " api-key))))
-                (url-request-data (json-encode `(("model" . "tts-1")
-                                                 ("input" . ,text)
-                                                 ("voice" . "alloy")))))
+            (calculate-compounded-value (* 12 10000) 8 0 10)
 
-            ;; Send the request
-            (url-retrieve api-url (lambda (status)
-                                    ;; Handle the response
-                                    ;; Check for errors in `status`
-                                    (when (equal :error (car status))
-                                      (let ((error-message (plist-get (cdr status) :error)))
-                                        (error "Error in API request: %s" error-message))
-                                      )
+        TENURE-START is 0 before we are calculating from this year.
 
-                                    ;; Save the response to a file
-                                    (goto-char url-http-end-of-headers)
-                                    (write-region (point) (point-max) output-file)
-                                    (message "Speech saved to: %s" output-file)
-                                    ;; Play the audio file
-                                    ;; This assumes you have a command-line utility like `mpg123` to play MP3 files
-                                    (start-process "openai-tts-audio" nil "mpg123" output-file))
-                          nil t))))
-    #+end_src
-*** Read mode
-    #+begin_src elisp
-      (require 'view)
-      (require 'hide-mode-line)
+        Again if a retirement fund needed is to be calculated, the RATE
+        will be the inflation rate, and tenure start will be \"number of
+        years from today you want to retire\", and tenure end is number
+        years from today that one is expected to live. So a monthly need
+        of 20000 for 20 years after retiring around 25 years from now,
+        with inflation of 4%
 
-      (make-variable-buffer-local
-       (defvar rm/read-frame nil))
+            (calculate-compounded-value (* 12 20000) 4 25 40)
+        "
 
-      (make-variable-buffer-local
-       (defvar rm/line-spacing 0.50))
+          (let ((total 0)
+                (x 0))
+            (while (< x (- tenure-end tenure-start))
+              (setq total (+ total (future-value amount rate (+ tenure-start x))))
+              (incf x))
+            total))
 
-      (make-variable-buffer-local
-       (defvar rm/old-line-spacing))
+        (defun )h
+      #+end_src
+***** Speak
+      A simple function to convert text to speech using OpenAI API.
 
-      (defun ss/center-window (frame)
-        (let ((margin-size (/ (- (frame-width frame) 100) 2)))
-          (set-window-margins (frame-root-window frame) 38)))
+      #+begin_src elisp
+        (defvar openai-tts-cache-directory "~/.emacs.d/openai-tts-cache/")
+        (defvar openai-tts-playback-process nil "Process used for playing TTS audio.")
 
-      (defun enable-read-mode ()
-        (interactive)
-        (setq rm/read-frame (make-frame))
-        (set-frame-parameter rm/read-frame 'fullscreen  'fullboth)
-        (view-mode-enable)
-        (variable-pitch-mode 1)
-        (setq-local rm/old-line-spacing line-spacing)
-        (setq-local line-spacing rm/line-spacing)
-        (ss/center-window rm/read-frame)
-        (turn-on-hide-mode-line-mode))
+        (defun get-openai-api-token ()
+          "Retrieve the OpenAI API token from the .authinfo file."
+          (let ((credential (car (auth-source-search :host "api.openai.com" :require '(:secret)))))
+            (if credential
+                (let ((token (plist-get credential :secret)))
+                  (if (functionp token)
+                      (funcall token) ; If the token is stored as a function, call it to retrieve the value
+                    token))           ; Otherwise, return the token directly
+              (error "No OpenAI API token found in .authinfo"))))
 
-      (defun disable-read-mode ()
-        (turn-off-hide-mode-line-mode)
-        (setq-local line-spacing rm/old-line-spacing)
-        (variable-pitch-mode -1)
-        (view-mode-disable)
-        (delete-frame rm/read-frame))
+        (defun openai-tts (start end)
+          "Send the selected text to OpenAI's TTS API, save the speech as an MP3 file and play."
+          (interactive "r")
+          (lexical-let* ((text (buffer-substring-no-properties start end))
+                         (api-key (get-openai-api-token))
+                         (api-url "https://api.openai.com/v1/audio/speech")
+                         (hashed-text (md5 text))
+                         (output-file (expand-file-name
+                                       (concat openai-tts-cache-directory hashed-text ".mp3"))))
 
-      (define-minor-mode read-mode
-        "Minor mode to enhance reading experience"
+            (if (file-exists-p output-file)
+                (progn
+                  (message "Playing from cache")
+                  (setq openai-tts-playback-process (start-process "openai-tts-audio" "*#openai-tts-audio*" "mpg123" output-file)))
 
-        :init-value nil
-        :lighter " reading"
-        :keymap (let ((read-map (make-sparse-keymap)))
-                  read-map)
+              ;; Prepare the API request
+              (let ((url-request-method "POST")
+                    (url-request-extra-headers `(("Content-Type" . "application/json")
+                                                 ("Authorization" . ,(concat "Bearer " api-key))))
+                    (url-request-data (json-encode `(("model" . "tts-1")
+                                                     ("input" . ,text)
+                                                     ("voice" . "alloy")))))
 
-        :after-hook (define-key read-mode-map (kbd "q")
-                      (lambda () (interactive) (read-mode -1)))
+                ;; Send the request
+                (url-retrieve api-url (lambda (status)
+                                        ;; Handle the response
+                                        ;; Check for errors in `status`
+                                        (when (equal :error (car status))
+                                          (let ((error-message (plist-get (cdr status) :error)))
+                                            (error "Error in API request: %s" error-message))
+                                          )
 
-        (if read-mode
-            (enable-read-mode)
-          (disable-read-mode)))
-    #+end_src
+                                        ;; Save the response to a file
+                                        (goto-char url-http-end-of-headers)
+                                        (write-region (point) (point-max) output-file)
+                                        (message "Speech saved to: %s" output-file)
+                                        ;; Play the audio file
+                                        ;; This assumes you have a command-line utility like `mpg123` to play MP3 files
+                                        (setq openai-tts-playback-process (start-process "openai-tts-audio" nil "mpg123" output-file)))
+                              nil t)))))
+
+        (defun openai-tts-playback-stop ()
+          "Stop the TTS audio playback."
+          (interactive)
+          (when (process-live-p openai-tts-playback-process)
+            (kill-process openai-tts-playback-process)
+            (setq openai-tts-playback-process nil)
+            (message "Stopped TTS playback.")))
+
+        (fconfig-utils-bind "s" 'openai-tts)
+        (fconfig-utils-bind "S" 'openai-tts-playback-stop)
+      #+end_src
+***** Read mode
+      #+begin_src elisp
+        (require 'view)
+        (require 'hide-mode-line)
+
+        (make-variable-buffer-local
+         (defvar rm/read-frame nil))
+
+        (make-variable-buffer-local
+         (defvar rm/line-spacing 0.50))
+
+        (make-variable-buffer-local
+         (defvar rm/old-line-spacing))
+
+        (defun ss/center-window (frame)
+          (let ((margin-size (/ (- (frame-width frame) 100) 2)))
+            (set-window-margins (frame-root-window frame) 38)))
+
+        (defun enable-read-mode ()
+          (interactive)
+          (setq rm/read-frame (make-frame))
+          (set-frame-parameter rm/read-frame 'fullscreen  'fullboth)
+          (view-mode-enable)
+          (variable-pitch-mode 1)
+          (setq-local rm/old-line-spacing line-spacing)
+          (setq-local line-spacing rm/line-spacing)
+          (ss/center-window rm/read-frame)
+          (turn-on-hide-mode-line-mode))
+
+        (defun disable-read-mode ()
+          (turn-off-hide-mode-line-mode)
+          (setq-local line-spacing rm/old-line-spacing)
+          (variable-pitch-mode -1)
+          (view-mode-disable)
+          (delete-frame rm/read-frame))
+
+        (define-minor-mode read-mode
+          "Minor mode to enhance reading experience"
+
+          :init-value nil
+          :lighter " reading"
+          :keymap (let ((read-map (make-sparse-keymap)))
+                    read-map)
+
+          :after-hook (define-key read-mode-map (kbd "q")
+                        (lambda () (interactive) (read-mode -1)))
+
+          (if read-mode
+              (enable-read-mode)
+            (disable-read-mode)))
+      #+end_src
 *** Temporary
      The following is a paste of a exiting config file, from which I will slowly
      move everything to org files.
