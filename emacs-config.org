@@ -2382,9 +2382,7 @@
             (while (< x (- tenure-end tenure-start))
               (setq total (+ total (future-value amount rate (+ tenure-start x))))
               (incf x))
-            total))
-
-        (defun )h
+            total)))
       #+end_src
 ***** Speak
       A simple function to convert text to speech using OpenAI API.
