@@ -5,10 +5,6 @@
 
 (set-face-attribute 'org-headline-done nil :strike-through t)
 
-(org-toggle-pretty-entities)
-(configure-prettify-symbols-alist)
-(org-toggle-inline-images)
-(setq org-latex-preview t)
 
 (add-hook 'before-save-hook 'org-update-all-dblocks)
 

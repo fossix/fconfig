@@ -219,7 +219,7 @@
 	      '((alpha . 0)
 		(left-fringe . 9)
 		(right-fringe . 9))
-	      vertico-posframe-font "Monospace-13"))
+	      vertico-posframe-font "Monospace-14"))
 
       (use-package marginalia
 	:ensure t
@@ -365,6 +365,23 @@
             org-odd-levels-only t
             org-pretty-entities t
             org-adapt-indentation t)
+
+      (add-hook 'org-mode-hook (lambda ()
+        "Beautify Org Checkbox Symbol"
+        (push '("[ ]" .  "☐") prettify-symbols-alist)
+        (push '("[X]" . "☑" ) prettify-symbols-alist)
+        (push '("[-]" . "❍" ) prettify-symbols-alist)
+        (prettify-symbols-mode)))
+
+      (defface org-checkbox-done-text
+        '((t (:foreground "#71696A" :strike-through t)))
+        "Face for the text part of a checked org-mode checkbox.")
+
+      (font-lock-add-keywords
+       'org-mode
+       `(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:X\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+          1 'org-checkbox-done-text prepend))
+       'append)
     #+end_src
 
     Use a org-bullets to show custom unicode bullets.
@@ -430,7 +447,7 @@
          org-agenda-skip-deadline-if-done t
          org-agenda-skip-scheduled-if-done t
          org-agenda-skip-timestamp-if-done t
-         org-clock-idle-time 15
+         org-clock-idle-time 30
          org-deadline-warning-days 7
          org-agenda-skip-scheduled-if-deadline-is-shown t
          org-return-follows-link t
@@ -521,11 +538,21 @@
       default the image is not displayed. One has to run
       ~org-display-inline-images~ after every source block evaluation to view the
       image result. To avoid that, add a hook to run the display command after
-      every babel execution.
+      every babel execution and load images by when org file startups. We also
+      don't want org to show the actual width of the image, let us have the
+      option to resize them.
 
       #+begin_src elisp
-	(eval-after-load 'org
-	  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+        (setq org-startup-with-inline-images t)
+        (eval-after-load 'org
+          (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+
+        (setq org-image-actual-width nil)
+      #+end_src
+
+      Load library of babel file at init time.
+      #+begin_src elisp
+        (org-babel-lob-ingest (expand-file-name "org/lob/lob.org" notes-dir))
       #+end_src
 
       Some of the languages that I use with ~org-babel~.
@@ -678,6 +705,19 @@
 
 ***** Note taking
       Everything related to note taking, currently ~org-roam~.
+
+      I like to clock-in to org-roam daily journal entries, which would nicely
+      keep each clocked items and also the notes taken during that event in that
+      particular day's org file. This will also avoid cramming the agenda files
+      with clock entries. End of the day, the work done can be viewed in a
+      single place along with the notes.
+
+      https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html
+
+      - Keep each project in a separate file
+      - Keep work project items in a subfolder
+      - Dynamically add only those project files to the agenda list
+
 ******* org-roam
 	#+begin_src elisp
           (general-create-definer fconfig-notes-bind
@@ -742,7 +782,7 @@
                   org-roam-ui-update-on-save t
                   org-roam-ui-open-on-start nil))
 
-                    ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
+          ;;; https://github.com/org-roam/org-roam/issues/1934#issuecomment-979735048
           (defun santosh/preview-fetcher ()
             (let* ((elem (org-element-context))
                    (parent (org-element-property :parent elem)))
@@ -1281,6 +1321,16 @@
               (message "Skipping task in future file: %s" filename)
               (org-agenda-skip-entry-if 'todo '("TODO" "DONE")))))
 
+        (defun skip-future-timestamped-todos ()
+          "Skip TODO entries with timestamps in the future or today."
+          (let ((end (save-excursion (or (outline-next-heading) (point-max)))))
+            (if (re-search-forward org-ts-regexp end t)
+                (let ((timestamp (match-string 0)))
+                  (if (org-time>= timestamp (org-read-date nil nil "now"))
+                      end
+                    nil))
+              nil)))
+
         ;;; show number of days a task from the org-roam daily has been pending
         (defun org-agenda-tasks-display-delay ()
           "Display delay in days based on the date string in the file name."
@@ -1405,7 +1455,8 @@
                                 (progn '(or
                                          (org-agenda-skip-if-blocked)
                                          (org-agenda-tasks-skip-if-future)
-                                         (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
+                                         (org-agenda-skip-if nil '(scheduled deadline))
+                                         (skip-future-timestamped-todos))))
                                (org-agenda-sorting-strategy
                                 '(priority-down effort-up todo-state-down))
                                (org-agenda-prefix-format "%i %(org-agenda-tasks-display-delay) [%e] ")
@@ -1430,7 +1481,7 @@
                                '(or (org-agenda-skip-if-blocked)
                                     (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
                                     ; (org-agenda-skip-if nil '(scheduled deadline timestamp))
-                                    (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "PROG" "DEFERRED")))))))))
+                                    (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "PROG" "DEFERRED" "HOLD")))))))))
 
                 ("h" "Bugs on hold"
                  ((tags-todo "bug/HOLD"
@@ -1487,6 +1538,7 @@
                 ("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-red)) nil nil :ascent center)
                 ("Project" ,(list (all-the-icons-octicon "diff" :face 'all-the-icons-green)) nil nil :ascent center)
                 ("Tasks" ,(list (all-the-icons-octicon "checklist" :face 'all-the-icons-green)) nil nil :ascent center)
+                ("Writing" ,(list (all-the-icons-faicon "pencil" :face 'all-the-icons-green)) nil nil :ascent center)
                 ))
       #+end_src
 
@@ -1769,6 +1821,19 @@
 	(general-def notmuch-show-part-map "d" 'fconfig/notmuch-show-view-as-patch)
       #+end_src
 
+***** Utility functions
+      #+begin_src elisp
+        (defun mail/copy-bug-details ()
+          "Extracts the number and the last string within square brackets from INPUT-STRING and copies them to the kill ring."
+          (interactive)
+          (let ((input-string (notmuch-show-get-subject)))
+            (when (string-match "\\[B\\] \\([0-9]+\\).*\\[\\([^]]+\\)\\]$"  input-string)
+              (let ((number (match-string 1 input-string))
+                    (last-string (match-string 2 input-string)))
+                (kill-new number)
+                (kill-new last-string)
+                (message "Bug: %s, Summary: %s" number last-string)))))
+      #+end_src
 *** Programming
 ***** Compilation
       Always scroll to the first error
@@ -2175,13 +2240,13 @@
       ;;; switch between light and dark themes
       (general-def "C-c l t l" '(lambda()
 				  (interactive)
-				  (disable-theme 'doom-one)
-				  (load-theme 'doom-opera-light t)))
+				  (disable-theme 'doom-nord)
+				  (load-theme 'doom-nord-light t)))
 
       (general-def "C-c l t d" '(lambda()
 				  (interactive)
-				  (disable-theme 'doom-opera-light)
-				  (load-theme 'doom-one t)))
+				  (disable-theme 'doom-nord-light)
+				  (load-theme 'doom-nord t)))
       ;; searching and jumping
       (general-create-definer fconfig-search-bind
 	:prefix "M-g"
@@ -2547,3 +2612,4 @@
 			    (concat (system-name) ".org") "~/.emacs.d"))
       (load custom-file)
     #+end_src
+(require 'ox-json)
