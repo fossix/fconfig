@@ -314,25 +314,38 @@
 
       (setq even-window-sizes nil)
     #+end_src
+    A function to create a temporary buffer
+    #+begin_src elisp
+      (defun create-temp-buffer-with-timestamp ()
+        "Create a temporary buffer with a unique name based on the current date and time."
+        (interactive)
+        (let* ((timestamp (format-time-string "%Y-%m-%d %H:%M:%S"))
+               (buffer-name (format "*Temp %s*" timestamp)))
+          (with-current-buffer (get-buffer-create buffer-name)
+            (insert (format "This is a temporary buffer created on %s.\nFeel free to use it and discard when done." timestamp))
+            (goto-char (point-min))
+            (display-buffer (current-buffer)))))
+    #+end_src
 
     A general key binding definer for buffer operations
 
     #+begin_src elisp
       ;; key bindings
       (general-create-definer fconfig-buffer-bind
-	:name "Buffer related bindings"
-	:prefix "C-c b"
-	"" '(:ignore t :which-key "Buffer related"))
+        :name "Buffer related bindings"
+        :prefix "C-c b"
+        "" '(:ignore t :which-key "Buffer related"))
 
       (fconfig-buffer-bind
-	"g" 'writegood-mode
-	"w" 'whitespace-mode
-	"l" 'recenter-top-bottom
-	"p" 'reposition-window
-	"s" 'flyspell-buffer
-	"b" 'bury-buffer
-	"r" 'revert-buffer
-	"f" 'fci-mode)
+        "g" 'writegood-mode
+        "w" 'whitespace-mode
+        "l" 'recenter-top-bottom
+        "p" 'reposition-window
+        "s" 'flyspell-buffer
+        "b" 'bury-buffer
+        "r" 'revert-buffer
+        "f" 'fci-mode
+        "t" 'create-temp-buffer-with-timestamp)
     #+end_src
 
 *** Org-mode
@@ -364,7 +377,9 @@
       (setq org-hide-emphasis-markers t
             org-odd-levels-only t
             org-pretty-entities t
-            org-adapt-indentation t)
+            org-adapt-indentation t
+            org-enforce-todo-checkbox-dependencies t
+            org-duration-format (quote h:mm))
 
       (add-hook 'org-mode-hook (lambda ()
         "Beautify Org Checkbox Symbol"
@@ -532,7 +547,12 @@
 	(use-package org-agenda)
 	(use-package org-contrib :ensure t)
       #+end_src
-
+***** Make org-mode a bit more modern looking
+      #+begin_src elisp
+        (use-package "org-modern"
+          :ensure t
+          :config (global-org-modern-mode))
+      #+end_src
 ***** Reproducible research
       After a source block is executed, and if that has a image as a result, by
       default the image is not displayed. One has to run
@@ -823,11 +843,17 @@
                 (let ((head "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n"))
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
-                    ("t" "Task" entry
+                    ("t" "Task" entry "* TODO %?"
+                     :target (file+head+olp "%<%Y-W%V>.org" ,head ("Week Tasks")))
+                    ("u" "Urgent Tasks" entry
                      "*** TODO %^{Task}%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
+                    ;; ("b" "Bug" entry
+                    ;;  "*** TODO   :bug:%i\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
+                    ;;  :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
+                    ;;  :jump-to-captured)
                     ("b" "Bug" entry
-                     "*** TODO [[[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%\\1] %^{Bug Title}]]  :bug:%i\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
+                     "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%^{System} - %^{Bug Title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
                      :jump-to-captured)
                     ("j" "Journal" entry "* %U %^{Summary}"
@@ -837,6 +863,32 @@
                      "* %U %^{Title} %^g\n"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
                      :clock-in t :clock-resume t))))
+
+          (defun org-roam-dailies-goto-previous-week ()
+            (interactive)
+            (let ((date (org-read-date nil nil "-7d")))
+              (org-roam-dailies-goto-week date)))
+
+          (defun org-roam-dailies-goto-next-week ()
+            (interactive)
+            (let ((date (org-read-date nil nil "+7d")))
+              (org-roam-dailies-goto-week date)))
+
+          (defun org-roam-dailies-goto-week (date)
+            "Navigate to the dailies entry for the week containing DATE."
+            (let ((weekly-file (format-time-string "%Y-W%W.org" (org-time-string-to-time date))))
+              (find-file (concat (file-name-as-directory (concat (file-name-as-directory org-roam-directory) org-roam-dailies-directory)) weekly-file))))
+
+          (defun org-roam-dailies-goto-this-week ()
+            (interactive)
+            (let ((date (org-read-date nil nil "0d")))
+              (org-roam-dailies-goto-week date)))
+
+          (defun org-roam-dailies-goto-day-in-week (date)
+            "Navigate to the dailies entry for the week containing DATE, then jump to the day."
+            (interactive (list (org-read-date)))
+            (org-roam-dailies-goto-week date)
+            (search-forward (format-time-string "%Y-%m-%d" (org-time-string-to-time date)) nil t))
 
           (defun santosh/org-roam-dailies-goto-today ()
             "Don't prompt for a roam template, use the first entry from the template list"
@@ -1259,42 +1311,36 @@
         #+begin_src elisp
           ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
 
-          (setq org-agenda-tag-line-face
-                '(("bug" . (:foreground "IndianRed"))
-                  ("meeting" . (:foreground "DeepSkyBlue" :weight bold))))
+          ;; (setq org-agenda-tag-line-face
+          ;;       '(("bug" . (:foreground "IndianRed"))
+          ;;         ("meeting" . (:foreground "DeepSkyBlue" :weight bold))))
 
-          (defun org-agenda-fontify-tagged-line ()
-            "Use `org-agenda-face-for-tagged-lines' to fontify lines with certain tags."
-            (goto-char (point-min))
-            (let (tags)
-              (while (progn (forward-line 1) (not (eobp)))
-                (if (setq tags (get-text-property (point) 'tags))
-                    (mapc
-                     (lambda (pair)
-                       (if (member (car pair) tags)
-                           (add-text-properties (point-at-bol) (point-at-eol) `(face ,(cdr pair)))))
-                     org-agenda-tag-line-face)))))
+          ;; (defun org-agenda-fontify-tagged-line ()
+          ;;   "Use `org-agenda-face-for-tagged-lines' to fontify lines with certain tags."
+          ;;   (goto-char (point-min))
+          ;;   (let (tags)
+          ;;     (while (progn (forward-line 1) (not (eobp)))
+          ;;       (if (setq tags (get-text-property (point) 'tags))
+          ;;           (mapc
+          ;;            (lambda (pair)
+          ;;              (if (member (car pair) tags)
+          ;;                  (add-text-properties (point-at-bol) (point-at-eol) `(face ,(cdr pair)))))
+          ;;            org-agenda-tag-line-face)))))
 
-          (add-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
+          ;; (remove-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
         #+end_src
 ***** Custom agenda
-      We will have 5 blocks under the "Agenda and TODOs headline. The first
-      block will show the scheduled items for today, deadlines, meetings etc.
+      We will have three blocks in agenda. The first block will show the
+      scheduled items for today, deadlines, meetings etc.
 
-      The second block shows high priority tasks (doesn't matter if a task
-      is started or in the next state, if it's high priority it shows up
-      here).
+      The second block shows issues (assigned bugs) that are not updated for
+      more than N days.
 
-      The third block shows the "Next and Ongoing tasks", but it's skipped from
-      being displayed if it's a scheduled entry, or blocked. This is so because
-      we don't want to clutter the view. If a task is scheduled, then we know
-      it's to be done sometime soon, so it a blocked talk, because the child
-      will either be scheduled or be shown in the "Pending items" block.
-
-      The next block shows all tasks that are due within 30 days, and finally
-      "Pending items", to show the remaining tasks with effort estimate.
+      The third block shows the "Pending tasks", and finally "Pending items", to
+      show the remaining tasks with effort estimate.
 
       #+begin_src elisp
+        (setq org-agenda-start-with-log-mode t)
         (defun day-agenda-skip ()
           "Skip trees that are of priority A and has a meeting tag"
           (let ((subtree-end (save-excursion (org-end-of-subtree t)))
@@ -1394,11 +1440,11 @@
         (setq org-agenda-custom-commands
               ;; NOTE: Since blocked items won't be shown, make sure the children are
               ;; TODO items, if they are check boxes, set the NOBLOCKING property.
-              '(("A" "Agenda and TODOs"
+              '(("d" "Agenda and TODOs"
                  ((agenda ""
                           ((org-agenda-overriding-header "Today's Agenda")
                            (org-agenda-span 'day)
-                           (org-agenda-prefix-format " %i %?-12t% s")
+                           (org-agenda-prefix-format " %i %?:e %?-12t% s")
                            (org-agenda-scheduled-leaders '("" "%2dx "))
                            (org-agenda-use-time-grid t)
                            (org-deadline-warning-days 7)
@@ -1411,36 +1457,6 @@
                             '(time-up todo-state-up priority-down))
                            (org-agenda-skip-function 'org-agenda-skip-if-blocked)))
 
-                  (tags-todo "/PROG"
-                             ((org-agenda-sorting-strategy
-                               '(priority-down effort-down todo-state-down))
-                              ;; (org-agenda-skip-function
-                              ;;  (progn
-                              ;;    '(or (org-agenda-skip-if-blocked))))
-                              (org-agenda-prefix-format " %i %s")
-                              (org-agenda-overriding-header "Ongoing Tasks & Projects")))
-
-                  (tags "PRIORITY={A}/-PROG-DONE"
-                        (
-                         (org-agenda-overriding-header "High Priority & Deadline (Pending)")
-                         (org-agenda-sorting-strategy
-                          '(priority-down effort-down todo-state-down))
-                         ;; If priority inheritance work's the following could be
-                         ;; uncommented, so only the next actionable child shows up.
-                         (org-agenda-dim-blocked-tasks 'invisible)
-                         (org-agenda-skip-function
-                          (progn '(or
-                                   (org-agenda-skip-if nil '(scheduled deadline timestamp)))))
-                         (org-agenda-prefix-format " %i %s")))
-
-                  (tags-todo "-bill&+DEADLINE>\"<today>\"+DEADLINE<\"<+30d>\""
-                             ((org-agenda-overriding-header "")
-                              (org-agenda-compact-blocks t)
-                              (org-agenda-skip-function
-                               (progn
-                                 '(or
-                                   (org-agenda-skip-entry-if 'notdeadline))))))
-
                   (tags-todo "bug/TODO"
                              ((org-agenda-overriding-header "Issues getting stale (> 2)")
                               (org-agenda-prefix-format "%i %s")
@@ -1449,15 +1465,15 @@
                                                                  (org-agenda-skip-entry-if 'scheduled))
                                                                ))))
 
-                  (tags-todo "-someday-bug-learning/TODO"
+                  (tags-todo "-someday-bug-learning/TODO|PROG"
                               ((org-agenda-overriding-header "Pending tasks")
                                (org-agenda-skip-function
                                 (progn '(or
                                          (org-agenda-skip-if-blocked)
                                          (org-agenda-tasks-skip-if-future)
-                                         (org-agenda-skip-if nil '(scheduled deadline))
+                                         (org-agenda-skip-if nil '(deadline))
                                          (skip-future-timestamped-todos))))
-                               (org-agenda-sorting-strategy
+                               (org-agenda-sorting-stratey
                                 '(priority-down effort-up todo-state-down))
                                (org-agenda-prefix-format "%i %(org-agenda-tasks-display-delay) [%e] ")
                                (org-agenda-files
@@ -1480,8 +1496,8 @@
                              (progn
                                '(or (org-agenda-skip-if-blocked)
                                     (org-agenda-skip-entry-if 'regexp "\\[#A\\]")
-                                    ; (org-agenda-skip-if nil '(scheduled deadline timestamp))
-                                    (org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("DONE" "PROG" "DEFERRED" "HOLD")))))))))
+                                    (org-agenda-skip-if nil '(scheduled deadline timestamp))
+                                    (org-agenda-skip-entry-if 'scheduled 'todo '("DONE" "PROG" "DEFERRED" "HOLD")))))))))
 
                 ("h" "Bugs on hold"
                  ((tags-todo "bug/HOLD"
@@ -1515,6 +1531,26 @@
                   (org-agenda-with-colors nil)
                   (org-agenda-remove-tags t)
                  ("~//tmp/agenda.html")))))
+      #+end_src
+
+      Super agenda
+      #+begin_src elisp
+        (use-package "org-super-agenda"
+          :init
+          (setq org-super-agenda-groups
+                '((:name "Today" :time-grid t :log t)
+                  (:scheduled today)
+                  (:habit t)
+                  (:name "Overdue"
+                         :deadline past)
+                  (:name "Due soon"
+                         :deadline future)
+                  (:name "Scheduled earlier"
+                         :scheduled past)
+                  (:name ""
+                         :tag "bug")
+                  (:name ""
+                         :anything t))))
       #+end_src
 
       Setup category icons
@@ -1741,6 +1777,11 @@
 	    message-kill-buffer-on-exit t
 	    message-mail-alias-type 'ecomplete
 	    message-auto-save-directory nil)
+    #+end_src
+
+    Use w3m for HTML mail reading.
+    #+begin_src elisp
+      (setq mm-text-html-renderer 'w3m)
     #+end_src
 
 ***** Email Workflow

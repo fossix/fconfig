@@ -6,7 +6,7 @@
 (set-face-attribute 'org-headline-done nil :strike-through t)
 
 
-(add-hook 'before-save-hook 'org-update-all-dblocks)
+; (add-hook 'before-save-hook 'org-update-all-dblocks)
 
 (setf org-special-ctrl-a/e t)
 (setf org-special-ctrl-k t)
@@ -211,7 +211,7 @@ A prefix arg forces clock in of the default task."
 
 (add-hook 'org-clock-out-hook 'remove-empty-drawer-on-clock-out 'append)
 
-(setq org-archive-location "archive/%s::")
+(setq org-archive-location "archive.org::datetree/* Finished Tasks")
 
 (setq org-stuck-projects
       '("+project|reading|learn/WAITING-CANCELLED-DONE-CLOSED-FIXED-STARTED" ()
