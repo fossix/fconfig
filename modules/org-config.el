@@ -211,7 +211,7 @@ A prefix arg forces clock in of the default task."
 
 (add-hook 'org-clock-out-hook 'remove-empty-drawer-on-clock-out 'append)
 
-(setq org-archive-location "archive.org::datetree/* Finished Tasks")
+(setq org-archive-location "archive.org::datetree/")
 
 (setq org-stuck-projects
       '("+project|reading|learn/WAITING-CANCELLED-DONE-CLOSED-FIXED-STARTED" ()

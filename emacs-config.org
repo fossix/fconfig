@@ -1,6 +1,6 @@
 #+STARTUP: overview
 #+OPTIONS: ^:{}
-#+header-args: :noweb yes
+#+header-args: :noweb yes :results none
 
 * Emacs Config
 *** Package setup
@@ -401,12 +401,12 @@
 
     Use a org-bullets to show custom unicode bullets.
     #+begin_src elisp
-      (use-package org-bullets
-	:ensure t
-	:hook (org-mode . org-bullets-mode)
-	:custom
-	(org-bullets-bullet-list '("◉" "○" "■" "◆" "▲" "▶"))
-	(org-ellipsis "⤵"))
+      ;; (use-package org-bullets
+      ;;   :ensure t
+      ;;   :hook (org-mode . org-bullets-mode)
+      ;;   :custom
+      ;;   (org-bullets-bullet-list '("◉" "○" "■" "◆" "▲" "▶"))
+      ;;   (org-ellipsis "⤵"))
     #+end_src
 
     Always show latex previews, and pretty entities
@@ -459,6 +459,7 @@
         (setq
          org-hide-leading-stars t
          org-clock-persist 'history
+         org-agenda-span 'day
          org-agenda-skip-deadline-if-done t
          org-agenda-skip-scheduled-if-done t
          org-agenda-skip-timestamp-if-done t
@@ -844,7 +845,7 @@
                   `(("d" "default" plain "%?"
                      :target (file+head "%<%Y-%m-%d>.org" ,head))
                     ("t" "Task" entry "* TODO %?"
-                     :target (file+head+olp "%<%Y-W%V>.org" ,head ("Week Tasks")))
+                     :target (file+head+olp "inbox.org" ,head ("Tasks")))
                     ("u" "Urgent Tasks" entry
                      "*** TODO %^{Task}%?"
                      :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
@@ -924,124 +925,125 @@
 ********* Org-roam and agenda
           Taken from [[https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html][Task Management with org-roam]] series
           #+begin_src elisp
-            (use-package vulpea
-              :ensure t
-              ;; hook into org-roam-db-autosync-mode you wish to enable
-              ;; persistence of meta values (see respective section in README to
-              ;; find out what meta means)
-              :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
+                        (use-package vulpea
+                          :ensure t
+                          ;; hook into org-roam-db-autosync-mode you wish to enable
+                          ;; persistence of meta values (see respective section in README to
+                          ;; find out what meta means)
+                          :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
 
-            (use-package vulpea-buffer)
+                        (use-package vulpea-buffer)
 
-            (defun vulpea-project-p ()
-              "Return non-nil if current buffer has any todo entry.
+                        (defun vulpea-project-p ()
+                          "Return non-nil if current buffer has any todo entry.
 
-            TODO entries marked as done are ignored, meaning the this
-            function returns nil if current buffer contains only completed
-            tasks."
-              (seq-find                                 ; (3)
-               (lambda (type)
-                 (eq type 'todo))
-               (org-element-map                         ; (2)
-                   (org-element-parse-buffer 'headline) ; (1)
-                   'headline
-                 (lambda (h)
-                   (org-element-property :todo-type h)))))
+                        TODO entries marked as done are ignored, meaning the this
+                        function returns nil if current buffer contains only completed
+                        tasks."
+                          (seq-find                                 ; (3)
+                           (lambda (type)
+                             (eq type 'todo))
+                           (org-element-map                         ; (2)
+                               (org-element-parse-buffer 'headline) ; (1)
+                               'headline
+                             (lambda (h)
+                               (org-element-property :todo-type h)))))
 
-            (defun vulpea-project-update-tag ()
-                "Update PROJECT tag in the current buffer."
-                (when (and (not (active-minibuffer-window))
-                           (vulpea-buffer-p))
-                  (save-excursion
-                    (goto-char (point-min))
-                    (let* ((tags (vulpea-buffer-tags-get))
-                           (original-tags tags))
-                      (if (vulpea-project-p)
-                          (setq tags (cons "tasks" tags))
-                        (setq tags (remove "tasks" tags)))
+                        (defun vulpea-project-update-tag ()
+                            "Update PROJECT tag in the current buffer."
+                            (when (and (not (active-minibuffer-window))
+                                       (vulpea-buffer-p))
+                              (save-excursion
+                                (goto-char (point-min))
+                                (let* ((tags (vulpea-buffer-tags-get))
+                                       (original-tags tags))
+                                  (if (vulpea-project-p)
+                                      (setq tags (cons "tasks" tags))
+                                    (setq tags (remove "tasks" tags)))
 
-                      ;; cleanup duplicates
-                      (setq tags (seq-uniq tags))
+                                  ;; cleanup duplicates
+                                  (setq tags (seq-uniq tags))
 
-                      ;; update tags if changed
-                      (when (or (seq-difference tags original-tags)
-                                (seq-difference original-tags tags))
-                        (apply #'vulpea-buffer-tags-set tags))))))
+                                  ;; update tags if changed
+                                  (when (or (seq-difference tags original-tags)
+                                            (seq-difference original-tags tags))
+                                    (apply #'vulpea-buffer-tags-set tags))))))
 
-            (defun vulpea-buffer-p ()
-              "Return non-nil if the currently visited buffer is a note."
-              (and buffer-file-name
-                   (string-prefix-p
-                    (expand-file-name (file-name-as-directory org-roam-directory))
-                    (file-name-directory buffer-file-name))))
+                        (defun vulpea-buffer-p ()
+                          "Return non-nil if the currently visited buffer is a note."
+                          (and buffer-file-name
+                               (string-prefix-p
+                                (expand-file-name (file-name-as-directory org-roam-directory))
+                                (file-name-directory buffer-file-name))))
 
-            (defun vulpea-project-files ()
-                "Return a list of note files containing 'tasks' tag." ;
-                (seq-uniq
-                 (seq-map
-                  #'car
-                  (org-roam-db-query
-                   [:select [nodes:file]
-                    :from tags
-                    :left-join nodes
-                    :on (= tags:node-id nodes:id)
-                    :where (like tag (quote "%\"tasks\"%"))]))))
+                        (defun vulpea-project-files ()
+                            "Return a list of note files containing 'tasks' tag." ;
+                            (seq-uniq
+                             (seq-map
+                              #'car
+                              (org-roam-db-query
+                               [:select [nodes:file]
+                                :from tags
+                                :left-join nodes
+                                :on (= tags:node-id nodes:id)
+                                :where (like tag (quote "%\"tasks\"%"))]))))
 
-            (defun vulpea-agenda-files-update (&rest _)
-              "Update the value of `org-agenda-files'."
-              (setq org-agenda-files (seq-uniq (append
-                                                (list (concat org-directory "/todo.org")
-                                                      (concat org-directory "/calendars/work.org")
-                                                      (concat org-directory "/calendars/personal.org"))
-                                                (vulpea-project-files)))))
+                        (defun vulpea-agenda-files-update (&rest _)
+                          "Update the value of `org-agenda-files'."
+                          (setq org-agenda-files (seq-uniq (append
+                                                            (list (concat org-directory "/todo.org")
+                                                                  (concat org-directory "/calendars/work.org")
+                                                                  (concat org-directory "/calendars/personal.org"))
+                                                            (vulpea-project-files)))))
 
-            (add-hook 'find-file-hook #'vulpea-project-update-tag)
-            (add-hook 'before-save-hook #'vulpea-project-update-tag)
+                        (add-hook 'find-file-hook #'vulpea-project-update-tag)
+                        (add-hook 'before-save-hook #'vulpea-project-update-tag)
 
-            (advice-add 'org-agenda :before #'vulpea-agenda-files-update)
-            (advice-add 'org-todo-list :before #'vulpea-agenda-files-update)
+                        (advice-add 'org-agenda :before #'vulpea-agenda-files-update)
+                        (advice-add 'org-todo-list :before #'vulpea-agenda-files-update)
 
-            (defun vulpea-agenda-category (&optional len)
-              "Get category of item at point for agenda.
+                        (defun vulpea-agenda-category (&optional len)
+                          "Get category of item at point for agenda.
 
-            Category is defined by one of the following items:
+                        Category is defined by one of the following items:
 
-            - CATEGORY property
-            - TITLE keyword
-            - TITLE property
-            - filename without directory and extension
+                        - CATEGORY property
+                        - TITLE keyword
+                        - TITLE property
+                        - filename without directory and extension
 
-            When LEN is a number, resulting string is padded right with
-            spaces and then truncated with ... on the right if result is
-            longer than LEN.
+                        When LEN is a number, resulting string is padded right with
+                        spaces and then truncated with ... on the right if result is
+                        longer than LEN.
 
-            Usage example:
+                        Usage example:
 
-              (setq org-agenda-prefix-format
-                    '((agenda . \" %(vulpea-agenda-category) %?-12t %12s\")))
+                          (setq org-agenda-prefix-format
+                                '((agenda . \" %(vulpea-agenda-category) %?-12t %12s\")))
 
-            Refer to `org-agenda-prefix-format' for more information."
-              (let* ((file-name (when buffer-file-name
-                                  (file-name-sans-extension
-                                   (file-name-nondirectory buffer-file-name))))
-                     (title (vulpea-buffer-prop-get "title"))
-                     (category (org-get-category))
-                     (result
-                      (or (if (and
-                               title
-                               (string-equal category file-name))
-                              title
-                            category)
-                          "")))
-                (if (numberp len)
-                    (s-truncate len (s-pad-right len " " result))
-                  result)))
+                        Refer to `org-agenda-prefix-format' for more information."
+                          (let* ((file-name (when buffer-file-name
+                                              (file-name-sans-extension
+                                               (file-name-nondirectory buffer-file-name))))
+                                 (title (vulpea-buffer-prop-get "title"))
+                                 (category (org-get-category))
+                                 (result
+                                  (or (if (and
+                                           title
+                                           (string-equal category file-name))
+                                          title
+                                        category)
+                                      "")))
+                            (if (numberp len)
+                                (s-truncate len (s-pad-right len " " result))
+                              result)))
 
-            (setq org-agenda-prefix-format
-                  '((agenda . " %i %(vulpea-agenda-category 12)%?-12t% s")
-                    (todo . " %i %(vulpea-agenda-category 12) ")
-                    (tags . " %i %(vulpea-agenda-category 12) ")
-                    (search . " %i %(vulpea-agenda-category 12) ")))
+                        (setq org-agenda-prefix-format
+                              '((agenda . " %i \
+            %(vulpea-agenda-category 12)%?-12t% s")
+                                (todo . " %i %(vulpea-agenda-category 12) ")
+                                (tags . " %i %(vulpea-agenda-category 12) ")
+                                (search . " %i %(vulpea-agenda-category 12) ")))
 
           #+end_src
 
@@ -1248,7 +1250,8 @@
         (setq org-agenda-time-grid '((daily today remove-match)
                                      (800 1000 1200 1400 1600 1800 2000)
                                      "......" "----------------")
-              org-agenda-sort-noeffort-is-high nil)
+              org-agenda-sort-noeffort-is-high nil
+              org-agenda-clockreport-parameter-plist '(:stepskip0 t :link t :maxlevel 2 :fileskip0 t :tags t :hidefiles t :compact t))
 
 
         ;; functions to remind me to stop working for the day
@@ -1311,24 +1314,25 @@
         #+begin_src elisp
           ;; from: https://lists.gnu.org/archive/html/emacs-orgmode/2014-01/msg00637.html
 
-          ;; (setq org-agenda-tag-line-face
-          ;;       '(("bug" . (:foreground "IndianRed"))
-          ;;         ("meeting" . (:foreground "DeepSkyBlue" :weight bold))))
+          (setq org-agenda-tag-line-face
+                '(("bug" . (:foreground "IndianRed"))
+                  ("meeting" . (:foreground "DeepSkyBlue" :weight bold))))
 
-          ;; (defun org-agenda-fontify-tagged-line ()
-          ;;   "Use `org-agenda-face-for-tagged-lines' to fontify lines with certain tags."
-          ;;   (goto-char (point-min))
-          ;;   (let (tags)
-          ;;     (while (progn (forward-line 1) (not (eobp)))
-          ;;       (if (setq tags (get-text-property (point) 'tags))
-          ;;           (mapc
-          ;;            (lambda (pair)
-          ;;              (if (member (car pair) tags)
-          ;;                  (add-text-properties (point-at-bol) (point-at-eol) `(face ,(cdr pair)))))
-          ;;            org-agenda-tag-line-face)))))
+          (defun org-agenda-fontify-tagged-line ()
+            "Use `org-agenda-face-for-tagged-lines' to fontify lines with certain tags."
+            (goto-char (point-min))
+            (let (tags)
+              (while (progn (forward-line 1) (not (eobp)))
+                (if (setq tags (get-text-property (point) 'tags))
+                    (mapc
+                     (lambda (pair)
+                       (if (member (car pair) tags)
+                           (add-text-properties (point-at-bol) (point-at-eol) `(face ,(cdr pair)))))
+                     org-agenda-tag-line-face)))))
 
-          ;; (remove-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
+          (add-hook 'org-agenda-finalize-hook 'org-agenda-fontify-tagged-line)
         #+end_src
+
 ***** Custom agenda
       We will have three blocks in agenda. The first block will show the
       scheduled items for today, deadlines, meetings etc.
@@ -1464,27 +1468,37 @@
                                                                  (santosh/since-last-update 2)
                                                                  (org-agenda-skip-entry-if 'scheduled))
                                                                ))))
+                  (tags-todo "/PROG"
+                             ((org-agenda-sorting-strategy
+                               '(priority-down effort-down todo-state-down))
+                              (org-agenda-skip-function
+                               (progn '(or
+                                        (org-agenda-skip-if nil '(deadline))
+                                        (skip-future-timestamped-todos))))
 
-                  (tags-todo "-someday-bug-learning/TODO|PROG"
-                              ((org-agenda-overriding-header "Pending tasks")
-                               (org-agenda-skip-function
-                                (progn '(or
-                                         (org-agenda-skip-if-blocked)
-                                         (org-agenda-tasks-skip-if-future)
-                                         (org-agenda-skip-if nil '(deadline))
-                                         (skip-future-timestamped-todos))))
-                               (org-agenda-sorting-stratey
-                                '(priority-down effort-up todo-state-down))
-                               (org-agenda-prefix-format "%i %(org-agenda-tasks-display-delay) [%e] ")
-                               (org-agenda-files
-                                (cl-remove-if-not
-                                 (lambda (file)
-                                   (and
-                                    (or
-                                     (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory))
-                                     (file-in-directory-p file (f-join org-roam-directory "work")))
-                                    (member file (vulpea-project-files))))
-                                 (vulpea-project-files)))))))
+                              (org-agenda-prefix-format " %i %s")
+                              (org-agenda-overriding-header "Ongoing Tasks & Projects")))
+
+                  (tags-todo "-someday-bug-learning/TODO"
+                             ((org-agenda-overriding-header "Pending tasks")
+                              (org-agenda-skip-function
+                               (progn '(or
+                                        (org-agenda-skip-if-blocked)
+                                        (org-agenda-tasks-skip-if-future)
+                                        (org-agenda-skip-if nil '(deadline))
+                                        (skip-future-timestamped-todos))))
+                              (org-agenda-sorting-strategy
+                               '(priority-down effort-up todo-state-down))
+                              (org-agenda-prefix-format "%i %(org-agenda-tasks-display-delay) [%e] ")
+                              (org-agenda-files
+                               (cl-remove-if-not
+                                (lambda (file)
+                                  (and
+                                   (or
+                                    (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory))
+                                    (file-in-directory-p file (f-join org-roam-directory "work")))
+                                   (member file (vulpea-project-files))))
+                                (vulpea-project-files)))))))
 
                 ("p" "All pending todos"
                  ((alltodo ""
@@ -1533,6 +1547,54 @@
                  ("~//tmp/agenda.html")))))
       #+end_src
 
+#+RESULTS:
+| d | Agenda and TODOs    | ((agenda  ((org-agenda-overriding-header Today's Agenda) (org-agenda-span 'day) (org-agenda-prefix-format  %i %?:e %?-12t% s) (org-agenda-scheduled-leaders '( %2dx )) (org-agenda-use-time-grid t) (org-deadline-warning-days 7) (org-agenda-show-log t) (org-agenda-skip-scheduled-if-deadline-is-shown 'not-today) (org-agenda-skip-deadline-prewarning-if-scheduled 3) (org-agenda-skip-scheduled-delay-if-deadline t) (org-agenda-skip-timestamp-if-deadline-is-shown nil) (org-agenda-sorting-strategy '(time-up todo-state-up priority-down)) (org-agenda-skip-function 'org-agenda-skip-if-blocked))) (tags-todo bug/TODO ((org-agenda-overriding-header Issues getting stale (> 2)) (org-agenda-prefix-format %i %s) (org-agenda-skip-function (progn '(or (santosh/since-last-update 2) (org-agenda-skip-entry-if 'scheduled)))))) (tags-todo /PROG ((org-agenda-sorting-strategy '(priority-down effort-down todo-state-down)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if nil '(deadline)) (skip-future-timestamped-todos)))) (org-agenda-prefix-format  %i %s) (org-agenda-overriding-header Ongoing Tasks & Projects))) (tags-todo -someday-bug-learning/TODO ((org-agenda-overriding-header Pending tasks) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked) (org-agenda-tasks-skip-if-future) (org-agenda-skip-if nil '(deadline)) (skip-future-timestamped-todos)))) (org-agenda-sorting-strategy '(priority-down effort-up todo-state-down)) (org-agenda-prefix-format %i %(org-agenda-tasks-display-delay) [%e] ) (org-agenda-files (cl-remove-if-not (lambda (file) (and (or (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory)) (file-in-directory-p file (f-join org-roam-directory work))) (member file (vulpea-project-files)))) (vulpea-project-files)))))) |                                                                                                               |                                           |
+| p | All pending todos   | ((alltodo  ((org-agenda-overriding-header Pending items) (org-agenda-prefix-format  %i [%e] ) (org-agenda-sorting-strategy '(priority-down effort-up todo-state-down category-keep)) (org-agenda-skip-function (progn '(or (org-agenda-skip-if-blocked) (org-agenda-skip-entry-if 'regexp \[#A\]) (org-agenda-skip-if nil '(scheduled deadline timestamp)) (org-agenda-skip-entry-if 'scheduled 'todo '(DONE PROG DEFERRED HOLD))))))))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |                                                                                                               |                                           |
+| h | Bugs on hold        | ((tags-todo bug/HOLD ((org-agenda-overriding-header Bugs on hold) (org-agenda-prefix-format %i %s))))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                                                               |                                           |
+| i | Tasks to be refiled | tags                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | refile                                                                                                        | ((org-agenda-files '(~/notes/org/inbox))) |
+| W | Week review         | ((agenda  ((org-agenda-start-on-weekday 1) (org-agenda-show-log t) (org-agenda-time-grid nil) (org-agenda-start-with-log-mode t) (org-agenda-include-diary nil) (org-agenda-log-mode-items '(state clock closed)) (org-agenda-files (append (vulpea-project-files) '(~/notes/org/todo.org))) (org-agenda-skip-function (progn '(or (org-agenda-skip-entry-if 'scheduled 'deadline) (org-agenda-skip-subtree-if 'regexp :habit:)))) (org-agenda-start-with-clockreport-mode t) (org-agenda-span 'week) (org-agenda-start-day -7) (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3)) (org-agenda-overriding-header Work week in Review))))                                                                                                                                                                                                                                                                                         |                                                                                                               |                                           |
+| X | agenda              |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | ((org-agenda-prefix-format  [ ] ) (org-agenda-with-colors nil) (org-agenda-remove-tags t) (~//tmp/agenda.html)) |                                           |
+
+      The above custom agenda can produce empty sections in some cases, like
+      when there are not ~PROG~ tasks. So let delete it. This code was taken from
+      a [[https://www.reddit.com/r/emacs/comments/jjrk2o/hide_empty_custom_agenda_sections/][Reditt Post]].
+
+      #+begin_src elisp
+        (defun org-agenda-delete-empty-blocks ()
+          "Remove empty agenda blocks.
+          A block is identified as empty if there are fewer than 2
+          non-empty lines in the block (excluding the line with
+          `org-agenda-block-separator' characters)."
+          (when org-agenda-compact-blocks
+            (user-error "Cannot delete empty compact blocks"))
+          (setq buffer-read-only nil)
+          (save-excursion
+            (goto-char (point-min))
+            (let* ((blank-line-re "^\\s-*$")
+                   (content-line-count (if (looking-at-p blank-line-re) 0 1))
+                   (start-pos (point))
+                   (block-re (format "%c\\{10,\\}" org-agenda-block-separator)))
+              (while (and (not (eobp)) (forward-line))
+                (cond
+                 ((looking-at-p block-re)
+                  (when (< content-line-count 2)
+                    (delete-region start-pos (1+ (point-at-bol))))
+                  (setq start-pos (point))
+                  (forward-line)
+                  (setq content-line-count (if (looking-at-p blank-line-re) 0 1)))
+                 ((not (looking-at-p blank-line-re))
+                  (setq content-line-count (1+ content-line-count)))))
+              (when (< content-line-count 2)
+                (delete-region start-pos (point-max)))
+              (goto-char (point-min))
+              ;; The above strategy can leave a separator line at the beginning
+              ;; of the buffer.
+              (when (looking-at-p block-re)
+                (delete-region (point) (1+ (point-at-eol))))))
+          (setq buffer-read-only t))
+
+        (add-hook 'org-agenda-finalize-hook #'org-agenda-delete-empty-blocks)
+      #+end_src
       Super agenda
       #+begin_src elisp
         (use-package "org-super-agenda"
@@ -1550,7 +1612,9 @@
                   (:name ""
                          :tag "bug")
                   (:name ""
-                         :anything t))))
+                         :anything t)))
+          :config
+          (org-super-agenda-mode))
       #+end_src
 
       Setup category icons
@@ -2111,10 +2175,14 @@
 
       (use-package dashboard
         :ensure t
+        :custom
+        (dashboard-set-heading-icons t)
+        (dashboard-set-file-icons t)
+        (dashboard-icon-type 'nerd-icons)
+        (dashboard-display-icons-p t)
+        (dashboard-center-content t)
         :config
         (dashboard-setup-startup-hook)
-        (dashboard-modify-heading-icons '((recents . "file-text")
-                                          (bookmarks . "book")))
 
         (defun dashboard-insert-random-note (list-size)
 
@@ -2653,4 +2721,8 @@
 			    (concat (system-name) ".org") "~/.emacs.d"))
       (load custom-file)
     #+end_src
+
+#+RESULTS:
+: t
+
 (require 'ox-json)
