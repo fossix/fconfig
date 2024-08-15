@@ -250,6 +250,12 @@
         (setq aw-ignore-current t)
         (setq ace-window-posframe-mode t))
     #+end_src
+
+Don't create too many windows, and create small splits.
+
+#+begin_src elisp
+  (setq split-width-threshold 200)
+#+end_src
 *** Shell
     Setup completion in eshell
 
@@ -514,7 +520,7 @@
          ;; task. Ordinarily a task (subtask mostly), shouldn't be spanning more than a
          ;; day. So the maximum subtask effort is set to 1d hours.
          org-global-properties (quote
-                                (("Effort_ALL" . "0:15 0:30 0:40 1:20 2:00 2:40 3:20 4:00 4:40 5:20 6:00 1d")))
+                                (("Effort_ALL" . "0:15 0:30 0:40 1:00 1:40 2:00 2:40 3:00 3:40 4:00 4:40 5:00 6:00 1d")))
 
          org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM"
          keep-clock-running nil
@@ -749,7 +755,7 @@
             :ensure t
             :after org-roam)
 
-          (use-package emacsql-sqlite
+          (use-package emacsql
             :ensure t)
 
           (use-package org-roam
@@ -1481,7 +1487,7 @@
                               (org-agenda-prefix-format " %i %s")
                               (org-agenda-overriding-header "Ongoing Tasks & Projects")))
 
-                  (tags-todo "-someday-bug-learning/TODO"
+                  (tags-todo "-someday-bug/TODO"
                              ((org-agenda-overriding-header "Pending tasks")
                               (org-agenda-skip-function
                                (progn '(or
