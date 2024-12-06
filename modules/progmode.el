@@ -47,7 +47,7 @@
         fill-column 79))
 
 (add-hook 'c-mode-common-hook 'c-specfic-hooks)
-(add-hook 'python-mode-hook 'python-mode-hooks)
+(add-hook 'python-mode-ts-hook 'python-mode-hooks)
 (add-hook 'lisp-mode-hook 'list-lang-hooks)
 (add-hook 'emacs-lisp-mode-hook 'list-lang-hooks)
 (add-hook 'scheme-mode-hook 'list-lang-hooks)

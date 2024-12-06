@@ -2037,6 +2037,19 @@ Don't create too many windows, and create small splits.
           :ensure t)
 
       #+end_src
+***** Treesit major modes
+      #+begin_src elisp
+        (setq major-mode-remap-alist
+         '((yaml-mode . yaml-ts-mode)
+           (bash-mode . bash-ts-mode)
+           (json-mode . json-ts-mode)
+           (css-mode . css-ts-mode)
+           (python-mode . python-ts-mode)
+           (rust-mode . rust-ts-mode)))
+      #+end_src
+
+#+RESULTS:
+
 *** Version Control
     Magit
     #+begin_src elisp
@@ -2048,10 +2061,6 @@ Don't create too many windows, and create small splits.
 	:config
 	(progn
 	  (setq magit-commit-signoff t)))
-
-      (use-package git-commit
-	:ensure t
-	:defer t)
 
       (use-package git-timemachine :ensure t :defer 3)
 
