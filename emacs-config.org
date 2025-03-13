@@ -570,8 +570,8 @@ Don't create too many windows, and create small splits.
 
       #+begin_src elisp
         (setq org-startup-with-inline-images t)
-        (eval-after-load 'org
-          (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+        ;; (eval-after-load 'org
+        ;;   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
 
         (setq org-image-actual-width nil)
       #+end_src
@@ -842,6 +842,11 @@ Don't create too many windows, and create small splits.
                   ("p" "Work Project" plain "%?"
                    :target (file+head "work/%<%Y%m%d%H%M%S>-${slug}.org"
                                       "#+title: ${title}\n#+filetags: :work:\n\n")
+                   :unnarrowed t
+                   :jump-to-captured)
+                  ("B" "Bug" plain
+                   "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=${bug-id}][${system} - ${bug-title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
                    :unnarrowed t
                    :jump-to-captured)))
 
@@ -1938,6 +1943,29 @@ Don't create too many windows, and create small splits.
                 (kill-new number)
                 (kill-new last-string)
                 (message "Bug: %s, Summary: %s" number last-string)))))
+
+
+        (defun mail/capture-bug-to-roam ()
+          "Capture bug from notmuch message to org-roam."
+          (interactive)
+          (let* ((subject (notmuch-show-get-subject))
+                 (bug-id nil)
+                 (bug-title nil)
+                 (system nil))
+            (when (string-match "\\[B\\] \\([0-9]+\\) \\[\\([^]]+\\)\\] \\[\\([^]]+\\)\\] \\(.*\\)" subject)
+              (setq bug-id (match-string 1 subject)
+                    bug-title (match-string 4 subject)
+                    system (match-string 2 subject))
+              (org-roam-capture-
+               :keys "B"
+               :node (org-roam-node-create)
+               :info `(:bug-id ,bug-id
+                               :system ,system
+                               :bug-title ,bug-title)))))
+
+        ;; Add keybinding for the new function in notmuch-show-mode-map and notmuch-search-mode-map
+        (general-def notmuch-show-mode-map "b" 'mail/capture-bug-to-roam)
+        (general-def notmuch-search-mode-map "b" 'mail/capture-bug-to-roam)
       #+end_src
 *** Programming
 ***** Compilation
@@ -1976,7 +2004,7 @@ Don't create too many windows, and create small splits.
         (use-package lsp-mode
           :diminish
           :commands (lsp lsp-deferred)
-          :hook ((c-mode rust-mode go-mode python-mode) . lsp-deferred)
+          :hook ((c-mode rust-ts-mode go-mode python-mode) . lsp-deferred)
           :bind (:map prog-mode-map
                       ("M-g r" . lsp-rename))
           :config
@@ -2047,8 +2075,15 @@ Don't create too many windows, and create small splits.
            (python-mode . python-ts-mode)
            (rust-mode . rust-ts-mode)))
       #+end_src
+***** Rust
+      #+begin_src elisp
+        (defun rust-format-after-save ()
+          (when (eq major-mode 'rust-ts-mode)
+            (rust-format-buffer)))
 
-#+RESULTS:
+        (add-hook 'after-save-hook #'rust-format-after-save)
+      #+end_src
+
 
 *** Version Control
     Magit
@@ -2730,5 +2765,3 @@ Don't create too many windows, and create small splits.
 			    (concat (system-name) ".org") "~/.emacs.d"))
       (load custom-file)
     #+end_src
-
-(require 'ox-json)

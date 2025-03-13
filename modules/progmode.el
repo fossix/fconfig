@@ -75,13 +75,8 @@
   (set (make-local-variable 'compile-command) "go build -v")
   (use-package go-eldoc :ensure t))
 
-(use-package rust-mode :ensure t)
 (use-package rustic
-  :ensure t
-  :mode ("\\.rs\\'" . rustic-mode)
-  :config
-  (setq rustic-rustfmt-args "--edition 2021")
-  (setq rustic-format-on-save t))
+  :ensure t)
 
 ;; c-eldoc
 (use-package c-eldoc
