@@ -846,7 +846,7 @@ Don't create too many windows, and create small splits.
                    :jump-to-captured)
                   ("B" "Bug" plain
                    "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=${bug-id}][${system} - ${bug-title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n"
-                   :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
+                   :target (file+head+olp "journal/%<%Y-%m-%d>.org" ,head ("Tasks"))
                    :unnarrowed t
                    :jump-to-captured)))
 
@@ -1962,10 +1962,6 @@ Don't create too many windows, and create small splits.
                :info `(:bug-id ,bug-id
                                :system ,system
                                :bug-title ,bug-title)))))
-
-        ;; Add keybinding for the new function in notmuch-show-mode-map and notmuch-search-mode-map
-        (general-def notmuch-show-mode-map "b" 'mail/capture-bug-to-roam)
-        (general-def notmuch-search-mode-map "b" 'mail/capture-bug-to-roam)
       #+end_src
 *** Programming
 ***** Compilation
@@ -2167,14 +2163,14 @@ Don't create too many windows, and create small splits.
     Will theme customisation till I integrate with the theme (=aanila=).
 
     #+begin_src elisp
-      (custom-theme-set-faces
-       'user
-       '(org-block ((t (:inherit t))))
-       '(org-meta-line ((t (:foreground "dim gray"))))
-       '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
-       '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
-       '(show-paren-match ((t (:foreground "light gray" :background "gray10" :extend t))))
-       '(bookmark-face ((t (:foreground nil :background "DodgerBlue4")))))
+      ;; (custom-theme-set-faces
+      ;;  'user
+      ;;  '(org-block ((t (:inherit t))))
+      ;;  '(org-meta-line ((t (:foreground "dim gray"))))
+      ;;  '(org-block-end-line ((t (:foreground "gray20" :overline t :extend t))))
+      ;;  '(org-block-begin-line ((t (:foreground "gray20" :underline t :extend t))))
+      ;;  '(show-paren-match ((t (:foreground "light gray" :background "gray10" :extend t))))
+      ;;  '(bookmark-face ((t (:foreground nil :background "DodgerBlue4")))))
     #+end_src
 
     Some transparency won't hurt
