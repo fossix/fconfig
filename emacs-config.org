@@ -219,9 +219,10 @@
 	      '((alpha . 0)
 		(left-fringe . 9)
 		(right-fringe . 9))
-	      vertico-posframe-font "Monospace-14"))
+	      vertico-posframe-font "Cascadia Code-14"))
 
       (use-package marginalia
+
 	:ensure t
 	:after vertico
 	:init (marginalia-mode))
@@ -450,7 +451,7 @@ Don't create too many windows, and create small splits.
     Move the point to the beginning of the agenda
 
     #+begin_src elisp
-      ; (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
+      (add-hook 'org-agenda-finalize-hook #'org-agenda-find-same-or-today-or-agenda 90)
     #+end_src
 
     Always show org files in the same windows, especially useful when browsing
@@ -586,6 +587,9 @@ Don't create too many windows, and create small splits.
         (use-package ob-go :ensure t)
         (use-package ob-rust :ensure t)
         (use-package gnuplot :ensure t)
+        (use-package ob-mermaid :ensure t)
+
+        (setq ob-mermaid-cli-path "/usr/local/bin/mmdc")
 
         (org-babel-do-load-languages
          'org-babel-load-languages
@@ -602,7 +606,8 @@ Don't create too many windows, and create small splits.
            (gnuplot . t)
            (sql . t)
            (plantuml . t)
-           (calc . t)))
+           (calc . t)
+           (mermaid . t)))
 
         (setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml.jar")
               org-ditaa-jar-path (expand-file-name "~/bin/ditaa-0.11.0-standalone.jar")
@@ -727,6 +732,14 @@ Don't create too many windows, and create small splits.
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+        #+end_src
+
+******* Temporary
+        Suppress the ~org-element~ warnings. This should be removed when other
+        packages gets fixed.
+
+        #+begin_src elisp
+          (add-to-list 'warning-suppress-types '(org-element org-element-parser))
         #+end_src
 
 ***** Note taking
@@ -2063,13 +2076,18 @@ Don't create too many windows, and create small splits.
       #+end_src
 ***** Treesit major modes
       #+begin_src elisp
+        (use-package tree-sitter)
         (setq major-mode-remap-alist
-         '((yaml-mode . yaml-ts-mode)
-           (bash-mode . bash-ts-mode)
-           (json-mode . json-ts-mode)
-           (css-mode . css-ts-mode)
-           (python-mode . python-ts-mode)
-           (rust-mode . rust-ts-mode)))
+              '((yaml-mode . yaml-ts-mode)
+                (bash-mode . bash-ts-mode)
+                (json-mode . json-ts-mode)
+                (css-mode . css-ts-mode)
+                (python-mode . python-ts-mode)
+                (rust-mode . rust-ts-mode)
+                (markdown-mode . markdown-ts-mode)
+                (go-mode . go-ts-mode)))
+
+        (treesit-language-available-p 'go)
       #+end_src
 ***** Rust
       #+begin_src elisp
@@ -2079,7 +2097,6 @@ Don't create too many windows, and create small splits.
 
         (add-hook 'after-save-hook #'rust-format-after-save)
       #+end_src
-
 
 *** Version Control
     Magit
