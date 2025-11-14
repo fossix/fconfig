@@ -231,30 +231,9 @@ A prefix arg forces clock in of the default task."
   (org-latex-listings 'minted))
 
 (use-package org-tempo)
-(use-package ol-notmuch)
+;; Note: ol-notmuch is loaded in emacs-config.org
 (use-package ol-git-link)
 (use-package org-checklist)
-
-(use-package org-brain
-  :disabled t
-  :requires org-capture
-  :init
-  (setq org-brain-path (concat notes-dir "/org/brain"))
-  :config
-  ;; (add-hook 'org-capture-mode-hook
-  ;;           (push '("b" "Brain" plain (function org-brain-goto-end)
-  ;;                   "* %i%?" :empty-lines 1)
-  ;;                 org-capture-templates))
-  (setq
-   org-id-track-globally t
-   org-id-locations-file "~/.emacs.d/.org-id-locations"
-   org-brain-visualize-default-choices 'all
-   org-brain-title-max-length 30
-   org-brain-include-file-entries t
-   org-brain-file-entries-use-title t
-   org-brain-show-full-entry t)
-
-  (add-hook 'before-save-hook #'org-brain-ensure-ids-in-buffer))
 
 (org-link-set-parameters
  "bz"

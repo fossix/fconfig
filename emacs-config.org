@@ -275,15 +275,6 @@ Don't create too many windows, and create small splits.
 #+begin_src elisp
   (setq split-width-threshold 200)
 #+end_src
-*** Shell
-    Setup completion in eshell
-
-    #+begin_src elisp
-      ;; (use-package bash-completion
-      ;;   :init (bash-completion-setup)
-      ;;   (add-hook 'shell-dynamic-complete-functions
-      ;;             'bash-completion-dynamic-complete))
-    #+end_src
 *** Buffer
     To move through buffers, I used to use the ~cycle-buffer~ package. But I
     rarely use the ~cycle-buffer-permissive~ and ~cycle-buffer-backward-permissive~
@@ -424,21 +415,10 @@ Don't create too many windows, and create small splits.
        'append)
     #+end_src
 
-    Use a org-bullets to show custom unicode bullets.
-    #+begin_src elisp
-      ;; (use-package org-bullets
-      ;;   :ensure t
-      ;;   :hook (org-mode . org-bullets-mode)
-      ;;   :custom
-      ;;   (org-bullets-bullet-list '("◉" "○" "■" "◆" "▲" "▶"))
-      ;;   (org-ellipsis "⤵"))
-    #+end_src
-
     Always show latex previews, and pretty entities
 
     #+begin_src elisp
       (setq org-startup-with-latex-preview t)
-      (add-hook 'org-brain-visualize-text-hook 'org-latex-preview)
     #+end_src
 
     Let the syntax highlight be enabled in the source blocks. Also editing in
@@ -569,7 +549,6 @@ Don't create too many windows, and create small splits.
       and org-capture, set those up first. Also load org-contrib
 
       #+begin_src elisp
-	(use-package org-agenda)
 	(use-package org-contrib :ensure t)
       #+end_src
 ***** Make org-mode a bit more modern looking
@@ -1753,8 +1732,6 @@ Don't create too many windows, and create small splits.
           "a" 'org-agenda
           "l" 'org-store-link
           "t" 'org-todo-list
-          "b" 'org-brain-goto
-          "v" 'org-brain-visualize
           "o" 'org-occur-in-agenda-files
           "s" 'org-search-view
           "r" 'org-refile

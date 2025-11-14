@@ -24,7 +24,6 @@
   (setq show-paren-style 'expression)
   (show-paren-mode +1))
 
-; (use-package dropdown-list)
 (use-package highlight-parentheses
   :ensure t
   :defer 3
@@ -84,16 +83,6 @@
   :hook (emacs-lisp-mode . paredit-mode)
   :diminish)
 
-(use-package undo-tree
-  :disabled t
-  :diminish undo-tree-mode
-  :defer 3
-  :config
-  (progn
-    (global-undo-tree-mode)
-    (setq undo-tree-visualizer-timestamps t)
-    (setq undo-tree-visualizer-diff t)))
-
 (use-package ispell :defer 5)
 
 (use-package flyspell
@@ -145,8 +134,7 @@
   :diminish
   :hook (c-mode-common . flycheck-mode))
 
-(use-package all-the-icons
-  :ensure t)
+;; Note: all-the-icons is loaded in emacs-config.org
 
 (use-package shell
   :defer t
