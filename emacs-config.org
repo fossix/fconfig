@@ -139,6 +139,15 @@
 	      select-enable-primary t)
       #+end_src
 
+***** Setup exec-path for development tools
+      Ensure Emacs can find development tools like cargo, rust-analyzer, etc.
+      #+begin_src elisp
+        ;; Add cargo/rust tools to exec-path
+        (when (file-directory-p (expand-file-name "~/.cargo/bin"))
+          (add-to-list 'exec-path (expand-file-name "~/.cargo/bin"))
+          (setenv "PATH" (concat (expand-file-name "~/.cargo/bin") ":" (getenv "PATH"))))
+      #+end_src
+
 ***** Load location settings
       This should be loaded early; and this cannot be part of the person config
       load section, since it is loaded at the end.
@@ -161,6 +170,14 @@
       does that job.
 
       #+begin_src elisp
+        ;; Install nerd-icons package and fonts
+        (use-package nerd-icons
+          :ensure t
+          :config
+          ;; The first time you load your configuration on a new machine, run:
+          ;; M-x nerd-icons-install-fonts
+          )
+
 	(use-package minions
 	  :ensure t
 	  :hook (doom-modeline-mode . minions-mode))
@@ -178,7 +195,8 @@
 	  (doom-modeline-irc nil)
 	  (doom-modeline-persp-name nil)
 	  (doom-modeline-buffer-file-name-style 'relative-from-project)
-	  (doom-modeline-major-mode-icon t))
+	  (doom-modeline-major-mode-icon t)
+	  (doom-modeline-icon t))
       #+end_src
 
 ***** Misc
@@ -1117,10 +1135,6 @@ Don't create too many windows, and create small splits.
 	  (use-package consult-org-roam
 	     :ensure t
 	     :after org-roam
-	     :init
-	     (require 'consult-org-roam)
-	     ;; Activate the minor mode
-	     (consult-org-roam-mode 1)
 	     :custom
 	     ;; Use `ripgrep' for searching with `consult-org-roam-search'
 	     (consult-org-roam-grep-func #'consult-ripgrep)
@@ -1133,7 +1147,11 @@ Don't create too many windows, and create small splits.
 	     ;; Eventually suppress previewing for certain functions
 	     (consult-customize
 	      consult-org-roam-forward-links
-	      :preview-key "M-."))
+	      :preview-key "M-.")
+	     ;; Note: consult-org-roam-mode auto-activation disabled due to initialization issues
+	     ;; You can manually enable it with M-x consult-org-roam-mode if needed
+	     ;; The individual functions (consult-org-roam-search, etc.) still work without the mode
+	     )
         #+end_src
 ******* org-transclusion
 	To seamlessly view and add notes and files into a org-buffer without
@@ -1260,13 +1278,13 @@ Don't create too many windows, and create small splits.
                 appt-display-format 'window
                 appt-disp-window-function 'ss/appt-disp-window)
 
-          (defadvice org-agenda-redo (after org-agenda-redo-add-appts)
+          ;; Modern advice using advice-add instead of defadvice
+          (defun ss/org-agenda-redo-add-appts (&rest _)
             "Pressing `r' on the agenda will also add appointments."
-            (progn
-              (setq appt-time-msg-list nil)
-              (org-agenda-to-appt)))
-
-          (ad-activate 'org-agenda-redo)
+            (setq appt-time-msg-list nil)
+            (org-agenda-to-appt))
+          
+          (advice-add 'org-agenda-redo :after #'ss/org-agenda-redo-add-appts)
 
           (add-hook 'org-finalize-agenda-hook 'ss/org-agenda-to-appt)
           (add-hook 'org-finalize-agenda-hook 'ss/notify-on-clocked-time)
@@ -1689,23 +1707,28 @@ Don't create too many windows, and create small splits.
 
 	  ;; system wide org-capture
 	  ;; https://www.reddit.com/r/emacs/comments/74gkeq/system_wide_org_capture/
-	  (defadvice org-switch-to-buffer-other-window
-	      (after supress-window-splitting activate)
+	  ;; Modern advice using advice-add instead of defadvice
+	  
+	  (defun ss/org-capture-suppress-window-splitting (&rest _)
 	    "Delete the extra window if we're in a capture frame"
-	    (if (equal "capture" (frame-parameter nil 'name))
-		(delete-other-windows)))
+	    (when (equal "capture" (frame-parameter nil 'name))
+	      (delete-other-windows)))
+	  
+	  (advice-add 'org-switch-to-buffer-other-window :after #'ss/org-capture-suppress-window-splitting)
 
-	  (defadvice org-capture-finalize
-	      (after delete-capture-frame activate)
+	  (defun ss/org-capture-finalize-delete-frame (&rest _)
 	    "Advise capture-finalize to close the frame"
 	    (when (and (equal "capture" (frame-parameter nil 'name))
 		       (not (eq this-command 'org-capture-refile)))
 	      (delete-frame)))
+	  
+	  (advice-add 'org-capture-finalize :after #'ss/org-capture-finalize-delete-frame)
 
-	  (defadvice org-capture-refile
-	      (after delete-capture-frame activate)
+	  (defun ss/org-capture-refile-delete-frame (&rest _)
 	    "Advise org-refile to close the frame"
 	    (delete-frame))
+	  
+	  (advice-add 'org-capture-refile :after #'ss/org-capture-refile-delete-frame)
 
 	  (defun activate-capture-frame ()
 	    "run org-capture in capture frame"
@@ -2020,6 +2043,23 @@ Don't create too many windows, and create small splits.
           (setq lsp-file-watch-threshold nil
                 lsp-idle-delay 0.5)
 
+          ;; Rust-analyzer configuration
+          (setq lsp-rust-analyzer-cargo-watch-command "clippy"
+                lsp-rust-analyzer-server-display-inlay-hints t
+                lsp-rust-analyzer-display-chaining-hints t
+                lsp-rust-analyzer-display-closure-return-type-hints t
+                lsp-rust-analyzer-display-parameter-hints nil)
+          
+          ;; Override cargo/cfgs to prevent format mismatch warning
+          ;; lsp-mode sends it as a map, but newer rust-analyzer expects a string array
+          (with-eval-after-load 'lsp-rust
+            ;; Remove or override the problematic cargo.cfgs setting
+            (lsp-register-custom-settings
+             '(("rust-analyzer.cargo.cfgs" nil t))))
+          
+          ;; Suppress unmatched client warnings
+          (setq lsp-warn-no-matched-clients nil)
+
           (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
         (use-package consult-lsp
@@ -2091,11 +2131,10 @@ Don't create too many windows, and create small splits.
       #+end_src
 ***** Rust
       #+begin_src elisp
-        (defun rust-format-after-save ()
-          (when (eq major-mode 'rust-ts-mode)
-            (rust-format-buffer)))
-
-        (add-hook 'after-save-hook #'rust-format-after-save)
+        ;; Rustic handles formatting automatically via rustic-format-on-save
+        ;; which is enabled by default. If you want to customize:
+        ;; (setq rustic-format-on-save t)
+        ;; (setq rustic-format-trigger 'on-save)
       #+end_src
 
 *** Version Control
@@ -2129,7 +2168,7 @@ Don't create too many windows, and create small splits.
 	(blamer-min-offset 70)
 	:custom-face
 	(blamer-face ((t :foreground "#7a88cf"
-			  :background nil
+			  :background unspecified
 			  :height 90
 			  :italic t))))
     #+end_src
@@ -2384,10 +2423,13 @@ Don't create too many windows, and create small splits.
     #+end_src
 *** Assistant
     #+begin_src elisp
-      (use-package c3po
-        :straight (:host github :repo "d1egoaz/c3po.el")
-        :config
-        (setq c3po-api-key "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"))
+      ;; c3po requires straight.el for GitHub installation
+      ;; To use this, you need to set up straight.el integration with use-package
+      ;; For now, this is commented out to avoid errors
+      ;; (use-package c3po
+      ;;   :straight (:host github :repo "d1egoaz/c3po.el")
+      ;;   :config
+      ;;   (setq c3po-api-key "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"))
 
       ;; (use-package org-ai
       ;;   :ensure

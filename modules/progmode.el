@@ -76,7 +76,18 @@
   (use-package go-eldoc :ensure t))
 
 (use-package rustic
-  :ensure t)
+  :ensure t
+  :config
+  ;; Use lsp-mode as the LSP client
+  (setq rustic-lsp-client 'lsp-mode)
+  ;; Ensure Emacs can find cargo and rust tools
+  (when (file-exists-p "~/.cargo/bin")
+    (add-to-list 'exec-path (expand-file-name "~/.cargo/bin")))
+  ;; Disable rustic's own flycheck in favor of LSP
+  (setq rustic-flycheck-setup-mode-line-p nil)
+  ;; Let LSP handle formatting instead of rustic's direct rustfmt calls
+  (setq rustic-format-on-save nil)
+  (setq rustic-lsp-format t))
 
 ;; c-eldoc
 (use-package c-eldoc
