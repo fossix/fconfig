@@ -3,6 +3,37 @@
 #+header-args: :noweb yes :results none
 
 * Emacs Config
+*** Performance Optimization
+    Optimize startup performance by adjusting garbage collection and file handlers.
+
+    #+begin_src elisp
+      ;; Increase GC threshold during startup for faster loading
+      (setq gc-cons-threshold most-positive-fixnum
+            gc-cons-percentage 0.6)
+
+      ;; Disable file name handler during startup
+      (defvar fconfig--file-name-handler-alist file-name-handler-alist)
+      (setq file-name-handler-alist nil)
+
+      ;; Measure and display startup time
+      (defun fconfig/display-startup-time ()
+        "Display Emacs startup time in the minibuffer."
+        (message "Emacs loaded in %s with %d garbage collections."
+                 (format "%.2f seconds"
+                         (float-time
+                          (time-subtract after-init-time before-init-time)))
+                 gcs-done))
+
+      (add-hook 'emacs-startup-hook #'fconfig/display-startup-time)
+
+      ;; Reset GC threshold and file handlers after startup
+      (add-hook 'emacs-startup-hook
+                (lambda ()
+                  (setq gc-cons-threshold 16777216 ; 16MB
+                        gc-cons-percentage 0.1)
+                  (setq file-name-handler-alist fconfig--file-name-handler-alist)))
+    #+end_src
+
 *** Package setup
     We will use melpa and elpa as our package archives, and load
     =use-package=, which will be used extensively everywhere else.
@@ -48,16 +79,173 @@
     function from =.el= files.
 
     #+begin_src elisp
-      (require 'fconfig)
+      ;; Configuration directory and paths
+      (defvar config-dir (file-name-directory
+                          (file-truename (or load-file-name (buffer-file-name)))))
 
-      (use-package doom-themes :ensure t)
+      (defvar fconfig-pkg-dir (concat config-dir "pkgs"))
+      (add-to-list 'load-path fconfig-pkg-dir)
+
+      ;; Variables for theme and font customization
+      (defvar fconfig-default-theme nil)
+      (defvar fconfig-default-font nil)
+
+      ;; Helper macros for key bindings
+      (defmacro global-map! (key fn)
+        "Map KEY to function FN globally using general-def."
+        `(general-def ,key ,fn))
+
+      (defmacro global-unmap! (key)
+        "Unbind KEY globally using general-unbind."
+        `(general-unbind ,key))
 
       ;; this is ugly
       (setq notes-dir (expand-file-name "~/notes/"))
 
-      (fconfig/init)
-      (fconfig! utils)
+      ;; GC optimization for startup (from fconfig/init)
+      (defconst fconfig/1MB (* 1 1024 1024))
+      (setq gc-cons-threshold (* 1000 fconfig/1MB))
     #+end_src
+***** Utility Functions
+      Various utility functions for everyday use.
+
+      #+begin_src elisp
+        (defun insert-time()
+          (interactive)
+          (insert (format-time-string "%a, %d %b %Y at %T")))
+
+        (defun insert-date ()
+          (interactive)
+          (insert (format-time-string "%d/%m/%Y")))
+
+        ;; Setting cross compile environment
+        (defvar cross-compilation-targets '(("powerpc" "powerpc64-linux-gnu-")
+                                            ("arm" "arm-none-linux-gnueabi-")
+                                            ("go" nil (("GOPATH" . "~/dev/gws") ("PATH" . ~/dev/gws/bin)))))
+
+        (defun cc-environ ()
+          "Set the environment for cross compilation"
+          (interactive)
+          (let* ((arch (completing-read "Select from the list: "
+                                       cross-compilation-targets nil t))
+                (prefix (car (cdr (assoc arch cross-compilation-targets))))
+                (env (cdr (cdr (assoc arch cross-compilation-targets)))))
+            (cc-setenv arch prefix)))
+
+        (defun cc-setenv (arch prefix &optional env)
+          (setenv "ARCH" arch)
+          (if prefix
+              (setenv "CROSS_COMPILE" prefix))
+          (loop for (key . value) in (car (cdr (cdr (assoc "go" cross-compilation-targets))))
+                do (if (string= key "PATH")
+                       (setenv "PATH" (concat (getenv "PATH") (format ":%s" value)))
+                     (setenv key (format "%s" value))))
+          (message "Cross compile enviroment set."))
+
+        ;; Replace "yes or no" with y or n
+        (defun yes-or-no-p (arg)
+          "An alias for y-or-n-p, because I hate having to type yes or no."
+          (y-or-n-p arg))
+
+        (defun backward-kill-line (arg)
+          "Kill chars backward until encountering the end of a line."
+          (interactive "p")
+          (kill-line 0))
+
+        ;; matching brace code
+        (defun match-paren (arg)
+          "Jump to the matching parenthesis"
+          (interactive "p")
+          (cond ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
+                ((looking-at "\\s\)") (forward-char 1) (backward-list 1))
+                (t (message "No match"))))
+
+        (defun flyspell-check-next-highlighted-word ()
+          "Custom function to spell check next highlighted word"
+          (interactive)
+          (flyspell-goto-next-error)
+          (ispell-word))
+
+        ;;; from emacswiki :: https://www.emacswiki.org/emacs/KeyboardMacrosTricks
+        (defun save-macro (name)
+          "save a macro. Take a name as argument and save the last
+           defined macro under this name at the end of your .emacs"
+          (interactive "Name of the macro :")   ; ask for the name of the macro
+          (kmacro-name-last-macro name)         ; use this name for the macro
+          (find-file user-init-file)            ; open ~/.emacs or other user init file
+          (goto-char (point-max))               ; go to the end of the .emacs
+          (newline)                             ; insert a newline
+          (insert-kbd-macro name)               ; copy the macro
+          (newline)                             ; insert a newline
+          (switch-to-buffer nil))               ; return to the initial buffer
+
+        ;;; from: http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/
+        (defun smarter-move-beginning-of-line (arg)
+          "Move point back to indentation of beginning of line.
+
+        Move point to the first non-whitespace character on this line.
+        If point is already there, move to the beginning of the line.
+        Effectively toggle between the first non-whitespace character and
+        the beginning of the line.
+
+        If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+        point reaches the beginning or end of the buffer, stop there."
+          (interactive "^p")
+          (setq arg (or arg 1))
+          ;; Move lines first
+          (when (/= arg 1)
+            (let ((line-move-visual nil))
+              (forward-line (1- arg))))
+          (let ((orig-point (point)))
+            (back-to-indentation)
+            (when (= orig-point (point))
+              (move-beginning-of-line 1))))
+
+        (defun apply-frame-font ()
+          (when fconfig-default-font
+            (set-frame-font fconfig-default-font nil t))
+          (setq-default line-spacing 0.15))
+
+        ;;; What should be done after frame creation?
+        (defun create-frame-hook (&optional frame)
+          (when fconfig-default-theme
+            (load-theme fconfig-default-theme t))
+          (apply-frame-font))
+
+        ;; Register frame hooks
+        (add-hook 'after-make-frame-functions 'create-frame-hook)
+        (add-hook 'emacs-startup-hook 'create-frame-hook)
+        (add-hook 'emacs-startup-hook 'toggle-frame-maximized)
+
+        (defun configure-prettify-symbols-alist ()
+          "Set prettify symbols alist."
+          (progn
+            (setq prettify-symbols-alist '(("lambda" . ?λ)
+                                           ("->" . ?→)
+                                           ("->>" . ?↠)
+                                           ("=>" . ?⇒)
+                                           ("map" . ?↦)
+                                           ("/=" . ?≠)
+                                           ("!=" . ?≠)
+                                           ("==" . ?≡)
+                                           ("<=" . ?≤)
+                                           (">=" . ?≥)
+                                           ("<=<" . ?↢)
+                                           (">=>" . ?↣)
+                                           ("&&" . ?∧)
+                                           ("||" . ?∨)
+                                           ("not" . ?¬)))
+            (prettify-symbols-mode)))
+
+        ;;; flash the modeline instead of bell
+        (setq ring-bell-function
+              (lambda ()
+                (let ((orig-fg (face-foreground 'mode-line)))
+                  (set-face-foreground 'mode-line "#F2804F")
+                  (run-with-idle-timer 0.2 nil
+                                       (lambda (fg) (set-face-foreground 'mode-line fg))
+                                       orig-fg))))
+      #+end_src
 ***** Install straight
       #+begin_src elisp
         ;; Install straight.el
@@ -75,6 +263,106 @@
           (load bootstrap-file nil 'nomessage))
 
       #+end_src
+
+***** Doom Package Configuration
+      Using Doom Emacs packages for enhanced UI experience.
+
+      - **doom-themes**: High-quality color schemes (doom-nord, doom-nord-light)
+      - **doom-modeline**: Modern modeline with LSP, git, and icon integration
+      - **Integration**: Seamlessly works with nerd-icons for consistent iconography
+
+      These packages are lightweight, well-maintained, and provide excellent
+      out-of-the-box aesthetics without the full Doom Emacs framework.
+
+*** Theme and Appearance
+    Consolidated configuration for all visual and theming aspects of Emacs.
+
+***** Color Themes
+      Using Doom themes for consistent, beautiful color schemes.
+
+      #+begin_src elisp
+        (use-package doom-themes
+          :ensure t
+          :config
+          ;; Global settings (defaults)
+          (setq doom-themes-enable-bold t
+                doom-themes-enable-italic t)
+          ;; Enable flashing mode-line on errors
+          (doom-themes-visual-bell-config)
+          ;; Corrects (and improves) org-mode's native fontification
+          (doom-themes-org-config))
+      #+end_src
+
+***** Icons
+      Using nerd-icons for consistent iconography across all packages.
+
+      #+begin_src elisp
+        (use-package nerd-icons
+          :ensure t
+          :config
+          ;; The first time you load your configuration on a new machine, run:
+          ;; M-x nerd-icons-install-fonts
+          )
+      #+end_src
+
+***** Mode Line
+      Doom modeline provides a clean, informative mode line with icon support.
+
+      #+begin_src elisp
+        (use-package minions
+          :ensure t
+          :hook (doom-modeline-mode . minions-mode))
+
+        (use-package doom-modeline
+          :ensure t
+          :hook (emacs-startup . doom-modeline-mode)
+          :custom-face
+          (mode-line ((t (:height 1.20))))
+          :custom
+          (doom-modeline-height 15)
+          (doom-modeline-bar-width 6)
+          (doom-modeline-lsp t)
+          (doom-modeline-github nil)
+          (doom-modeline-irc nil)
+          (doom-modeline-persp-name nil)
+          (doom-modeline-buffer-file-name-style 'relative-from-project)
+          (doom-modeline-major-mode-icon t)
+          (doom-modeline-icon t))
+      #+end_src
+
+***** Fonts
+      Custom font configuration for different scripts and contexts.
+
+      #+begin_src elisp
+        ;; Devanagari script support
+        (set-fontset-font t 'devanagari "Noto Serif Devanagiri")
+
+        ;; Note: Vertico posframe font is configured in the Completions section
+      #+end_src
+
+***** Theme Switching
+      Quick keybindings to switch between light and dark themes.
+
+      #+begin_src elisp
+        ;; Switch to light theme
+        (defun fconfig/load-light-theme ()
+          "Load the light theme (doom-nord-light)."
+          (interactive)
+          (disable-theme 'doom-nord)
+          (load-theme 'doom-nord-light t))
+
+        ;; Switch to dark theme
+        (defun fconfig/load-dark-theme ()
+          "Load the dark theme (doom-nord)."
+          (interactive)
+          (disable-theme 'doom-nord-light)
+          (load-theme 'doom-nord t))
+
+        ;; Keybindings for theme switching
+        (general-def "C-c l t l" 'fconfig/load-light-theme)
+        (general-def "C-c l t d" 'fconfig/load-dark-theme)
+      #+end_src
+
 *** Fundamentals
 ***** Setup packages and utility functions
       #+begin_src elisp
@@ -165,40 +453,6 @@
 	(setq-default line-spacing 3)
       #+end_src
 
-***** Mode line
-      A minimilatic, non-cluttering mode line is what is needed. Doom mode line
-      does that job.
-
-      #+begin_src elisp
-        ;; Install nerd-icons package and fonts
-        (use-package nerd-icons
-          :ensure t
-          :config
-          ;; The first time you load your configuration on a new machine, run:
-          ;; M-x nerd-icons-install-fonts
-          )
-
-	(use-package minions
-	  :ensure t
-	  :hook (doom-modeline-mode . minions-mode))
-
-	(use-package doom-modeline
-	  :ensure t
-	  :hook (emacs-startup . doom-modeline-mode)
-	  :custom-face
-	  (mode-line ((t (:height 1.20))))
-	  :custom
-	  (doom-modeline-height 15)
-	  (doom-modeline-bar-width 6)
-	  (doom-modeline-lsp t)
-	  (doom-modeline-github nil)
-	  (doom-modeline-irc nil)
-	  (doom-modeline-persp-name nil)
-	  (doom-modeline-buffer-file-name-style 'relative-from-project)
-	  (doom-modeline-major-mode-icon t)
-	  (doom-modeline-icon t))
-      #+end_src
-
 ***** Misc
       Don't ask when opening a symlink, always follow it.
 
@@ -215,10 +469,6 @@
       Enable winner mode
       #+begin_src elisp
 	(winner-mode)
-      #+end_src
-***** Fonts
-      #+begin_src elisp
-	(set-fontset-font t 'devanagari "Noto Serif Devanagiri")
       #+end_src
 *** Completions
     #+begin_src elisp
@@ -270,10 +520,30 @@
         (setq ace-window-posframe-mode t))
     #+end_src
 
-Don't create too many windows, and create small splits.
+Window splitting preferences: prefer side-by-side splits on large screens, avoid splits on small screens.
 
 #+begin_src elisp
-  (setq split-width-threshold 200)
+  ;; Prevent vertical (top/bottom) splits - we only want side-by-side
+  (setq split-height-threshold nil)
+
+  ;; Allow horizontal (side-by-side) splits only on wide screens
+  ;; On ultrawide monitors, allow splits. On laptops (< 160 columns), inhibit splits
+  (setq split-width-threshold 160)
+
+  ;; Custom function to be more aggressive about not splitting on small screens
+  (defun fconfig/split-window-sensibly (&optional window)
+    "Split WINDOW sensibly, preferring horizontal splits and avoiding splits on small screens."
+    (let ((window (or window (selected-window))))
+      (or
+       ;; Only split horizontally if we have enough width
+       (and (window-splittable-p window t)
+            (>= (window-total-width window) split-width-threshold)
+            (with-selected-window window
+              (split-window-right)))
+       ;; If we can't split, return nil (reuse window instead)
+       nil)))
+
+  (setq split-window-preferred-function 'fconfig/split-window-sensibly)
 #+end_src
 *** Buffer
     To move through buffers, I used to use the ~cycle-buffer~ package. But I
@@ -306,27 +576,56 @@ Don't create too many windows, and create small splits.
     #+end_src
 
     Avoid window resizing and reuse windows when possible.
+    Prefer reusing existing windows over splitting.
 
     #+begin_src elisp
+      ;; Globally disable automatic window splitting
+      (setq pop-up-windows nil)        ;; Never automatically create new windows
+      (setq pop-up-frames nil)         ;; Never create new frames
+
+      ;; Strongly prefer reusing windows over creating new ones
       (setq display-buffer-base-action
             '((display-buffer-reuse-window
-               display-buffer-reuse-mode-window
                display-buffer-same-window
-               display-buffer-in-previous-window)
-      ))
+               display-buffer-reuse-mode-window)))
 
-      (setq display-buffer-alist '())
-      ;;; https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html
-      (add-to-list 'display-buffer-alist
-                   '("\\*Help\\*"
-                     (display-buffer-reuse-window display-buffer-pop-up-frame)
-                     (reusable-frames . visible)))
+      ;; Specific buffer display rules - AGGRESSIVELY prevent splits
+      (setq display-buffer-alist
+            '(;; Help buffers - always reuse current window
+              ("\\*Help\\*"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
 
-      (add-to-list 'display-buffer-alist
-                   '(".*"
-                     (display-buffer-reuse-window display-buffer-pop-up-window)
-                     '((mode . (org-mode helpful-mode help-mode c-mode rust-mode go-mode)))
-                     (reusable-frames . visible)))
+              ;; Mail/Notmuch buffers - NEVER split, always reuse
+              ;; This catches: *notmuch-hello*, *notmuch-search*, *notmuch-show*, etc.
+              ("\\*notmuch"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
+
+              ;; Message composition buffers
+              ("\\*\\(mail\\|message\\|sent\\|unsent\\)"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
+
+              ;; Compilation and similar buffers - reuse or same window (no splits)
+              ("\\*\\(compilation\\|grep\\|occur\\)\\*"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
+
+              ;; Completions - reuse window (no splits)
+              ("\\*Completions\\*"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
+
+              ;; Messages and warnings - reuse window
+              ("\\*\\(Messages\\|Warnings\\)\\*"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))
+
+              ;; Catch-all for any other buffers - reuse window
+              (".*"
+               (display-buffer-reuse-window display-buffer-same-window)
+               (inhibit-same-window . nil))))
 
       (setq even-window-sizes nil)
     #+end_src
@@ -418,7 +717,38 @@ Don't create too many windows, and create small splits.
     Always show latex previews, and pretty entities
 
     #+begin_src elisp
-      (setq org-startup-with-latex-preview t)
+      (setq org-startup-with-latex-preview t
+            org-preview-latex-default-process 'dvipng)
+
+      ;; Ensure dvipng process uses correct latex command
+      (setq org-preview-latex-process-alist
+            '((dvipng
+               :programs ("latex" "dvipng")
+               :description "dvi > png"
+               :message "you need to install the programs: latex and dvipng."
+               :image-input-type "dvi"
+               :image-output-type "png"
+               :image-size-adjust (1.0 . 1.0)
+               :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+               :image-converter ("dvipng -D %D -T tight -o %O %f"))
+              (dvisvgm
+               :programs ("latex" "dvisvgm")
+               :description "dvi > svg"
+               :message "you need to install the programs: latex and dvisvgm."
+               :image-input-type "dvi"
+               :image-output-type "svg"
+               :image-size-adjust (1.7 . 1.5)
+               :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+               :image-converter ("dvisvgm %f -n -b min -c %S -o %O"))
+              (imagemagick
+               :programs ("latex" "convert")
+               :description "pdf > png"
+               :message "you need to install the programs: latex and imagemagick."
+               :image-input-type "pdf"
+               :image-output-type "png"
+               :image-size-adjust (1.0 . 1.0)
+               :latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
+               :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
     #+end_src
 
     Let the syntax highlight be enabled in the source blocks. Also editing in
@@ -549,7 +879,8 @@ Don't create too many windows, and create small splits.
       and org-capture, set those up first. Also load org-contrib
 
       #+begin_src elisp
-	(use-package org-contrib :ensure t)
+	;; Defer org-contrib (additional org-mode features)
+	(use-package org-contrib :ensure t :defer t)
       #+end_src
 ***** Make org-mode a bit more modern looking
       #+begin_src elisp
@@ -581,10 +912,11 @@ Don't create too many windows, and create small splits.
 
       Some of the languages that I use with ~org-babel~.
       #+begin_src elisp
-        (use-package ob-go :ensure t)
-        (use-package ob-rust :ensure t)
-        (use-package gnuplot :ensure t)
-        (use-package ob-mermaid :ensure t)
+        ;; Defer org-babel language support packages (loaded when code blocks are executed)
+        (use-package ob-go :ensure t :defer t)
+        (use-package ob-rust :ensure t :defer t)
+        (use-package gnuplot :ensure t :defer t)
+        (use-package ob-mermaid :ensure t :defer t)
 
         (setq ob-mermaid-cli-path "/usr/local/bin/mmdc")
 
@@ -631,9 +963,7 @@ Don't create too many windows, and create small splits.
 
       #+begin_src elisp
         (setq org-html-postamble
-              '((
-                 "en" "<hr/><p class=\"author\">Author: %a (%e)</p>\n<p class=\"date\">Date: %d</p>\n<p class=\"creator\">%c</p>\n<p class=\"validation\">%v</p>"))
-              )
+              '(("en" "<hr/><p class=\"author\">Author: %a (%e)</p>\n<p class=\"date\">Date: %d</p>\n<p class=\"creator\">%c</p>\n<p class=\"validation\">%v</p>")))
 
       #+end_src
 ***** Presentation using org-mode
@@ -642,11 +972,14 @@ Don't create too many windows, and create small splits.
       =hide-mode-line= gives a nice interface to show slides directly from emacs.
 
       #+begin_src elisp
+	;; Defer presentation packages (only load when presenting)
 	(use-package hide-mode-line
-	  :ensure t)
+	  :ensure t
+	  :commands hide-mode-line-mode)
 
 	(use-package org-present
 	  :ensure t
+	  :commands (org-present org-present-big org-present-hide-cursor org-present-read-only)
 	  :config
 	  (add-hook 'org-present-mode-hook
 		    (lambda ()
@@ -671,7 +1004,8 @@ Don't create too many windows, and create small splits.
 
       Sometimes presentation using ~reveal.js~ does make an impact
       #+begin_src elisp
-	(use-package ox-reveal :ensure t)
+	;; Defer ox-reveal (reveal.js export - only needed when exporting)
+	(use-package ox-reveal :ensure t :defer t)
       #+end_src
 
 ******* For using beamer
@@ -765,8 +1099,10 @@ Don't create too many windows, and create small splits.
             :ensure t
             :after org-roam)
 
+          ;; Defer emacsql (database backend for org-roam)
           (use-package emacsql
-            :ensure t)
+            :ensure t
+            :after org-roam)
 
           (use-package org-roam
             :ensure t
@@ -842,8 +1178,11 @@ Don't create too many windows, and create small splits.
                 (goto-char (org-capture-get :end))
                 (insert additional-content))))
 
+          ;; Define head template once for reuse
+          (setq org-roam-dailies-head "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n")
+
           (setq org-roam-capture-templates
-                '(("d" "Default" plain "%?" :target
+                `(("d" "Default" plain "%?" :target
                    (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n\n")
                    :jump-to-captured)
                   ("b" "Book" plain "- %?\n\n" :if-new
@@ -856,36 +1195,34 @@ Don't create too many windows, and create small splits.
                    :jump-to-captured)
                   ("B" "Bug" plain
                    "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=${bug-id}][${system} - ${bug-title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n"
-                   :target (file+head+olp "journal/%<%Y-%m-%d>.org" ,head ("Tasks"))
+                   :target (file+head+olp "journal/%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Tasks"))
                    :unnarrowed t
                    :jump-to-captured)))
 
           (setq org-roam-dailies-capture-templates
-                (let ((head "#+title: %<%Y-%m-%d (%A)>\n#+category: Tasks\n#+startup: showall\n"))
-                  `(("d" "default" plain "%?"
-                     :target (file+head "%<%Y-%m-%d>.org" ,head))
-                    ("t" "Task" entry "* TODO %^{Task}   %^g\n"
-                     :target (file+head+olp "inbox.org" ,head ("Tasks"))
-                     :immediate-finish t)
-                    ("u" "Urgent Tasks" entry
-                     "*** TODO %^{Task}%?"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks")))
-                    ("b" "Bug" entry
-                     "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%^{System} - %^{Bug Title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Tasks"))
-                     :jump-to-captured)
-                    ("j" "Journal" entry "* %U %^{Summary}  %^g\n"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
-                     :jump-to-captured)
-                    ("c" "Team Call" entry
-                     "* %U %^{Title} :work:call:%^g\n"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
-                     :clock-in t :clock-resume t)
-                    ("r" "Morning Work Routine" entry
-                     "* %U Morning mail and bug sweep :work:\n"
-                     :target (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal"))
-                     :clock-in t :clock-resume t)
-                    )))
+                `(("d" "default" plain "%?"
+                   :target (file+head "%<%Y-%m-%d>.org" ,org-roam-dailies-head))
+                  ("t" "Task" entry "* TODO %^{Task}   %^g\n"
+                   :target (file+head+olp "inbox.org" ,org-roam-dailies-head ("Tasks"))
+                   :immediate-finish t)
+                  ("u" "Urgent Tasks" entry
+                   "*** TODO %^{Task}%?"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Tasks")))
+                  ("b" "Bug" entry
+                   "*** TODO [[https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=%^{Bug ID}][%^{System} - %^{Bug Title}]] :bug:\n    :PROPERTIES:\n    :CAPTURED: %U\n    :CATEGORY: Bug\n    :END:\n%?"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Tasks"))
+                   :jump-to-captured)
+                  ("j" "Journal" entry "* %U %^{Summary}  %^g\n"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Journal"))
+                   :jump-to-captured)
+                  ("c" "Team Call" entry
+                   "* %U %^{Title} :work:call:%^g\n"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Journal"))
+                   :clock-in t :clock-resume t)
+                  ("r" "Morning Work Routine" entry
+                   "* %U Morning mail and bug sweep :work:\n"
+                   :target (file+head+olp "%<%Y-%m-%d>.org" ,org-roam-dailies-head ("Journal"))
+                   :clock-in t :clock-resume t)))
 
           (defun org-roam-dailies-goto-previous-week ()
             (interactive)
@@ -1262,7 +1599,7 @@ Don't create too many windows, and create small splits.
             "Pressing `r' on the agenda will also add appointments."
             (setq appt-time-msg-list nil)
             (org-agenda-to-appt))
-          
+
           (advice-add 'org-agenda-redo :after #'ss/org-agenda-redo-add-appts)
 
           (add-hook 'org-finalize-agenda-hook 'ss/org-agenda-to-appt)
@@ -1634,26 +1971,24 @@ Don't create too many windows, and create small splits.
 
       Setup category icons
       #+begin_src elisp :results none
-        (use-package all-the-icons
-          :ensure t)
-
+        ;; Using nerd-icons for all icons (consistent with doom-modeline)
         (setq org-agenda-category-icon-alist
-              `(("Work" ,(list (all-the-icons-material "work" :face 'all-the-icons-blue)) nil nil :ascent center)
-                ("Personal" ,(list (all-the-icons-material "person" :face 'all-the-icons-purple)) nil nil :ascent center)
-                ("Kernel" ,(list (all-the-icons-octicon "terminal" :face 'all-the-icons-cyan)) nil nil :ascent center)
-                ("Learning" ,(list (all-the-icons-material "book" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Language" ,(list (all-the-icons-material "language" :face 'all-the-icons-green)) nil nil :ascent center)
-                ("Default" ,(list (all-the-icons-material "alarm_off" :face 'all-the-icons-dsilver)) nil nil :ascent center)
-                ("Sun" ,(list (all-the-icons-material "wb_sunny" :face 'all-the-icons-yellow)) nil nil :ascent center)
-                ("Diary" ,(list (all-the-icons-material "date_range")) nil nil :ascent center)
-                ("Moon" ,(list (all-the-icons-faicon "moon-o" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Books" ,(list (all-the-icons-material "library_books" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Technical" ,(list (all-the-icons-material "code" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Meeting" ,(list (all-the-icons-material "group" :face 'all-the-icons-silver)) nil nil :ascent center)
-                ("Bug" ,(list (all-the-icons-octicon "bug" :face 'all-the-icons-red)) nil nil :ascent center)
-                ("Project" ,(list (all-the-icons-octicon "diff" :face 'all-the-icons-green)) nil nil :ascent center)
-                ("Tasks" ,(list (all-the-icons-octicon "checklist" :face 'all-the-icons-green)) nil nil :ascent center)
-                ("Writing" ,(list (all-the-icons-faicon "pencil" :face 'all-the-icons-green)) nil nil :ascent center)
+              `(("Work" ,(list (nerd-icons-mdicon "nf-md-briefcase" :face 'nerd-icons-blue)) nil nil :ascent center)
+                ("Personal" ,(list (nerd-icons-mdicon "nf-md-account" :face 'nerd-icons-purple)) nil nil :ascent center)
+                ("Kernel" ,(list (nerd-icons-mdicon "nf-md-console" :face 'nerd-icons-cyan)) nil nil :ascent center)
+                ("Learning" ,(list (nerd-icons-mdicon "nf-md-book_open_variant" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Language" ,(list (nerd-icons-mdicon "nf-md-translate" :face 'nerd-icons-green)) nil nil :ascent center)
+                ("Default" ,(list (nerd-icons-mdicon "nf-md-alarm_off" :face 'nerd-icons-dsilver)) nil nil :ascent center)
+                ("Sun" ,(list (nerd-icons-mdicon "nf-md-white_balance_sunny" :face 'nerd-icons-yellow)) nil nil :ascent center)
+                ("Diary" ,(list (nerd-icons-mdicon "nf-md-calendar" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Moon" ,(list (nerd-icons-mdicon "nf-md-weather_night" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Books" ,(list (nerd-icons-mdicon "nf-md-book_multiple" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Technical" ,(list (nerd-icons-mdicon "nf-md-code_tags" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Meeting" ,(list (nerd-icons-mdicon "nf-md-account_group" :face 'nerd-icons-silver)) nil nil :ascent center)
+                ("Bug" ,(list (nerd-icons-mdicon "nf-md-bug" :face 'nerd-icons-red)) nil nil :ascent center)
+                ("Project" ,(list (nerd-icons-mdicon "nf-md-source_branch" :face 'nerd-icons-green)) nil nil :ascent center)
+                ("Tasks" ,(list (nerd-icons-mdicon "nf-md-checkbox_marked_outline" :face 'nerd-icons-green)) nil nil :ascent center)
+                ("Writing" ,(list (nerd-icons-mdicon "nf-md-pencil" :face 'nerd-icons-green)) nil nil :ascent center)
                 ))
       #+end_src
 
@@ -1687,12 +2022,12 @@ Don't create too many windows, and create small splits.
 	  ;; system wide org-capture
 	  ;; https://www.reddit.com/r/emacs/comments/74gkeq/system_wide_org_capture/
 	  ;; Modern advice using advice-add instead of defadvice
-	  
+
 	  (defun ss/org-capture-suppress-window-splitting (&rest _)
 	    "Delete the extra window if we're in a capture frame"
 	    (when (equal "capture" (frame-parameter nil 'name))
 	      (delete-other-windows)))
-	  
+
 	  (advice-add 'org-switch-to-buffer-other-window :after #'ss/org-capture-suppress-window-splitting)
 
 	  (defun ss/org-capture-finalize-delete-frame (&rest _)
@@ -1700,13 +2035,13 @@ Don't create too many windows, and create small splits.
 	    (when (and (equal "capture" (frame-parameter nil 'name))
 		       (not (eq this-command 'org-capture-refile)))
 	      (delete-frame)))
-	  
+
 	  (advice-add 'org-capture-finalize :after #'ss/org-capture-finalize-delete-frame)
 
 	  (defun ss/org-capture-refile-delete-frame (&rest _)
 	    "Advise org-refile to close the frame"
 	    (delete-frame))
-	  
+
 	  (advice-add 'org-capture-refile :after #'ss/org-capture-refile-delete-frame)
 
 	  (defun activate-capture-frame ()
@@ -1798,16 +2133,137 @@ Don't create too many windows, and create small splits.
 *** Mail
     Notmuch mail setup
 
-    #+begin_src elisp
+***** Mail Helper Functions
+      Various helper functions for notmuch mail management.
+
+      #+begin_src elisp
+        (defun fconfig/org-capture-email ()
+          (interactive)
+          (org-capture nil "d"))
+
+        (defun fconfig/notmuch-get-tags ()
+          "Set tag for the message thread "
+          (pcase major-mode
+            ('notmuch-show-mode (notmuch-show-get-tags))
+            ('notmuch-search-mode (notmuch-search-get-tags))
+            ('notmuch-tree-mode (notmuch-tree-get-tags))))
+
+        (defun fconfig/notmuch-set-tags (tags)
+          "Set tag for message"
+          (pcase major-mode
+            ('notmuch-search-mode (notmuch-search-tag tags))
+            ('notmuch-show-mode (notmuch-show-tag tags))
+            ('notmuch-tree-mode (notmuch-tree-tag tags))))
+
+        (defun fconfig/notmuch-set-tags-thread (tags)
+          "Set tag for the message thread "
+          (pcase major-mode
+            ('notmuch-show-mode (notmuch-show-tag-all tags))
+            ('notmuch-search-mode (notmuch-search-tag tags))
+            ('notmuch-tree-mode (notmuch-tree-tag-thread tags))))
+
+        (defun fconfig/notmuch-toggle-tag (tag &optional threadp)
+          "Toggle tag. Will strip '-' and '+' from the start and end of the tag string."
+          (when (not (stringp tag))
+            (error "%s is not a string" tag))
+          (setq tag (string-trim tag "[ \t\n\r+-]+" "[ \t\n\r+-]+"))
+          (if (member tag (fconfig/notmuch-get-tags))
+              (setq tag (concat "-" tag))
+            (setq tag (concat "+" tag)))
+          (if threadp
+              (fconfig/notmuch-set-tags-thread (list tag))
+            (fconfig/notmuch-set-tags (list tag))))
+
+        (defun fconfig/notmuch-toggle-unread ()
+          "toggle unread tag for thread"
+          (interactive)
+          (fconfig/notmuch-toggle-tag "unread"))
+
+        (defun fconfig/notmuch-toggle-flagged ()
+          "Toggle needs action/flagged tag for thread"
+          (interactive)
+          (fconfig/notmuch-toggle-tag "flagged"))
+
+        (defun fconfig/notmuch-delete-thread ()
+          "Toggle 'deleted' tag for a thread"
+          (interactive)
+          (fconfig/notmuch-set-tags-thread (list "-unread"))
+          (fconfig/notmuch-toggle-tag "deleted" t))
+
+        (defun fconfig/notmuch-delete-message ()
+          "Toggle 'deleted tag for a message"
+          (interactive)
+          (fconfig/notmuch-set-tags (list "-unread"))
+          (fconfig/notmuch-toggle-tag "deleted"))
+
+        (defun fconfig/notmuch-bounce-message (&optional address)
+          "Bounce the current message."
+          (interactive "sBounce To: ")
+          (notmuch-show-view-raw-message)
+          (message-resend address))
+
+        (defun fconfig/notmuch-count-query (query)
+          "Return the count of messages matching a notmuch query"
+          (string-to-number
+           (string-trim
+            (shell-command-to-string
+             (concat "notmuch count " query)))))
+
+        (defun fconfig/notmuch-hello-insert-important ()
+          "Insert important saved searches section"
+          (widget-insert "Important:\n\n")
+          (let ((start (point)))
+            (mapc (apply-partially 'notmuch-hello-insert-buttons start)
+                  notmuch-hello-important-searches))
+          (widget-insert "\n"))
+
+        (defun fconfig/notmuch-hello-insert-others ()
+          "Insert other saved searches section"
+          (widget-insert "Others:\n\n")
+          (let ((start (point)))
+            (mapc (apply-partially 'notmuch-hello-insert-buttons start)
+                  notmuch-hello-other-searches))
+          (widget-insert "\n"))
+      #+end_src
+
+***** Notmuch Package Configuration
+      Main notmuch configuration and key bindings.
+
+      #+begin_src elisp
       (use-package notmuch
 	:ensure t
 	:config
 	(setq notmuch-show-logo nil
 	      notmuch-column-control t
-	      notmuch-mua-compose-in 'new-frame)
+	      ;; Compose in new frame (keep separate)
+	      notmuch-mua-compose-in 'new-frame
+	      ;; But reading/viewing should use current window, never split
+	      notmuch-show-mark-read-tags '()
+	      notmuch-search-result-format '(("date" . "%12s ")
+					      ("count" . "%-7s ")
+					      ("authors" . "%-20s ")
+					      ("subject" . "%-72s ")
+					      ("tags" . "(%s)")))
 
-	;; Load all the defuns which will be used later
-	(fconfig! mail))
+	;; Force notmuch-show (reading mail) to use current window
+	(setq notmuch-tree-outline-enabled nil)
+
+	;; Add display-buffer rules for notmuch buffers
+	;; notmuch-hello and notmuch-saved-search should share the same window
+	(add-to-list 'display-buffer-alist
+		     '("\\*notmuch-hello\\*"
+		       (display-buffer-same-window)
+		       (inhibit-same-window . nil)))
+
+	(add-to-list 'display-buffer-alist
+		     '("\\*notmuch-saved-search"
+		       (display-buffer-same-window)
+		       (inhibit-same-window . nil)))
+
+	(add-to-list 'display-buffer-alist
+		     '("\\*notmuch-show"
+		       (display-buffer-same-window)
+		       (inhibit-same-window . nil))))
     #+end_src
 
     Consult and notmuch hello. The saved searches for notmuch-hello are defined in
@@ -2026,14 +2482,14 @@ Don't create too many windows, and create small splits.
                 lsp-rust-analyzer-display-chaining-hints t
                 lsp-rust-analyzer-display-closure-return-type-hints t
                 lsp-rust-analyzer-display-parameter-hints nil)
-          
+
           ;; Override cargo/cfgs to prevent format mismatch warning
           ;; lsp-mode sends it as a map, but newer rust-analyzer expects a string array
           (with-eval-after-load 'lsp-rust
             ;; Remove or override the problematic cargo.cfgs setting
             (lsp-register-custom-settings
              '(("rust-analyzer.cargo.cfgs" nil t))))
-          
+
           ;; Suppress unmatched client warnings
           (setq lsp-warn-no-matched-clients nil)
 
@@ -2064,7 +2520,29 @@ Don't create too many windows, and create small splits.
                 company-idle-delay 0.0)
           (global-company-mode))
 
+        ;; LSP-Treemacs integration
+        (use-package lsp-treemacs
+          :ensure t
+          :after lsp-mode
+          :config
+          (lsp-treemacs-sync-mode 1)
+          :init
+          (defun lsp-treemacs-symbols-toggle ()
+            "Toggle the lsp-treemacs-symbols buffer."
+            (interactive)
+            (if (get-buffer "*LSP Symbols List*")
+                (kill-buffer "*LSP Symbols List*")
+              (progn (lsp-treemacs-symbols)
+                     (other-window -1)))))
+
+        ;; LSP keybindings
         (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
+        (general-def "C-c t e" 'lsp-treemacs-errors-list)
+        (general-def "C-c t y" 'lsp-treemacs-symbols-toggle)
+        (general-def "C-c t r" 'lsp-treemacs-references)
+        (general-def "C-c t i" 'lsp-treemacs-implementations)
+        (general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
+        (general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
       #+end_src
 ***** Misc
       Add a keybinding for recompile
@@ -2287,25 +2765,25 @@ Don't create too many windows, and create small splits.
                            (registers . 5)
                            (note . 1))
          dashboard-banner-logo-title (format "Welcome %s! Happy hacking ♥!" (user-login-name))
-         dashboard-footer-icon (all-the-icons-octicon "book"
-                                                      :height 1.00
-                                                      :v-adjust 0.05)
+         dashboard-footer-icon (nerd-icons-mdicon "nf-md-book"
+                                                     :height 1.00
+                                                     :v-adjust 0.05)
          dashboard-footer-messages gita-verses
          dashboard-projects-switch-function 'projectile-switch-project-by-name
          dashboard-navigator-buttons
          `(;; line1
            (
             ;; Open kernel source directory
-            (,(all-the-icons-faicon "calendar" :height 1.0 :v-adjust 0.0)
+            (,(nerd-icons-mdicon "nf-md-calendar" :height 1.0 :v-adjust 0.0)
              nil "Today's agenda and todo"
              (lambda (&rest _) (if (get-buffer "*Org Agenda*")
                               (switch-to-buffer-other-window "*Org Agenda*")
                             (org-agenda "a" "A"))))
             ;; Mails
-            (,(all-the-icons-octicon "mail" :height 1.0 :v-adjust 0.0)
+            (,(nerd-icons-mdicon "nf-md-email" :height 1.0 :v-adjust 0.0)
              nil "Unread Mails"
              (lambda (&rest _) (notmuch)))
-            (,(all-the-icons-octicon "star" :height 1.0 :v-adjust 0.0)
+            (,(nerd-icons-mdicon "nf-md-star" :height 1.0 :v-adjust 0.0)
              ,(fconfig/notmuch-count-query "tag:flagged") "Starred Mails"
              (lambda (&rest _) (notmuch-search "tag:flagged")))))))
 
@@ -2327,8 +2805,11 @@ Don't create too many windows, and create small splits.
 *** Media
 ***** Bongo
       #+begin_src elisp
+	;; Defer bongo (music player - load only when explicitly used)
 	(use-package bongo
-	  :ensure t)
+	  :ensure t
+	  :defer t
+	  :commands (bongo bongo-playlist bongo-dired-library bongo-buffer))
 
 	(org-link-set-parameters "audio"
 				 :follow #'org-play-media-file)
@@ -2342,15 +2823,20 @@ Don't create too many windows, and create small splits.
 
 *** Help
     #+begin_src elisp
-      (use-package helpful :ensure t)
-      (global-set-key (kbd "C-h f") #'helpful-callable)
-      (global-set-key (kbd "C-h v") #'helpful-variable)
-      (global-set-key (kbd "C-h k") #'helpful-key)
+      ;; Helpful - better help system (lazy load via keybindings)
+      (use-package helpful
+        :ensure t
+        :commands (helpful-callable helpful-variable helpful-key helpful-command helpful-at-point)
+        :bind (("C-h f" . helpful-callable)
+               ("C-h v" . helpful-variable)
+               ("C-h k" . helpful-key)))
     #+end_src
 *** Quick websearch
     #+begin_src elisp
+      ;; Defer engine-mode (web search integration)
       (use-package engine-mode
         :ensure t
+        :defer 3
         :config
         (engine-mode t)
         (defengine github
@@ -2422,16 +2908,6 @@ Don't create too many windows, and create small splits.
       (general-def read-mode-map "<down>" 'next-line)
       (general-def read-mode-map "<up>" 'previous-line)
 
-      ;;; switch between light and dark themes
-      (general-def "C-c l t l" '(lambda()
-				  (interactive)
-				  (disable-theme 'doom-nord)
-				  (load-theme 'doom-nord-light t)))
-
-      (general-def "C-c l t d" '(lambda()
-				  (interactive)
-				  (disable-theme 'doom-nord-light)
-				  (load-theme 'doom-nord t)))
       ;; searching and jumping
       (general-create-definer fconfig-search-bind
 	:prefix "M-g"
@@ -2477,12 +2953,6 @@ Don't create too many windows, and create small splits.
       ;;; treemacs
       (general-def "C-c t t" 'treemacs)
       (general-def "C-c t s" 'treemacs-select-window)
-      (general-def "C-c t e" 'lsp-treemacs-errors-list)
-      (general-def "C-c t y" 'lsp-treemacs-symbols-toggle)
-      (general-def "C-c t r" 'lsp-treemacs-references)
-      (general-def "C-c t i" 'lsp-treemacs-implementations)
-      (general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
-      (general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
 
       (fconfig-C-c-bind
 	"x s" 'vterm
@@ -2526,6 +2996,7 @@ Don't create too many windows, and create small splits.
     #+end_src*
 *** Misc
     #+begin_src elisp
+      ;; Speed-type - typing practice (reverted to original - has known issues with speed-type-text)
       (use-package speed-type
         :ensure t)
     #+end_src
@@ -2776,48 +3247,526 @@ Don't create too many windows, and create small splits.
               (enable-read-mode)
             (disable-read-mode)))
       #+end_src
-*** Temporary
-     The following is a paste of a exiting config file, from which I will slowly
-     move everything to org files.
+*** Core Emacs Settings
+    Basic Emacs settings for better defaults and usability.
 
-     #+begin_src elisp
-       (let ((file-name-handler-alist nil))
-	 (fconfig! core)
-	 (fconfig! packages)
-	 (fconfig! org-config)
-	 (fconfig! progmode)
-       )
+    #+begin_src elisp
+      ;; Frame and window settings
+      (setq frame-title-format '("%b %* %m")
+            delete-key-deletes-forward t
+            mouse-yank-at-point t
+            minibuffer-max-depth nil
+            scroll-conservatively 200
+            require-final-newline t
+            confirm-kill-emacs 'y-or-n-p
+            completion-ignored-extensions '(".o" ".elc")
+            scroll-preserve-screen-position 1
+            visible-bell t
+            global-auto-revert-mode t
+            ispell-program-name "hunspell"
+            tramp-default-method "scp")
 
-       (defun santosh/org-agenda-open ()
-	 (interactive)
-	 (if (get-buffer "*Org Agenda*")
-	     (progn
-	       (switch-to-buffer-other-frame "*Org Agenda*")
-	       (org-agenda-redo))
-	   (progn
-	     (let (
-		   (org-agenda-window-setup 'only-window)
-		   (org-frame (make-frame
-			       '((no-other-frame . t)
-				 (unsplittable . t)
-				 (height . 30)
-				 (buffer-list . '("*Org Agenda*"))
-				 (minibuffer . nil)
-				 (undecorated . t)))))
-	       (set-frame-font "monospace-9" t nil)
-	       (org-agenda nil "A")
-	       (org-agenda-goto-today)
-	       (set-window-dedicated-p (selected-window) t)
-	       (delete-other-windows)))))
+      ;; Appearance and highlighting
+      (setq font-lock-maximum-decoration t
+            query-replace-highlight t
+            search-highlight t
+            transient-mark-mode t
+            shift-select-mode nil
+            bookmark-save-flag 1
+            history-delete-duplicates t)
 
-       (global-map! "C-c o RET" 'santosh/org-agenda-open)
+      ;; Text editing defaults
+      (setq-default x-stretch-cursor t
+                    fill-column 80
+                    indent-tabs-mode nil
+                    save-place t
+                    save-place-file "~/.emacs.d/saved-places")
 
-       (if (not (server-running-p))
-	   (server-start))
+      ;; Enable modes
+      (line-number-mode t)
+      (mouse-avoidance-mode 'jump)
+      (display-time-mode)
 
-       (fconfig/finish)
-     #+end_src
+      ;; Text mode hooks
+      (add-hook 'text-mode-hook (lambda() (auto-fill-mode 1)))
+      (add-hook 'text-mode-hook (lambda() (setq fill-column 80)))
 
+      ;; Ediff settings - always split horizontally (side-by-side), never vertically
+      (setq ediff-split-window-function 'split-window-horizontally
+            ediff-window-setup-function 'ediff-setup-windows-plain)
+
+      ;; Enable disabled commands
+      (put 'narrow-to-region 'disabled nil)
+      (put 'narrow-to-page 'disabled nil)
+
+      ;; Occur context
+      (setq list-matching-lines-default-context-lines 2)
+    #+end_src
+
+*** Utility Functions
+    Helper functions for everyday use.
+
+    #+begin_src elisp
+      (defun insert-time()
+        "Insert current timestamp."
+        (interactive)
+        (insert (format-time-string "%a, %d %b %Y at %T")))
+
+      (defun insert-date ()
+        "Insert current date."
+        (interactive)
+        (insert (format-time-string "%d/%m/%Y")))
+
+      (defun backward-kill-line (arg)
+        "Kill chars backward until encountering the end of a line."
+        (interactive "p")
+        (kill-line 0))
+
+      (defun set-cursor-with-file-mode ()
+        "Change cursor color and type according to file mode."
+        (cond
+         (buffer-read-only
+          (setq cursor-type 'bar)
+          (set-cursor-color "gray"))
+         (overwrite-mode
+          (set-cursor-color "red")
+          (setq cursor-type 'hbar))
+         (t
+          (set-cursor-color "gray")
+          (setq cursor-type 'box))))
+
+      (add-hook 'post-command-hook 'set-cursor-with-file-mode)
+    #+end_src
+
+*** Additional Package Configuration
+    Package configurations that complement the main setup.
+
+    #+begin_src elisp
+      (use-package yasnippet
+        :ensure t
+        :diminish yas-minor-mode
+        :commands yas-expand
+        :config
+        (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets" t)
+        (use-package yasnippet-snippets
+          :ensure t
+          :config (yasnippet-snippets-initialize)))
+
+      (use-package ace-jump-mode
+        :ensure t
+        :diminish ace-jump-mode
+        :commands ace-jump-mode
+        :config
+        (ace-jump-mode-enable-mark-sync))
+
+      (use-package paren
+        :defer 3
+        :config
+        (setq show-paren-style 'expression)
+        (show-paren-mode +1))
+
+      (use-package highlight-parentheses
+        :ensure t
+        :defer 3
+        :diminish)
+
+      (use-package fic-mode
+        :ensure t
+        :defer 5
+        :config
+        (add-to-list 'fic-highlighted-words "WARNING"))
+
+      (use-package type-break
+        :defer 5
+        :init
+        (setq type-break-interval (* 45 60)
+              type-break-good-rest-interval (* 2 60)
+              type-break-good-break-interval (* 5 60)
+              type-break-keystroke-threshold (cons 1350 6750)
+              type-break-file-name "~/.emacs.d/typebreak"
+              type-break-query-interval 60
+              type-break-query-mode t)
+        (type-break-mode t)
+        (if (fboundp 'type-break-mode-line-message-mode)
+            (type-break-mode-line-message-mode -1))
+        (type-break-schedule))
+
+      (use-package ledger-mode
+        :ensure t
+        :defer t
+        :init
+        (setq ledger-schedule-file (concat notes-dir "/santosh/finance/ledger-schedule"))
+        :config
+        (use-package company-ledger
+          :ensure t
+          :after (company)
+          :init
+          (add-to-list 'company-backends 'company-ledger)
+          :config
+          (setq company-ledger-date-regexp "^[0-9]\\{2\\}/[0-9]\\{2\\}/[0-9]\\{4\\}")))
+
+      (use-package paredit
+        :ensure t
+        :hook (emacs-lisp-mode . paredit-mode)
+        :diminish)
+
+      (use-package ispell :defer 5)
+
+      (use-package flyspell
+        :defer 3
+        :diminish flyspell-mode)
+
+      (use-package ace-isearch
+        :ensure t
+        :diminish
+        :defer 3
+        :init (global-ace-isearch-mode 1))
+
+      (use-package dired
+        :defer 3
+        :init
+        (add-hook 'dired-mode-hook 'hl-line-mode)
+        (add-hook 'dired-mode-hook 'dired-omit-mode)
+        :config (setq dired-listing-switches "-alh"))
+
+      (use-package dired-x
+        :defer 3
+        :config
+        (setq-default dired-omit-files-p t)
+        (setq dired-omit-extensions
+              (append dired-omit-extensions
+                      '(".ko" ".ko.cmd" ".o.cmd" ".o" ".mod.c" ".mod.o")))
+        (setq dired-omit-files (concat dired-omit-files "\\|^\\..+$")))
+
+      (use-package openwith
+        :ensure t
+        :defer 5
+        :config
+        (openwith-mode t)
+        (setq openwith-associations '(("\\.pdf\\'" "xdg-open" (file)))))
+
+      (use-package flycheck
+        :diminish
+        :hook (c-mode-common . flycheck-mode))
+
+      (use-package shell
+        :defer t
+        :bind (:map shell-mode-map ("<tab>" . completion-at-point))
+        :custom (comint-prompt-read-only t))
+
+      (use-package which-key
+        :defer 3
+        :config
+        (setq which-key-sort-order 'which-key-prefix-then-key-order)
+        (which-key-mode)
+        :diminish)
+
+      (use-package company
+        :ensure t
+        :hook (after-init . global-company-mode)
+        :diminish
+        :config
+        (let ((bg (face-attribute 'default :background)))
+          (custom-set-faces
+           `(company-tooltip ((t (:inherit default :background "gray5"))))
+           `(company-scrollbar-bg ((t (:background "gray10"))))
+           `(company-scrollbar-fg ((t (:background "light gray"))))
+           `(company-tooltip-selection ((t (:inherit font-lock-function-name-face))))
+           `(company-tooltip-common ((t (:inherit font-lock-constant-face)))))))
+
+      (use-package treemacs
+        :ensure t
+        :init
+        ;; Defer extensions until treemacs and their dependencies are loaded
+        (use-package treemacs-projectile
+          :ensure t
+          :after (treemacs projectile))
+        (use-package treemacs-magit
+          :ensure t
+          :after (treemacs magit)))
+
+      ;; Defer graphviz (graph visualization - load for .dot files)
+      (use-package graphviz-dot-mode
+        :ensure t
+        :mode "\\.dot\\'"
+        :defer t
+        :config
+        (setq graphviz-dot-indent-width 4))
+
+      (use-package golden-ratio-scroll-screen
+        :defer 2
+        :config
+        (global-map! [remap scroll-down-command] 'golden-ratio-scroll-screen-down)
+        (global-map! [remap scroll-up-command] 'golden-ratio-scroll-screen-up))
+
+      (use-package writegood-mode :defer t)
+
+      ;; Defer smartparens (structured editing - used in prog-mode-hook)
+      (use-package smartparens
+        :ensure t
+        :defer t
+        :commands smartparens-mode)
+
+      ;; Diminish minor modes
+      (diminish 'abbrev-mode)
+      (diminish 'eldoc-mode)
+      (diminish 'flyspell-mode)
+      (diminish 'flycheck-mode)
+      (diminish 'hs-minor-mode)
+      (diminish 'highlight-changes-mode)
+      (diminish 'auto-fill-function)
+    #+end_src
+
+*** Programming Mode Configuration
+    Language-specific settings and hooks.
+
+    #+begin_src elisp
+      ;; General programming mode hook
+      (defun program-mode-hook ()
+        (which-function-mode 1)
+        (whitespace-mode 1)
+        (flyspell-prog-mode)
+        (hs-minor-mode)
+        (fic-mode)
+        (fci-mode)
+        (highlight-parentheses-mode)
+        (configure-prettify-symbols-alist)
+        (smartparens-mode)
+        (when (featurep 'yasnippet)
+          (yas-minor-mode)))
+
+      (add-to-list 'prog-mode-hook 'program-mode-hook)
+
+      ;; C/C++ specific settings
+      (defun c-specfic-hooks ()
+        (c-set-style "linux")
+        (setq indent-tabs-mode t
+              tab-width 8
+              fill-column 80
+              gdb-many-windows 1
+              c-hungry-delete-key t
+              backward-delete-function nil))
+
+      (add-hook 'c-mode-common-hook 'c-specfic-hooks)
+
+      ;; Assembly mode
+      (defun asm-mode-hooks ()
+        (setq asm-comment-char ?\#
+              indent-tabs-mode t
+              tab-width 8)
+        (electric-indent-mode -1))
+
+      (add-hook 'asm-mode-hook 'asm-mode-hooks)
+
+      ;; Python settings
+      (defun python-mode-hooks ()
+        (setq python-indent-offset 4
+              fill-column 79))
+
+      (add-hook 'python-mode-hook 'python-mode-hooks)
+
+      ;; Lisp languages
+      (defun list-lang-hooks ()
+        (paredit-mode +1))
+
+      (add-hook 'lisp-mode-hook 'list-lang-hooks)
+      (add-hook 'emacs-lisp-mode-hook 'list-lang-hooks)
+      (add-hook 'scheme-mode-hook 'list-lang-hooks)
+
+      ;; Other modes
+      (add-hook 'js-mode-hook 'program-mode-hook)
+      (add-hook 'html-mode-hook 'program-mode-hook)
+
+      ;; Go Mode
+      (use-package go-mode
+        :ensure t
+        :hook ((before-save . gofmt-before-save)
+               (go-mode . go-eldoc-setup))
+        :mode ("\\.go\\'" . go-mode)
+        :config
+        (setenv "GOPATH" (expand-file-name "~/dev/gws"))
+        (add-to-list 'exec-path (expand-file-name "~/gws/bin"))
+        (set (make-local-variable 'compile-command) "go build -v")
+        (use-package go-eldoc :ensure t))
+
+      ;; Rust Mode
+      (use-package rustic
+        :ensure t
+        :config
+        (setq rustic-lsp-client 'lsp-mode)
+        (when (file-exists-p "~/.cargo/bin")
+          (add-to-list 'exec-path (expand-file-name "~/.cargo/bin")))
+        (setq rustic-flycheck-setup-mode-line-p nil
+              rustic-format-on-save nil
+              rustic-lsp-format t))
+
+      ;; C eldoc
+      (use-package c-eldoc
+        :ensure t
+        :defer 5
+        :hook (c-mode . c-turn-on-eldoc-mode)
+        :diminish
+        :config (setq c-eldoc-includes "-I./ -I../ -I/usr/include"))
+
+      ;; Common Lisp
+      (use-package slime
+        :ensure t
+        :defer 5
+        :config (setq inferior-lisp-program "/usr/bin/clisp"))
+
+      ;; Octave
+      (use-package octave
+        :mode ("\\.m\\'" . octave-mode)
+        :config
+        (add-hook 'octave-mode-hook
+                  (lambda ()
+                    (abbrev-mode 1)
+                    (if (eq window-system 'x)
+                        (font-lock-mode 1)))))
+    #+end_src
+
+*** Org-mode Helper Functions
+    Additional org-mode utilities and helpers.
+
+    #+begin_src elisp
+      (defun org-insert-clock-range (&optional n)
+        "Insert a clock range with N minutes offset."
+        (interactive "NTime Offset (in min): ")
+        (let* ((ctime (cdr (decode-time (current-time))))
+               (min (car ctime))
+               (start (apply 'encode-time 0 (- min n) (cdr ctime))))
+          (org-insert-time-stamp start t t "CLOCK: ")
+          (insert "--")
+          (org-insert-time-stamp (current-time) t t)))
+
+      (defun is-task-p ()
+        "Any task with a todo keyword and no subtask."
+        (save-restriction
+          (widen)
+          (let ((has-subtask)
+                (subtree-end (save-excursion (org-end-of-subtree t)))
+                (is-a-task (member (nth 2 (org-heading-components)) org-todo-keywords-1)))
+            (save-excursion
+              (forward-line 1)
+              (while (and (not has-subtask)
+                          (< (point) subtree-end)
+                          (re-search-forward "^\*+ " subtree-end t))
+                (when (member (org-get-todo-state) org-todo-keywords-1)
+                  (setq has-subtask t))))
+            (and is-a-task (not has-subtask)))))
+
+      (defun is-project-p ()
+        "Any task with a todo keyword subtask."
+        (save-restriction
+          (widen)
+          (let ((has-subtask)
+                (subtree-end (save-excursion (org-end-of-subtree t)))
+                (is-a-task (member (nth 2 (org-heading-components)) org-todo-keywords-1)))
+            (save-excursion
+              (forward-line 1)
+              (while (and (not has-subtask)
+                          (< (point) subtree-end)
+                          (re-search-forward "^\*+ " subtree-end t))
+                (when (member (org-get-todo-state) org-todo-keywords-1)
+                  (setq has-subtask t))))
+            (and is-a-task has-subtask))))
+
+      (defun clock-in-to-next (kw)
+        "Switch a task from NEXT to PROG when clocking in."
+        (when (not (and (boundp 'org-capture-mode) org-capture-mode))
+          (cond
+           ((and (string= (org-get-todo-state) "NEXT")
+                 (not (is-project-p)))
+            "PROG"))))
+
+      (setq org-clock-in-switch-to-state 'clock-in-to-next)
+
+      (defun org-clock-in-if-starting ()
+        "Clock in when the task is marked PROG."
+        (when (and (string= org-state "PROG")
+                   (not (string= org-last-state org-state)))
+          (org-clock-in)))
+
+      (defun org-clock-out-if-waiting ()
+        "Clock out when the task is marked TODO from PROG."
+        (when (and (string= org-last-state "PROG")
+                   (string= org-state "TODO"))
+          (org-clock-out)))
+
+      (add-hook 'org-after-todo-state-change-hook 'org-clock-out-if-waiting)
+
+      ;; Org-mode appearance settings
+      (set-face-attribute 'org-headline-done nil :strike-through t)
+      (setf org-special-ctrl-a/e t)
+      (setf org-special-ctrl-k t)
+      (org-clock-persistence-insinuate)
+
+      ;; Org src edit keybinding
+      (eval-after-load 'org-src
+        '(define-key org-src-mode-map
+                     (kbd "C-x C-s") #'org-edit-src-exit))
+
+      ;; Auto-update parent todo state
+      (defun org-summary-todo (n-done n-not-done)
+        "Switch entry to DONE when all subentries are done, to TODO otherwise."
+        (let (org-log-done org-log-states)
+          (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+
+      (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
+    #+end_src
+
+*** Notmuch Mail Utility Functions
+    Helper functions for notmuch mail management.
+
+    #+begin_src elisp
+      (defun fconfig/org-capture-email ()
+        "Capture email to org."
+        (interactive)
+        (org-capture nil "d"))
+
+      (defun fconfig/notmuch-get-tags ()
+        "Get tags for the current message."
+        (pcase major-mode
+          ('notmuch-show-mode (notmuch-show-get-tags))
+          ('notmuch-search-mode (notmuch-search-get-tags))
+          ('notmuch-tree-mode (notmuch-tree-get-tags))))
+
+      (defun fconfig/notmuch-set-tags (tags)
+        "Set tags for message."
+        (pcase major-mode
+          ('notmuch-search-mode (notmuch-search-tag tags))
+          ('notmuch-show-mode (notmuch-show-tag tags))
+          ('notmuch-tree-mode (notmuch-tree-tag tags))))
+
+      (defun fconfig/notmuch-set-tags-thread (tags)
+        "Set tag for the message thread."
+        (pcase major-mode
+          ('notmuch-show-mode (notmuch-show-tag-all tags))
+          ('notmuch-search-mode (notmuch-search-tag tags))
+          ('notmuch-tree-mode (notmuch-tree-tag-thread tags))))
+
+      (defun fconfig/notmuch-toggle-tag (tag &optional threadp)
+        "Toggle TAG for message or thread if THREADP is non-nil."
+        (when (not (stringp tag))
+          (error "%s is not a string" tag))
+        (setq tag (string-trim tag "[ \t\n\r+-]+" "[ \t\n\r+-]+"))
+        (if (member tag (fconfig/notmuch-get-tags))
+            (setq tag (concat "-" tag))
+          (setq tag (concat "+" tag)))
+        (if threadp
+            (fconfig/notmuch-set-tags-thread (list tag))
+          (fconfig/notmuch-set-tags (list tag))))
+
+      (defun fconfig/notmuch-toggle-unread ()
+        "Toggle unread tag for thread."
+        (interactive)
+        (fconfig/notmuch-toggle-tag "unread"))
+
+      (defun fconfig/notmuch-toggle-flagged ()
+        "Toggle flagged tag for thread."
+        (interactive)
+        (fconfig/notmuch-toggle-tag "flagged"))
+    #+end_src
 *** Load personal setup
     Load personal setup file, which can have personal information like email
     address, location etc, and load host specific setup file, which I only use
