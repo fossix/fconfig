@@ -32,6 +32,11 @@
                   (setq gc-cons-threshold 16777216 ; 16MB
                         gc-cons-percentage 0.1)
                   (setq file-name-handler-alist fconfig--file-name-handler-alist)))
+
+      ;; Start Emacs server for emacsclient
+      (require 'server)
+      (unless (server-running-p)
+        (server-start))
     #+end_src
 
 *** Package setup
@@ -2137,6 +2142,12 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
       Various helper functions for notmuch mail management.
 
       #+begin_src elisp
+        (defun fconfig/notmuch-show-thread-from-notification (thread-id)
+          "Open a notmuch thread by thread ID.
+        This can be called from external scripts."
+          (interactive "sThread ID: ")
+          (notmuch-show (concat "thread:" thread-id)))
+
         (defun fconfig/org-capture-email ()
           (interactive)
           (org-capture nil "d"))
@@ -2202,28 +2213,42 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
           (notmuch-show-view-raw-message)
           (message-resend address))
 
+        (defun fconfig/notmuch-is-busy-p ()
+          "Check if notmuch new is currently running (database locked).
+                  Checks both Emacs processes and system processes."
+          (let ((emacs-busy (catch 'found
+                              (dolist (proc (process-list))
+                                (when (and (string-match-p "notmuch" (process-name proc))
+                                           (memq (process-status proc) '(run open)))
+                                  (throw 'found t)))
+                              nil))
+                (system-busy (condition-case nil
+                                 (with-timeout (0.1 nil)
+                                   (let ((result (shell-command-to-string
+                                                  "pgrep -f 'notmuch new' >/dev/null 2>&1 && echo busy")))
+                                     (not (string-empty-p (string-trim result)))))
+                               (error nil))))
+            (or emacs-busy system-busy)))
+
         (defun fconfig/notmuch-count-query (query)
           "Return the count of messages matching a notmuch query"
-          (string-to-number
-           (string-trim
-            (shell-command-to-string
-             (concat "notmuch count " query)))))
+          (condition-case err
+              (let ((result (shell-command-to-string
+                             (concat "notmuch count " query))))
+                (if (string-empty-p (string-trim result))
+                    0
+                  (string-to-number (string-trim result))))
+            (error 0)))
 
         (defun fconfig/notmuch-hello-insert-important ()
           "Insert important saved searches section"
-          (widget-insert "Important:\n\n")
-          (let ((start (point)))
-            (mapc (apply-partially 'notmuch-hello-insert-buttons start)
-                  notmuch-hello-important-searches))
-          (widget-insert "\n"))
+          (notmuch-hello-insert-searches "Important:" notmuch-hello-important-searches
+                                         :oldest-first nil))
 
         (defun fconfig/notmuch-hello-insert-others ()
           "Insert other saved searches section"
-          (widget-insert "Others:\n\n")
-          (let ((start (point)))
-            (mapc (apply-partially 'notmuch-hello-insert-buttons start)
-                  notmuch-hello-other-searches))
-          (widget-insert "\n"))
+          (notmuch-hello-insert-searches "Others:" notmuch-hello-other-searches
+                                         :oldest-first nil))
       #+end_src
 
 ***** Notmuch Package Configuration
@@ -2237,13 +2262,19 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 	      notmuch-column-control t
 	      ;; Compose in new frame (keep separate)
 	      notmuch-mua-compose-in 'new-frame
-	      ;; But reading/viewing should use current window, never split
-	      notmuch-show-mark-read-tags '()
 	      notmuch-search-result-format '(("date" . "%12s ")
 					      ("count" . "%-7s ")
 					      ("authors" . "%-20s ")
 					      ("subject" . "%-72s ")
 					      ("tags" . "(%s)")))
+
+	;; Automatically remove unread tag when viewing messages
+	;; Use customize-set-variable to override any saved custom value
+	(customize-set-variable 'notmuch-show-mark-read-tags '("-unread"))
+	(setq-default notmuch-show-mark-read-tags '("-unread"))
+
+	;; Mark messages as read when viewing them
+	(add-hook 'notmuch-show-insert-header-hook 'notmuch-show-mark-read)
 
 	;; Force notmuch-show (reading mail) to use current window
 	(setq notmuch-tree-outline-enabled nil)
@@ -2271,25 +2302,47 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
     #+begin_src elisp
       (use-package consult-notmuch
-	:ensure t
-	:after (consult notmuch)
-	:commands consult-notmuch)
+        :ensure t
+        :after (consult notmuch)
+        :commands consult-notmuch)
 
-	 ;;; from http://www.coli.uni-saarland.de/~slemaguer/emacs/main.html
+         ;;; from http://www.coli.uni-saarland.de/~slemaguer/emacs/main.html
       (use-package notmuch-hello
-	:commands (notmuch notmuch-hello)
-	:config
+        :commands (notmuch notmuch-hello)
+        :config
 
-	(setq notmuch-hello-thousands-separator ",") ;; Add a thousand separator
-	(general-def notmuch-hello-mode-map "h" 'consult-notmuch)
+        (setq notmuch-hello-thousands-separator ",") ;; Add a thousand separator
+        ;; Ensure mark-read-tags is set (may get reset by customizable variables)
+        (customize-set-variable 'notmuch-show-mark-read-tags '("-unread"))
+        (setq-default notmuch-show-mark-read-tags '("-unread"))
+        (general-def notmuch-hello-mode-map "h" 'consult-notmuch)
 
-	(add-hook 'notmuch-hello-refresh-hook
-		  (lambda ()
-		    (whitespace-mode -1)))
+        (add-hook 'notmuch-hello-refresh-hook
+                  (lambda ()
+                    (whitespace-mode -1)))
 
-	(setq notmuch-hello-sections '())
-	(add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-others)
-	(add-to-list 'notmuch-hello-sections 'fconfig/notmuch-hello-insert-important))
+        (add-hook 'notmuch-show-mode-hook
+                  (lambda ()
+                    (setq fconfig/notmuch-show-last-message-id nil)
+                    ;; Mark message as read when entering show mode
+                    (run-with-idle-timer 0.1 nil 'notmuch-show-mark-read)))
+
+        (setq notmuch-hello-sections
+              '(fconfig/notmuch-hello-insert-important
+                fconfig/notmuch-hello-insert-others)))
+
+      ;; Ensure mark-read-tags persists after notmuch-show loads
+      ;; Use customize-set-variable to override any saved custom value
+      (with-eval-after-load 'notmuch-show
+        (customize-set-variable 'notmuch-show-mark-read-tags '("-unread"))
+        (setq-default notmuch-show-mark-read-tags '("-unread")))
+
+      ;; Also ensure it's set after init (in case custom files override it)
+      (add-hook 'after-init-hook
+                (lambda ()
+                  (when (boundp 'notmuch-show-mark-read-tags)
+                    (customize-set-variable 'notmuch-show-mark-read-tags '("-unread"))
+                    (setq-default notmuch-show-mark-read-tags '("-unread")))))
     #+end_src
 
     Let's autoload =mail-hist= and and =sendmail=
@@ -2572,24 +2625,91 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 ***** Treesit major modes
       #+begin_src elisp
         (use-package tree-sitter)
-        (setq major-mode-remap-alist
-              '((yaml-mode . yaml-ts-mode)
-                (bash-mode . bash-ts-mode)
-                (json-mode . json-ts-mode)
-                (css-mode . css-ts-mode)
-                (python-mode . python-ts-mode)
-                (rust-mode . rust-ts-mode)
-                (markdown-mode . markdown-ts-mode)
-                (go-mode . go-ts-mode)))
 
-        (treesit-language-available-p 'go)
-      #+end_src
-***** Rust
-      #+begin_src elisp
-        ;; Rustic handles formatting automatically via rustic-format-on-save
-        ;; which is enabled by default. If you want to customize:
-        ;; (setq rustic-format-on-save t)
-        ;; (setq rustic-format-trigger 'on-save)
+        ;; Configure tree-sitter grammar sources
+        ;; Note: markdown-ts-mode is not a built-in mode, so we don't include markdown here
+        (setq treesit-language-source-alist
+              '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+                (css "https://github.com/tree-sitter/tree-sitter-css")
+                (go "https://github.com/tree-sitter/tree-sitter-go")
+                (json "https://github.com/tree-sitter/tree-sitter-json")
+                (python "https://github.com/tree-sitter/tree-sitter-python")
+                (rust "https://github.com/tree-sitter/tree-sitter-rust")
+                (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+        ;; Helper function to check tree-sitter status
+        (defun fconfig/treesit-status ()
+          "Show which tree-sitter grammars are installed."
+          (interactive)
+          (let ((available '())
+                (missing '()))
+            (dolist (lang '(bash css go json python rust yaml))
+              (if (treesit-language-available-p lang)
+                  (push lang available)
+                (push lang missing)))
+            (with-output-to-temp-buffer "*Tree-sitter Status*"
+              (princ "Tree-sitter Grammar Status\n")
+              (princ "==========================\n\n")
+              (princ (format "Available: %s\n" (or available "none")))
+              (princ (format "Missing:   %s\n\n" (or missing "none")))
+              (when missing
+                (princ "To install missing grammars, run:\n")
+                (princ "  M-x fconfig/install-treesit-grammars\n")))))
+
+        ;; Helper function to install tree-sitter grammars
+        (defun fconfig/install-treesit-grammars ()
+          "Install all configured tree-sitter grammars."
+          (interactive)
+          (message "Checking tree-sitter grammars...")
+          (let ((missing-langs '()))
+            (dolist (lang '(bash css go json python rust yaml))
+              (unless (treesit-language-available-p lang)
+                (push lang missing-langs)))
+            (if missing-langs
+                (progn
+                  (message "Installing tree-sitter grammars for: %s" missing-langs)
+                  (dolist (lang missing-langs)
+                    (message "Installing %s..." lang)
+                    (condition-case err
+                        (progn
+                          ;; Install the grammar - this will download and compile
+                          (let ((noninteractive t))
+                            (treesit-install-language-grammar lang))
+                          (message "Successfully installed %s" lang))
+                      (error (message "ERROR: Failed to install %s: %s" lang (error-message-string err))))))
+              (message "All tree-sitter grammars already installed"))))
+
+        ;; Function to update mode remappings based on available grammars
+        (defun fconfig/update-treesit-remaps ()
+          "Update major-mode-remap-alist based on available tree-sitter grammars."
+          (setq major-mode-remap-alist
+                (seq-filter
+                 (lambda (mapping)
+                   (let* ((ts-mode (cdr mapping))
+                          (mode-name (symbol-name ts-mode))
+                          (lang-name (when (string-match "\\(.*\\)-ts-mode" mode-name)
+                                      (intern (match-string 1 mode-name)))))
+                     (and lang-name (treesit-language-available-p lang-name))))
+                 '((yaml-mode . yaml-ts-mode)
+                   (bash-mode . bash-ts-mode)
+                   (json-mode . json-ts-mode)
+                   (css-mode . css-ts-mode)
+                   (python-mode . python-ts-mode)
+                   (rust-mode . rust-ts-mode)
+                   (go-mode . go-ts-mode)))))
+
+        ;; Set initial remaps (only for already-installed grammars)
+        (fconfig/update-treesit-remaps)
+
+        ;; Try to install missing grammars, then update remaps
+        (run-with-idle-timer 1 nil
+          (lambda ()
+            (fconfig/install-treesit-grammars)
+            ;; After installation, update the remaps again
+            (run-with-idle-timer 1 nil #'fconfig/update-treesit-remaps)))
+
+        ;; Associate .rs files with rustic-mode (which will use rust-ts-mode internally)
+        (add-to-list 'auto-mode-alist '("\\.rs\\'" . rustic-mode))
       #+end_src
 
 *** Version Control
@@ -3501,6 +3621,15 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
       (use-package writegood-mode :defer t)
 
+      ;; Markdown mode for editing markdown files
+      (use-package markdown-mode
+        :ensure t
+        :mode (("README\\.md\\'" . gfm-mode)
+               ("\\.md\\'" . markdown-mode)
+               ("\\.markdown\\'" . markdown-mode))
+        :init
+        (setq markdown-command "multimarkdown"))
+
       ;; Defer smartparens (structured editing - used in prog-mode-hook)
       (use-package smartparens
         :ensure t
@@ -3589,16 +3718,27 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
         (set (make-local-variable 'compile-command) "go build -v")
         (use-package go-eldoc :ensure t))
 
-      ;; Rust Mode
+      ;; Rust Mode - rustic provides rich Rust development tools
+      ;; It will use rust-ts-mode as base if available, otherwise rust-mode
       (use-package rustic
         :ensure t
+        :init
+        ;; Tell rustic to use tree-sitter mode as base (if available)
+        (setq rustic-mode-treesitter-derive t)
         :config
         (setq rustic-lsp-client 'lsp-mode)
         (when (file-exists-p "~/.cargo/bin")
           (add-to-list 'exec-path (expand-file-name "~/.cargo/bin")))
         (setq rustic-flycheck-setup-mode-line-p nil
               rustic-format-on-save nil
-              rustic-lsp-format t))
+              rustic-lsp-format t)
+        ;; Rustic provides these useful commands:
+        ;; C-c C-c C-b : rustic-cargo-build
+        ;; C-c C-c C-r : rustic-cargo-run
+        ;; C-c C-c C-t : rustic-cargo-test
+        ;; C-c C-c C-l : rustic-cargo-clippy
+        ;; C-c C-c C-k : rustic-cargo-clean
+        )
 
       ;; C eldoc
       (use-package c-eldoc
