@@ -80,6 +80,9 @@
       (setq byte-compile-warnings '(cl-functions))
     #+end_src
 
+    #+RESULTS:
+    | cl-functions |
+
     Load the config manager =fconfig=, so it will be easier to load utility
     function from =.el= files.
 
@@ -588,13 +591,7 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
       (setq pop-up-windows nil)        ;; Never automatically create new windows
       (setq pop-up-frames nil)         ;; Never create new frames
 
-      ;; Strongly prefer reusing windows over creating new ones
-      (setq display-buffer-base-action
-            '((display-buffer-reuse-window
-               display-buffer-same-window
-               display-buffer-reuse-mode-window)))
-
-      ;; Specific buffer display rules - AGGRESSIVELY prevent splits
+      ;; Specific buffer display rules - prevent splits for special buffers, allow for files
       (setq display-buffer-alist
             '(;; Help buffers - always reuse current window
               ("\\*Help\\*"
@@ -612,10 +609,11 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
                (display-buffer-reuse-window display-buffer-same-window)
                (inhibit-same-window . nil))
 
-              ;; Compilation and similar buffers - reuse or same window (no splits)
+              ;; Compilation and similar buffers - show at bottom (allow seeing errors + code)
               ("\\*\\(compilation\\|grep\\|occur\\)\\*"
-               (display-buffer-reuse-window display-buffer-same-window)
-               (inhibit-same-window . nil))
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (window-height . 0.3)
+               (inhibit-same-window . t))
 
               ;; Completions - reuse window (no splits)
               ("\\*Completions\\*"
@@ -624,11 +622,6 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
               ;; Messages and warnings - reuse window
               ("\\*\\(Messages\\|Warnings\\)\\*"
-               (display-buffer-reuse-window display-buffer-same-window)
-               (inhibit-same-window . nil))
-
-              ;; Catch-all for any other buffers - reuse window
-              (".*"
                (display-buffer-reuse-window display-buffer-same-window)
                (inhibit-same-window . nil))))
 
@@ -723,9 +716,9 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
     #+begin_src elisp
       (setq org-startup-with-latex-preview t
-            org-preview-latex-default-process 'dvipng)
+            ;; dvisvgm (via lualatex) works with fontspec/metropolis; dvipng does not
+            org-preview-latex-default-process 'dvisvgm)
 
-      ;; Ensure dvipng process uses correct latex command
       (setq org-preview-latex-process-alist
             '((dvipng
                :programs ("latex" "dvipng")
@@ -737,22 +730,22 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
                :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
                :image-converter ("dvipng -D %D -T tight -o %O %f"))
               (dvisvgm
-               :programs ("latex" "dvisvgm")
-               :description "dvi > svg"
-               :message "you need to install the programs: latex and dvisvgm."
+               :programs ("lualatex" "dvisvgm")
+               :description "dvi > svg (via lualatex)"
+               :message "you need to install the programs: lualatex and dvisvgm."
                :image-input-type "dvi"
                :image-output-type "svg"
                :image-size-adjust (1.7 . 1.5)
-               :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+               :latex-compiler ("lualatex --output-format=dvi -interaction nonstopmode -output-directory %o %f")
                :image-converter ("dvisvgm %f -n -b min -c %S -o %O"))
               (imagemagick
-               :programs ("latex" "convert")
-               :description "pdf > png"
-               :message "you need to install the programs: latex and imagemagick."
+               :programs ("lualatex" "convert")
+               :description "pdf > png (via lualatex, fallback)"
+               :message "you need to install the programs: lualatex and imagemagick."
                :image-input-type "pdf"
                :image-output-type "png"
                :image-size-adjust (1.0 . 1.0)
-               :latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
+               :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
                :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))))
     #+end_src
 
@@ -871,12 +864,13 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
          holiday-oriental-holidays nil
          holiday-solar-holidays nil
 
+         ;; %latex is substituted with the value of #+LaTeX_COMPILER (or lualatex default)
          org-latex-pdf-process
-         '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-           "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-           "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
+         '("%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+           "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+           "%latex -shell-escape -interaction nonstopmode -output-directory %o %f")
 
-         org-format-latex-options (plist-put org-format-latex-options :scale 2.5)
+         org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
          org-clock-mode-line-total 'today)
       #+end_src
 ***** Setup org modules
@@ -886,6 +880,10 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
       #+begin_src elisp
 	;; Defer org-contrib (additional org-mode features)
 	(use-package org-contrib :ensure t :defer t)
+
+	;; Enable org-tempo for template expansion shortcuts
+	;; <s TAB for source blocks, <e TAB for examples, etc.
+	(require 'org-tempo)
       #+end_src
 ***** Make org-mode a bit more modern looking
       #+begin_src elisp
@@ -1513,6 +1511,21 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
             (set-frame-parameter nil 'unsplittable t))
         #+end_src
 
+        Set environment variables from .env file
+        #+begin_src elisp
+          (defun fconfig/load-dotenv (file)
+            "Read a .env file and set environment variables."
+            (interactive "f.env file: ")
+            (when (file-exists-p file)
+              (with-temp-buffer
+                (insert-file-contents file)
+                (while (not (eobp))
+                  (let ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
+                    (when (and (not (string-match-p "^#\\|^\\s-*$" line)) (string-match "\\([^=]+\\)=\\(.*\\)" line))
+                      (setenv (match-string 1 line) (match-string 2 line))))
+                  (forward-line 1)))))
+#+end_src
+
 ******* Searching
 ***** Publishing notes
       #+begin_src elisp
@@ -1571,6 +1584,8 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
       Add agenda files
       #+begin_src elisp :results none
+        (require 'notifications)
+
         (use-package org-agenda
           :bind (:map org-agenda-mode-map ([C-f9] . org-agenda-goto-today))
           :commands org-agenda
@@ -2297,7 +2312,19 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 	(add-to-list 'display-buffer-alist
 		     '("\\*notmuch-show"
 		       (display-buffer-same-window)
-		       (inhibit-same-window . nil))))
+		       (inhibit-same-window . nil)))
+
+	;; Customize faces for better read/unread distinction
+	(custom-set-faces
+	 ;; Unread messages in search view - bold and brighter
+	 '(notmuch-search-unread-face ((t (:weight bold :foreground "#82aaff"))))
+	 ;; Read messages in search view - normal weight, dimmer
+	 '(notmuch-search-matching-authors ((t (:foreground "#c3e88d"))))
+	 ;; Unread messages in tree view
+	 '(notmuch-tree-match-author-face ((t (:foreground "#c3e88d"))))
+	 '(notmuch-tree-match-subject-face ((t (:foreground "#c792ea"))))
+	 ;; Make unread tag more visible
+	 '(notmuch-tag-unread ((t (:foreground "#ff5370" :weight bold))))))
     #+end_src
 
     Consult and notmuch hello. The saved searches for notmuch-hello are defined in
@@ -2518,93 +2545,59 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
           (setq geiser-defauslt-implementation 'guile
                 geiser-guile-binary "guile2.2"))
       #+end_src
-***** LSP
+***** Eglot (LSP Client)
       #+begin_src elisp
         (setq read-process-output-max fconfig/1MB)
 
-        (use-package lsp-mode
-          :diminish
-          :commands (lsp lsp-deferred)
-          :hook ((c-mode rust-ts-mode go-mode python-mode) . lsp-deferred)
-          :bind (:map prog-mode-map
-                      ("M-g r" . lsp-rename))
-          :config
-          (setq lsp-file-watch-threshold nil
-                lsp-idle-delay 0.5)
-
-          ;; Rust-analyzer configuration
-          (setq lsp-rust-analyzer-cargo-watch-command "clippy"
-                lsp-rust-analyzer-server-display-inlay-hints t
-                lsp-rust-analyzer-display-chaining-hints t
-                lsp-rust-analyzer-display-closure-return-type-hints t
-                lsp-rust-analyzer-display-parameter-hints nil)
-
-          ;; Override cargo/cfgs to prevent format mismatch warning
-          ;; lsp-mode sends it as a map, but newer rust-analyzer expects a string array
-          (with-eval-after-load 'lsp-rust
-            ;; Remove or override the problematic cargo.cfgs setting
-            (lsp-register-custom-settings
-             '(("rust-analyzer.cargo.cfgs" nil t))))
-
-          ;; Suppress unmatched client warnings
-          (setq lsp-warn-no-matched-clients nil)
-
-          (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-
-        (use-package consult-lsp
+        (use-package eglot
           :ensure t
-          :after lsp-mode)
+          :hook ((c-mode go-mode python-mode) . eglot-ensure)
+          :bind (:map eglot-mode-map
+                      ("C-c l a" . eglot-code-actions)
+                      ("C-c l r" . eglot-rename)
+                      ("C-c l f" . eglot-format)
+                      ("C-c l d" . eldoc)
+                      ("C-c l h" . eldoc-doc-buffer))
+          :config
+          ;; Performance tuning
+          (setq eglot-events-buffer-size 0  ; Disable event logging for performance
+                eglot-sync-connect nil       ; Don't block on connection
+                eglot-autoshutdown t)        ; Shutdown server when last buffer is killed
 
-        (use-package lsp-ui
+          ;; Rust-analyzer configuration via eglot
+          ;; (add-to-list 'eglot-server-programs
+          ;;              '(rustic-mode . ("rust-analyzer")))
+
+          ;; Customize rust-analyzer settings
+          ;; (setq-default eglot-workspace-configuration
+          ;;               '(:rust-analyzer
+          ;;                 (:check (:command "clippy")
+          ;;                  :inlayHints (:chainingHints (:enable t)
+          ;;                               :closureReturnTypeHints (:enable "always")
+          ;;                               :parameterHints (:enable :json-false)))))
+
+          ;; Show eldoc in echo area
+          (setq eldoc-echo-area-use-multiline-p nil))
+
+        ;; Company completion (works with eglot via company-capf)
+        (use-package company
           :ensure t
-          :hook (lsp-mode . lsp-ui-mode)
-          :after lsp-mode)
-
-        (use-package lsp-ui-doc
-          :after lsp-ui
+          :hook (eglot-managed-mode . company-mode)
           :config
-          (setq lsp-ui-doc-include-signature t
-                lsp-ui-doc-delay 1.5
-                lsp-ui-sideline-delay 1.5))
-
-        (use-package company-capf
-          :requires company
-          :after lsp-mode
-          :config
-          (push 'company-capf company-backends)
           (setq company-minimum-prefix-length 1
-                company-idle-delay 0.0)
+                company-idle-delay 0.1
+                company-backends '(company-capf company-dabbrev-code company-keywords))
           (global-company-mode))
 
-        ;; LSP-Treemacs integration
-        (use-package lsp-treemacs
+        ;; Consult integration for xref (works with eglot)
+        (use-package consult-eglot
           :ensure t
-          :after lsp-mode
-          :config
-          (lsp-treemacs-sync-mode 1)
-          :init
-          (defun lsp-treemacs-symbols-toggle ()
-            "Toggle the lsp-treemacs-symbols buffer."
-            (interactive)
-            (if (get-buffer "*LSP Symbols List*")
-                (kill-buffer "*LSP Symbols List*")
-              (progn (lsp-treemacs-symbols)
-                     (other-window -1)))))
-
-        ;; LSP keybindings
-        (general-def lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols)
-        (general-def "C-c t e" 'lsp-treemacs-errors-list)
-        (general-def "C-c t y" 'lsp-treemacs-symbols-toggle)
-        (general-def "C-c t r" 'lsp-treemacs-references)
-        (general-def "C-c t i" 'lsp-treemacs-implementations)
-        (general-def "C-c t h c" 'lsp-treemacs-call-hierarchy)
-        (general-def "C-c t h t" 'lsp-treemacs-type-hierarchy)
+          :after eglot
+          :bind (:map eglot-mode-map
+                      ("C-c l s" . consult-eglot-symbols)))
       #+end_src
 ***** Misc
-      Add a keybinding for recompile
       #+begin_src elisp
-        (general-def "C-c RET" 'recompile)
-
         ;;; Add gtags to xref backend
         (use-package gxref
           :ensure t
@@ -2736,6 +2729,10 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 	:name "Version control"
 	"" '(:ignore t :which-key "Version control"))
     #+end_src
+
+    #+RESULTS:
+    : fconfig-vc-bind
+
     Lets show the change history while browsing the file
     #+begin_src elisp
       (use-package blamer
@@ -3728,19 +3725,40 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
         :init
         ;; Tell rustic to use tree-sitter mode as base (if available)
         (setq rustic-mode-treesitter-derive t)
+        :bind (:map rustic-mode-map
+                    ;; More convenient keybindings for Rust development
+                    ("C-c r b" . rustic-cargo-build)
+                    ("C-c r r" . rustic-cargo-run)
+                    ("C-c r t" . rustic-cargo-test)
+                    ("C-c r l" . rustic-cargo-clippy)
+                    ("C-c r c" . rustic-cargo-clean)
+                    ("C-c r d" . rustic-cargo-doc)
+                    ("C-c r f" . rustic-format-buffer)
+                    ("C-c r a" . rustic-cargo-add)
+                    ("C-c r k" . rustic-cargo-check))
         :config
-        (setq rustic-lsp-client 'lsp-mode)
+        (setq rustic-lsp-client 'eglot)
         (when (file-exists-p "~/.cargo/bin")
           (add-to-list 'exec-path (expand-file-name "~/.cargo/bin")))
         (setq rustic-flycheck-setup-mode-line-p nil
               rustic-format-on-save nil
-              rustic-lsp-format t)
-        ;; Rustic provides these useful commands:
-        ;; C-c C-c C-b : rustic-cargo-build
-        ;; C-c C-c C-r : rustic-cargo-run
-        ;; C-c C-c C-t : rustic-cargo-test
-        ;; C-c C-c C-l : rustic-cargo-clippy
-        ;; C-c C-c C-k : rustic-cargo-clean
+              rustic-lsp-format t
+              rustic-format-trigger 'on-save)  ; Auto-format on save
+
+        ;; Use cargo-nextest if available
+        (when (executable-find "cargo-nextest")
+          (setq rustic-cargo-test-exec-command "cargo nextest run"))
+
+        ;; Rustic keybindings reference:
+        ;; C-c r b : Build project (cargo build)
+        ;; C-c r r : Run project (cargo run)
+        ;; C-c r t : Run tests (cargo test)
+        ;; C-c r l : Run clippy (cargo clippy)
+        ;; C-c r c : Clean build artifacts (cargo clean)
+        ;; C-c r d : Open documentation (cargo doc)
+        ;; C-c r f : Format buffer (rustfmt)
+        ;; C-c r a : Add dependency (cargo add)
+        ;; C-c r k : Check project (cargo check)
         )
 
       ;; C eldoc
@@ -3916,9 +3934,32 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
     for setting up font.
 
     #+begin_src elisp
-      (org-babel-load-file (expand-file-name
-			    (concat (user-login-name) ".org") "~/.emacs.d"))
-      (org-babel-load-file (expand-file-name
-			    (concat (system-name) ".org") "~/.emacs.d"))
+      ;; Load user-specific config (e.g., ssivaraj.org)
+      (let ((user-config (expand-file-name
+                          (concat (user-login-name) ".org") "~/.emacs.d")))
+        (when (file-exists-p user-config)
+          (org-babel-load-file user-config)))
+
+      ;; Load hostname-specific config (e.g., dhcp-192-168-2-179.nvidia.com.org)
+      (let ((host-config (expand-file-name
+                          (concat (system-name) ".org") "~/.emacs.d")))
+        (when (file-exists-p host-config)
+          (org-babel-load-file host-config)))
+
+      ;; Load OS-specific config (e.g., fedora.org, ubuntu.org)
+      ;; This is useful when hostname changes (DHCP, VPNs, etc.)
+      (let* ((os-release-file "/etc/os-release")
+             (os-id (when (file-exists-p os-release-file)
+                      (with-temp-buffer
+                        (insert-file-contents os-release-file)
+                        (goto-char (point-min))
+                        (when (re-search-forward "^ID=\\(.+\\)$" nil t)
+                          (replace-regexp-in-string "\"" "" (match-string 1))))))
+             (os-config (when os-id
+                          (expand-file-name (concat os-id ".org") "~/.emacs.d"))))
+        (when (and os-config (file-exists-p os-config))
+          (message "Loading OS-specific config: %s" os-config)
+          (org-babel-load-file os-config)))
+
       (load custom-file)
     #+end_src

@@ -6,6 +6,7 @@
 (add-hook 'after-init-hook
           `(lambda ()
              (require 'org)
+             (require 'ox-beamer)
              ;; load up the starter kit
              (org-babel-load-file (expand-file-name "emacs-config.org"
                                                     config-dir))))
