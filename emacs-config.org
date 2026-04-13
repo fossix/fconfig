@@ -891,7 +891,10 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
       #+begin_src elisp
         (use-package "org-modern"
           :ensure t
-          :config (global-org-modern-mode))
+          :config (global-org-modern-mode)
+          (setq org-startup-indented t
+                org-adapt-indentation t
+                org-indent-indentation-per-level 1))
       #+end_src
 ***** Reproducible research
       After a source block is executed, and if that has a image as a result, by
