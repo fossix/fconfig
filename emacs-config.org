@@ -873,6 +873,36 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
          org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
          org-clock-mode-line-total 'today)
       #+end_src
+***** Archive
+      Route archives to a single =~/notes/org/archive/= root. A helper
+      function picks the destination based on the source file's path:
+
+      - Daily journal files (=org/roam/journal/*.org=) → =archive/dailies.org=
+      - Other roam files (=org/roam/*.org=)           → =archive/roam.org=
+      - Anything else                                  → =archive/%s_archive=
+
+      #+begin_src elisp
+        (defun santosh/org-archive-location-for (file)
+          "Return the `org-archive-location' value for FILE."
+          (let ((abs     (and file (expand-file-name file)))
+                (dailies (expand-file-name "~/notes/org/roam/journal/"))
+                (roam    (expand-file-name "~/notes/org/roam/")))
+            (cond
+             ((and abs (string-prefix-p dailies abs))
+              "~/notes/org/archive/dailies.org::")
+             ((and abs (string-prefix-p roam abs))
+              "~/notes/org/archive/roam.org::")
+             (t
+              "~/notes/org/archive/%s_archive::"))))
+
+        (defun santosh/set-org-archive-location ()
+          "Set buffer-local `org-archive-location' from the file path."
+          (when buffer-file-name
+            (setq-local org-archive-location
+                        (santosh/org-archive-location-for buffer-file-name))))
+
+        (add-hook 'org-mode-hook #'santosh/set-org-archive-location)
+      #+end_src
 ***** Setup org modules
       The two most important org packages that we need are org-agenda
       and org-capture, set those up first. Also load org-contrib
