@@ -1326,7 +1326,7 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
                           ;; hook into org-roam-db-autosync-mode you wish to enable
                           ;; persistence of meta values (see respective section in README to
                           ;; find out what meta means)
-                          :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
+                          :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-mode)))
 
                         (use-package vulpea-buffer)
 
@@ -1758,6 +1758,15 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
 
       #+begin_src elisp
         (setq org-agenda-start-with-log-mode t)
+
+        (defun santosh/file-has-filetag-p (file tag)
+          "Return non-nil if FILE's header declares :TAG: in #+filetags."
+          (with-temp-buffer
+            (insert-file-contents file nil 0 2000)
+            (goto-char (point-min))
+            (re-search-forward
+             (format "^#\\+filetags:.*:%s:" (regexp-quote tag)) nil t)))
+
         (defun day-agenda-skip ()
           "Skip trees that are of priority A and has a meeting tag"
           (let ((subtree-end (save-excursion (org-end-of-subtree t)))
@@ -1909,7 +1918,7 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
                                   (and
                                    (or
                                     (file-in-directory-p file (f-join org-roam-directory org-roam-dailies-directory))
-                                    (file-in-directory-p file (f-join org-roam-directory "work")))
+                                    (santosh/file-has-filetag-p file "work"))
                                    (member file (vulpea-project-files))))
                                 (vulpea-project-files)))))))
 
