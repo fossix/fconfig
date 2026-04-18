@@ -3973,32 +3973,20 @@ Window splitting preferences: prefer side-by-side splits on large screens, avoid
     for setting up font.
 
     #+begin_src elisp
+      (defun fconfig/load-org-if-nonempty (path)
+        "Tangle and load PATH via `org-babel-load-file' when it exists and is non-empty.
+      An empty .org tangles to nothing, leaving no .el to load, so guard against that."
+        (when (and (file-exists-p path)
+                   (> (file-attribute-size (file-attributes path)) 0))
+          (org-babel-load-file path)))
+
       ;; Load user-specific config (e.g., ssivaraj.org)
-      (let ((user-config (expand-file-name
-                          (concat (user-login-name) ".org") "~/.emacs.d")))
-        (when (file-exists-p user-config)
-          (org-babel-load-file user-config)))
+      (fconfig/load-org-if-nonempty
+       (expand-file-name (concat (user-login-name) ".org") "~/.emacs.d"))
 
       ;; Load hostname-specific config (e.g., dhcp-192-168-2-179.nvidia.com.org)
-      (let ((host-config (expand-file-name
-                          (concat (system-name) ".org") "~/.emacs.d")))
-        (when (file-exists-p host-config)
-          (org-babel-load-file host-config)))
-
-      ;; Load OS-specific config (e.g., fedora.org, ubuntu.org)
-      ;; This is useful when hostname changes (DHCP, VPNs, etc.)
-      (let* ((os-release-file "/etc/os-release")
-             (os-id (when (file-exists-p os-release-file)
-                      (with-temp-buffer
-                        (insert-file-contents os-release-file)
-                        (goto-char (point-min))
-                        (when (re-search-forward "^ID=\\(.+\\)$" nil t)
-                          (replace-regexp-in-string "\"" "" (match-string 1))))))
-             (os-config (when os-id
-                          (expand-file-name (concat os-id ".org") "~/.emacs.d"))))
-        (when (and os-config (file-exists-p os-config))
-          (message "Loading OS-specific config: %s" os-config)
-          (org-babel-load-file os-config)))
+      (fconfig/load-org-if-nonempty
+       (expand-file-name (concat (system-name) ".org") "~/.emacs.d"))
 
       (load custom-file)
     #+end_src
